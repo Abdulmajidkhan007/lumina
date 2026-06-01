@@ -144,6 +144,19 @@ export function ProfilePostGrid({
 
   const keyExtractor = useCallback((item: Post) => item.id, []);
 
+  const listContentStyle = useMemo(() => ({ paddingBottom: 80 }), []);
+
+  const renderEmpty = useCallback(
+    () => (
+      <EmptyState
+        icon="image-outline"
+        title="No posts yet"
+        subtitle="When you share photos they'll appear here."
+      />
+    ),
+    [],
+  );
+
   // Show skeleton inside the list header area on first load
   if (isLoading) {
     return (
@@ -173,18 +186,10 @@ export function ProfilePostGrid({
       keyExtractor={keyExtractor}
       numColumns={grid.profileColumns}
       ListHeaderComponent={ListHeaderComponent}
-      ListEmptyComponent={
-        <EmptyState
-          icon="image-outline"
-          title="No posts yet"
-          subtitle="When you share photos they'll appear here."
-        />
-      }
+      ListEmptyComponent={renderEmpty}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.4}
-      contentContainerStyle={{
-        paddingBottom: 80,
-      }}
+      contentContainerStyle={listContentStyle}
       showsVerticalScrollIndicator={false}
     />
   );

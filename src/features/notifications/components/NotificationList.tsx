@@ -131,14 +131,15 @@ export function NotificationList(): React.JSX.Element {
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const ListFooter = useCallback((): React.JSX.Element | null => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={[styles.footer, { paddingVertical: theme.spacing.xl }]}>
-        <Spinner size="sm" />
-      </View>
-    );
-  }, [isFetchingNextPage, theme.spacing.xl]);
+  const listFooter = useMemo(
+    () =>
+      isFetchingNextPage ? (
+        <View style={[styles.footer, { paddingVertical: theme.spacing.xl }]}>
+          <Spinner size="sm" />
+        </View>
+      ) : null,
+    [isFetchingNextPage, theme.spacing.xl],
+  );
 
   // --- Loading state ---
   if (isLoading) {
@@ -181,7 +182,7 @@ export function NotificationList(): React.JSX.Element {
       renderItem={renderItem}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
-      ListFooterComponent={ListFooter}
+      ListFooterComponent={listFooter}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
       accessibilityLabel="Notifications list"

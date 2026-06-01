@@ -45,7 +45,8 @@ export default function CommentsScreen(): React.JSX.Element {
   const router = useRouter();
   const { postId: postIdParam } = useLocalSearchParams<CommentsParams>();
 
-  const postId = postIdParam as PostId | undefined;
+  const hasId = typeof postIdParam === 'string' && postIdParam.length > 0;
+  const postId = (postIdParam ?? '') as PostId;
 
   // Reply state
   const [replyTo, setReplyTo] = useState<{
@@ -61,7 +62,7 @@ export default function CommentsScreen(): React.JSX.Element {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useComments(postId as PostId);
+  } = useComments(postId, undefined, { enabled: hasId });
 
   const dismiss = useCallback(() => router.back(), [router]);
 
@@ -85,7 +86,7 @@ export default function CommentsScreen(): React.JSX.Element {
   );
 
   // ---- Missing param guard ----
-  if (postId === undefined || postId === '') {
+  if (!hasId) {
     return (
       <SafeAreaView
         style={[styles.safeArea, { backgroundColor: theme.colors.background }]}

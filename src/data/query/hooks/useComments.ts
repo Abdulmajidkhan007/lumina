@@ -8,9 +8,14 @@ import type { Paginated } from '@/types/api';
 import { postsApi } from '@/data/api/client';
 import { queryKeys } from '../keys';
 
+export interface UseCommentsOptions {
+  enabled?: boolean;
+}
+
 export function useComments(
   postId: PostId,
   parentCommentId?: CommentId,
+  options?: UseCommentsOptions,
 ): UseInfiniteQueryResult<InfiniteData<Paginated<Comment>>, Error> {
   return useInfiniteQuery({
     queryKey: queryKeys.comments(postId, parentCommentId),
@@ -22,6 +27,6 @@ export function useComments(
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: Boolean(postId),
+    enabled: Boolean(postId) && (options?.enabled ?? true),
   });
 }

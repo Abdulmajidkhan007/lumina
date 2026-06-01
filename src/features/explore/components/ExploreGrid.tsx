@@ -9,7 +9,7 @@
  * RefreshControl for pull-to-refresh.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   FlatList,
   Pressable,
@@ -136,7 +136,10 @@ export function ExploreGrid(): React.JSX.Element {
     isFetchingNextPage,
   } = useExplore();
 
-  const posts: Post[] = data?.pages.flatMap((p) => p.items) ?? [];
+  const posts = useMemo<Post[]>(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data],
+  );
 
   const handlePostPress = useCallback(
     (postId: string) => {

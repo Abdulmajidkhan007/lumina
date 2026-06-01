@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Spinner } from '@/design-system/primitives/Spinner';
+import { Text } from '@/design-system/primitives/Text';
 import { hitSlop } from '@/constants/layout';
 import { useAddComment } from '@/data/query/hooks';
 import { useCurrentUser } from '@/stores/auth.store';
@@ -103,6 +104,13 @@ export const CommentComposer = React.memo(function CommentComposer({
               size={14}
               color={theme.colors.textTertiary}
             />
+            <Text
+              variant="caption"
+              color="tertiary"
+              style={{ marginLeft: theme.spacing.xs }}
+            >
+              {`Replying to @${replyToUsername}`}
+            </Text>
           </View>
         ) : null}
 

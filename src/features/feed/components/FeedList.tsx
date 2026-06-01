@@ -10,7 +10,7 @@
  * - Error -> ErrorState with retry
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -136,6 +136,16 @@ export function FeedList(): React.JSX.Element {
     [isFetchingNextPage],
   );
 
+  const listContentStyle = useMemo(
+    () => ({ paddingBottom: insets.bottom + theme.spacing['4xl'], flexGrow: 1 as const }),
+    [insets.bottom, theme.spacing],
+  );
+
+  const listStyle = useMemo(
+    () => ({ backgroundColor: theme.colors.background }),
+    [theme.colors.background],
+  );
+
   const renderEmpty = useCallback(() => {
     if (isLoading) return <LoadingSkeleton />;
     if (isError) {
@@ -186,11 +196,8 @@ export function FeedList(): React.JSX.Element {
           colors={[theme.colors.accent]}
         />
       }
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + theme.spacing['4xl'],
-        flexGrow: 1,
-      }}
-      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={listContentStyle}
+      style={listStyle}
       showsVerticalScrollIndicator={false}
       removeClippedSubviews
       accessibilityRole="list"

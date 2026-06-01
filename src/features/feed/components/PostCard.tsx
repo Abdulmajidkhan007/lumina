@@ -60,6 +60,10 @@ const Caption = React.memo(function Caption({
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
 
+  const handleExpand = useCallback(() => {
+    setExpanded(true);
+  }, []);
+
   if (caption == null || caption.trim() === '') return null;
 
   return (
@@ -67,7 +71,7 @@ const Caption = React.memo(function Caption({
       <Text
         variant="callout"
         numberOfLines={expanded ? undefined : MAX_CAPTION_LINES}
-        onPress={expanded ? undefined : () => setExpanded(true)}
+        onPress={expanded ? undefined : handleExpand}
       >
         <Text
           variant="callout"
@@ -82,7 +86,7 @@ const Caption = React.memo(function Caption({
         {caption}
       </Text>
       {!expanded ? (
-        <Pressable onPress={() => setExpanded(true)} hitSlop={hitSlop.sm}>
+        <Pressable onPress={handleExpand} hitSlop={hitSlop.sm}>
           <Text variant="caption" color="tertiary" style={{ marginTop: 2 }}>
             more
           </Text>

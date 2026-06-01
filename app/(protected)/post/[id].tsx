@@ -36,31 +36,29 @@ export default function PostDetailScreen(): React.JSX.Element {
   const router = useRouter();
   const { id } = useLocalSearchParams<PostParams>();
 
-  const postId = id as PostId | undefined;
+  const hasId = typeof id === 'string' && id.length > 0;
+  const postId = (id ?? '') as PostId;
 
   const {
     data: post,
     isLoading,
     isError,
     refetch,
-  } = usePost(postId as PostId);
+  } = usePost(postId, { enabled: hasId });
 
   // Load a preview of top-level comments (first page only)
-  const { data: commentsData } = useComments(
-    postId as PostId,
-    undefined,
-  );
+  const { data: commentsData } = useComments(postId, undefined, { enabled: hasId });
 
   const goBack = useCallback(() => router.back(), [router]);
 
   const handleViewAllComments = useCallback(() => {
-    if (postId !== undefined) {
+    if (hasId) {
       router.push(`/(protected)/comments/${postId}`);
     }
-  }, [router, postId]);
+  }, [router, hasId, postId]);
 
   // ---- Missing / bad param guard ----
-  if (postId === undefined || postId === '') {
+  if (!hasId) {
     return (
       <SafeAreaView
         style={[styles.safeArea, { backgroundColor: theme.colors.background }]}

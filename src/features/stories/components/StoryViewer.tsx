@@ -18,10 +18,10 @@ import React, {
   useState,
 } from 'react';
 import {
-  Dimensions,
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -59,7 +59,6 @@ export interface StoryViewerProps {
 
 const STORY_DURATION_MS = 5000;
 const SWIPE_DISMISS_THRESHOLD = 80;
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // ---------------------------------------------------------------------------
 // Component
@@ -71,6 +70,7 @@ export function StoryViewer({
 }: StoryViewerProps): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
 
   const [storyIndex, setStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -147,8 +147,7 @@ export function StoryViewer({
       }
       cancelAnimation(progress);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storyIndex, isPaused]);
+  }, [storyIndex, isPaused, goNext, progress]);
 
   // Mark current story seen on mount/index change
   useEffect(() => {
@@ -188,7 +187,7 @@ export function StoryViewer({
 
   const containerStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
-    opacity: 1 - translateY.value / (SCREEN_HEIGHT * 0.5),
+    opacity: 1 - translateY.value / (screenHeight * 0.5),
   }));
 
   // ---------------------------------------------------------------------------
