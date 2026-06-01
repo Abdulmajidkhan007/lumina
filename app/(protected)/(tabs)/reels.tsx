@@ -1,62 +1,49 @@
 /**
  * Lumina — Reels tab
  *
- * Placeholder screen. Will be replaced by the full reels feature.
+ * Immersive fullscreen vertical reels pager. Content fills the entire screen
+ * (behind the tab bar). Dark background so the pager blends edge-to-edge.
  */
 
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { useTheme } from '@/design-system/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/design-system/primitives/Text';
-import { EmptyState } from '@/components/EmptyState';
-import { tabBarHeight } from '@/constants/layout';
+import { ReelsPager } from '@/features/reels/components';
 
 export default function ReelsScreen(): React.JSX.Element {
-  const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
-      edges={['top']}
-    >
+    <View style={styles.container}>
+      {/* Full-bleed pager — fills behind tab bar */}
+      <ReelsPager />
+
+      {/* Floating "Reels" wordmark in the top safe area */}
       <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: theme.colors.border,
-            paddingHorizontal: theme.spacing.lg,
-          },
-        ]}
+        style={[styles.header, { top: insets.top + 8 }]}
+        pointerEvents="none"
       >
-        <Text variant="headline" color="primary">
+        <Text variant="headline" style={styles.headerText}>
           Reels
         </Text>
       </View>
-
-      <View style={[styles.body, { paddingBottom: tabBarHeight.default }]}>
-        <EmptyState
-          icon="play-circle-outline"
-          title="No reels yet"
-          subtitle="Short videos from people you follow will appear here."
-        />
-      </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
   header: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
   },
-  body: {
-    flex: 1,
+  headerText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
