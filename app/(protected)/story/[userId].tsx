@@ -1,71 +1,108 @@
 /**
  * Lumina — Story viewer screen
  *
- * Placeholder. Full-screen modal with transparent/fade presentation.
+ * Fullscreen dark modal that shows a user's story reel. Reads `userId` from
+ * the route param, finds the matching StoryReel from the query cache, and
+ * renders StoryViewer. Guards all param accesses. Hides the tab bar while open.
  */
 
-import React, { useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 
-import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
-import { hitSlop } from '@/constants/layout';
+import { Spinner } from '@/design-system/primitives/Spinner';
+import { useStoryReels } from '@/data/query/hooks/useStoryReels';
+import { useUiStore } from '@/stores/ui.store';
+import { StoryViewer } from '@/features/stories/components/StoryViewer';
 
-type StoryParams = { userId: string };
+// ---------------------------------------------------------------------------
+// Route param types
+// ---------------------------------------------------------------------------
+
+type StoryParams = {
+  userId: string;
+};
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 export default function StoryViewerScreen(): React.JSX.Element {
-  const theme = useTheme();
   const router = useRouter();
-  const { userId } = useLocalSearchParams<StoryParams>();
+  const params = useLocalSearchParams<StoryParams>();
+  const userId = params.userId ?? null;
 
-  const dismiss = useCallback(() => router.back(), [router]);
+  const setTabBarVisible = useUiStore((s) => s.setTabBarVisible);
+  const resetStoryViewer = useUiStore((s) => s.resetStoryViewer);
+
+  const { data: reels, isLoading } = useStoryReels();
+
+  // Hide tab bar while viewing story; restore on unmount
+  useEffect(() => {
+    setTabBarVisible(false);
+    return () => {
+      setTabBarVisible(true);
+      resetStoryViewer();
+    };
+  }, [setTabBarVisible, resetStoryViewer]);
+
+  const dismiss = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  // Guard: no userId
+  if (userId == null) {
+    return (
+      <View style={styles.fallback}>
+        <Text variant="callout" color="inverse" align="center">
+          Story not found.
+        </Text>
+      </View>
+    );
+  }
+
+  // Loading
+  if (isLoading) {
+    return (
+      <View style={styles.fallback}>
+        <Spinner size="md" colorVariant="inverse" />
+      </View>
+    );
+  }
+
+  // Find the matching reel
+  const reel = reels?.find((r) => r.author.id === userId) ?? null;
+
+  if (reel == null) {
+    return (
+      <View style={styles.fallback}>
+        <Text variant="callout" color="inverse" align="center">
+          No stories found for this user.
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.overlay }]}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text variant="bodyStrong" color="inverse">
-            Story — {userId ?? ''}
-          </Text>
-          <Pressable
-            onPress={dismiss}
-            hitSlop={hitSlop.md}
-            accessibilityRole="button"
-            accessibilityLabel="Close story"
-          >
-            <Ionicons name="close-outline" size={28} color="#FFFFFF" />
-          </Pressable>
-        </View>
-        <View style={styles.body}>
-          <Text variant="callout" color="inverse" align="center">
-            Story viewer coming soon.
-          </Text>
-        </View>
-      </SafeAreaView>
-    </View>
+    <>
+      <StatusBar style="light" />
+      <StoryViewer reel={reel} onDismiss={dismiss} />
+    </>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
 const styles = StyleSheet.create({
-  container: {
+  fallback: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  body: {
-    flex: 1,
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 32,
   },
 });

@@ -1,17 +1,17 @@
 /**
  * Lumina — Home (Feed) tab
  *
- * Placeholder screen. Will be replaced by the full feed feature.
+ * Gradient wordmark header + horizontal StoryRail (inside FeedList as
+ * ListHeaderComponent) + infinite-scroll PostCard feed.
  */
 
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/design-system/theme';
-import { Text } from '@/design-system/primitives/Text';
-import { EmptyState } from '@/components/EmptyState';
-import { tabBarHeight } from '@/constants/layout';
+import { FeedHeader } from '@/features/feed/components/FeedHeader';
+import { FeedList } from '@/features/feed/components/FeedList';
 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -21,44 +21,14 @@ export default function HomeScreen(): React.JSX.Element {
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      {/* Screen header */}
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: theme.colors.border,
-            paddingHorizontal: theme.spacing.lg,
-          },
-        ]}
-      >
-        <Text variant="headline" color="primary">
-          Lumina
-        </Text>
-      </View>
-
-      {/* Body */}
-      <View style={[styles.body, { paddingBottom: tabBarHeight.default }]}>
-        <EmptyState
-          icon="images-outline"
-          title="Your feed is empty"
-          subtitle="Follow people to see their posts here."
-        />
-      </View>
+      <FeedHeader />
+      <FeedList />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-  },
-  header: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  body: {
     flex: 1,
   },
 });
