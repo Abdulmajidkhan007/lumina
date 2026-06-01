@@ -11,7 +11,7 @@
  * down via props so the parent can call handleSubmit directly.
  */
 
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 import {
   Pressable,
   ScrollView,
@@ -19,16 +19,11 @@ import {
   Switch,
   TextInput,
   View,
-  type NativeSyntheticEvent,
-  type TextInputChangeEventData,
 } from 'react-native';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '@/design-system';
-import { Text } from '@/design-system';
-import { Divider } from '@/design-system';
-import { Avatar } from '@/design-system';
+import { useTheme , Text , Divider , Avatar } from '@/design-system';
 import { hitSlop } from '@/constants/layout';
 import { Config } from '@/constants/config';
 import type { CreatePostFormValues } from '../types';

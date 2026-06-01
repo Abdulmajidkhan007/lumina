@@ -26,4 +26,4 @@ export const Config = {
   AVATAR_PLACEHOLDER_URI: 'https://picsum.photos/seed/lumina-default/150/150',
 } as const;
 
-export type Config = typeof Config;
+export type ConfigShape = typeof Config;

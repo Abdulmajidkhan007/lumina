@@ -1,6 +1,5 @@
 import type { IUsersApi } from '@/data/api/contracts';
-import type { User, UserSummary, Post } from '@/types/models';
-import type { UserId } from '@/types/models';
+import type { User, UserSummary, Post , UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
 import { mutableUsers, toUserSummary } from './fixtures/users.fixture';
 import { mutablePosts } from './fixtures/posts.fixture';

@@ -1,6 +1,5 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { Post } from '@/types/models';
-import type { PostId } from '@/types/models';
+import type { Post , PostId } from '@/types/models';
 import { postsApi } from '@/data/api/client';
 import { queryKeys } from '../keys';
 

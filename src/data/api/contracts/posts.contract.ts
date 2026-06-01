@@ -1,5 +1,4 @@
-import type { Post, Comment } from '@/types/models';
-import type { PostId, CommentId, UserId } from '@/types/models';
+import type { Post, Comment , PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 
 // ---------------------------------------------------------------------------

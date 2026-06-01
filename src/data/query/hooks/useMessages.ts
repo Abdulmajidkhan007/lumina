@@ -3,8 +3,7 @@ import {
   type InfiniteData,
   type UseInfiniteQueryResult,
 } from '@tanstack/react-query';
-import type { Message } from '@/types/models';
-import type { ConversationId } from '@/types/models';
+import type { Message , ConversationId } from '@/types/models';
 import type { Paginated } from '@/types/api';
 import { messagesApi } from '@/data/api/client';
 import { queryKeys } from '../keys';

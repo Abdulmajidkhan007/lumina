@@ -20,8 +20,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '@/design-system';
-import { Text } from '@/design-system';
+import { useTheme , Text } from '@/design-system';
 import { grid } from '@/constants/layout';
 import { Config } from '@/constants/config';
 

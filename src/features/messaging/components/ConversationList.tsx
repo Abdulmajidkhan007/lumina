@@ -48,7 +48,7 @@ function SkeletonList(): React.JSX.Element {
   return (
     <View accessibilityLabel="Loading conversations" accessibilityRole="progressbar">
       {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-        // eslint-disable-next-line react/no-array-index-key
+         
         <SkeletonChatRow key={i} />
       ))}
     </View>
@@ -196,7 +196,7 @@ export function ConversationList({
         searchQuery.trim() !== '' ? (
           <View style={styles.emptySearch}>
             <Text variant="callout" color="secondary" align="center">
-              No conversations match "{searchQuery}"
+              No conversations match &ldquo;{searchQuery}&rdquo;
             </Text>
           </View>
         ) : (

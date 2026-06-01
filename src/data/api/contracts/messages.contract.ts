@@ -1,5 +1,4 @@
-import type { Conversation, Message } from '@/types/models';
-import type { ConversationId } from '@/types/models';
+import type { Conversation, Message , ConversationId } from '@/types/models';
 import type { Paginated, ConversationMessagesParams } from '@/types/api';
 
 // ---------------------------------------------------------------------------

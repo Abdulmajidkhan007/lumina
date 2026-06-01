@@ -64,7 +64,7 @@ type ConvWithMessages = {
 function buildConversation(
   index: number,
   otherUserIndex: number,
-  msgPairs: Array<{ senderIndex: number; text: string; minutesAgo: number }>,
+  msgPairs: { senderIndex: number; text: string; minutesAgo: number }[],
 ): ConvWithMessages {
   const convId = conversationIdSchema.parse(`conv-${String(index + 1).padStart(3, '0')}`);
   const otherUser = mutableUsers[otherUserIndex]!;

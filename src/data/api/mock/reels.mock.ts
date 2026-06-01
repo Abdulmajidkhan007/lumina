@@ -1,6 +1,5 @@
 import type { IReelsApi } from '@/data/api/contracts';
-import type { Reel } from '@/types/models';
-import type { ReelId } from '@/types/models';
+import type { Reel , ReelId } from '@/types/models';
 import type { Paginated, ReelsParams } from '@/types/api';
 import { mutableReels } from './fixtures/reels.fixture';
 import { mockDelay } from './latency';

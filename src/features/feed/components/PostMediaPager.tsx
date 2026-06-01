@@ -27,7 +27,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/design-system/theme';
-import { screen, aspectRatio, feedMediaHeight } from '@/constants/layout';
+import { screen, feedMediaHeight } from '@/constants/layout';
 import type { Media } from '@/types/models';
 
 // ---------------------------------------------------------------------------

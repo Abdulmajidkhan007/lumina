@@ -21,8 +21,7 @@ import { Spinner } from '@/design-system/primitives/Spinner';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { useTheme } from '@/design-system/theme';
-import type { Message } from '@/types/models';
-import type { ConversationId } from '@/types/models';
+import type { Message , ConversationId } from '@/types/models';
 import { useMessages } from '@/data/query/hooks/useMessages';
 
 import { MessageBubble } from './MessageBubble';

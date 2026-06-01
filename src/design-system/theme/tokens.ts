@@ -5,7 +5,7 @@
  * No raw hex values or magic numbers should appear outside this file.
  */
 
-import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, type TextStyle } from 'react-native';
 
 // ---------------------------------------------------------------------------
 // Primitive color palette (not exported for direct use — use semantic tokens)

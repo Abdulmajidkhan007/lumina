@@ -11,7 +11,7 @@ import { asyncStoragePersister } from '@/lib/storage';
 // becomes a normal static import and the fallback path is unreachable.
 let ThemeProvider: React.ComponentType<{ children: ReactNode }> | null = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+   
   const ds = require('@/design-system') as {
     ThemeProvider?: React.ComponentType<{ children: ReactNode }>;
   };

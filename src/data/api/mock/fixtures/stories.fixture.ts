@@ -1,7 +1,6 @@
-import type { Story, StoryReel } from '@/types/models';
+import type { Story, StoryReel , Media } from '@/types/models';
 import { storyIdSchema } from '@/schemas';
 import { mutableUsers, toUserSummary } from './users.fixture';
-import type { Media } from '@/types/models';
 
 const SAMPLE_VIDEO_URI =
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';

@@ -15,8 +15,7 @@ import {
 } from 'react-native';
 
 import { useTheme } from '@/design-system/theme';
-import { Skeleton } from '@/design-system/primitives/Skeleton';
-import { SkeletonCircle } from '@/design-system/primitives/Skeleton';
+import { Skeleton , SkeletonCircle } from '@/design-system/primitives/Skeleton';
 import { Divider } from '@/design-system/primitives/Divider';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';

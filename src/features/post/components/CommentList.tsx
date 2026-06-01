@@ -20,7 +20,7 @@ import { useTheme } from '@/design-system/theme';
 import { Spinner } from '@/design-system/primitives/Spinner';
 import { EmptyState } from '@/components/EmptyState';
 import { CommentItem } from './CommentItem';
-import type { Comment, PostId, CommentId } from '@/types/models';
+import type { Comment, PostId } from '@/types/models';
 
 // ---------------------------------------------------------------------------
 // Types

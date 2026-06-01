@@ -16,23 +16,19 @@ import {
   Pressable,
   StyleSheet,
   View,
-  type ViewStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Animated, {
-  useAnimatedStyle,
+import {
   useSharedValue,
   withTiming,
   Easing,
 } from 'react-native-reanimated';
 
-import { useTheme } from '@/design-system';
-import { Text } from '@/design-system';
-import { Spinner } from '@/design-system';
+import { useTheme , Text , Spinner } from '@/design-system';
 import { Image } from 'expo-image';
 import { hitSlop, screen } from '@/constants/layout';
 import { queryClient } from '@/lib';
@@ -45,8 +41,7 @@ import {
   useMockGalleryTiles,
   createPostSchema,
 } from '@/features/create';
-import type { CreatePostFormValues } from '@/features/create';
-import type { MockMediaTile } from '@/features/create';
+import type { CreatePostFormValues , MockMediaTile } from '@/features/create';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,10 +100,6 @@ export default function CreatePostModal(): React.JSX.Element {
 
   // ---- Slide animation for step transition ----
   const slideX = useSharedValue(0);
-
-  const animatedContent = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value }],
-  }));
 
   const goToDetails = useCallback(() => {
     slideX.value = 0;

@@ -1,6 +1,5 @@
 import type { IStoriesApi } from '@/data/api/contracts';
-import type { StoryReel } from '@/types/models';
-import type { StoryId } from '@/types/models';
+import type { StoryReel , StoryId } from '@/types/models';
 import { mutableStoryReels } from './fixtures/stories.fixture';
 import { mockDelay } from './latency';
 

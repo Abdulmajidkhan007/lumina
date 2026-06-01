@@ -1,6 +1,5 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { User } from '@/types/models';
-import type { UserId } from '@/types/models';
+import type { User , UserId } from '@/types/models';
 import { usersApi } from '@/data/api/client';
 import { queryKeys } from '../keys';
 

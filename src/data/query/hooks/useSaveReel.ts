@@ -3,8 +3,7 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
-import type { Reel } from '@/types/models';
-import type { ReelId } from '@/types/models';
+import type { Reel , ReelId } from '@/types/models';
 import type { Paginated } from '@/types/api';
 import { reelsApi } from '@/data/api/client';
 import { queryKeys } from '../keys';

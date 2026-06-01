@@ -5,7 +5,7 @@
  * Like and Save are optimistic via useLikePost / useSavePost.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 

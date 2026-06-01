@@ -1,5 +1,4 @@
-import type { User, UserSummary, Post } from '@/types/models';
-import type { UserId } from '@/types/models';
+import type { User, UserSummary, Post , UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
 
 // ---------------------------------------------------------------------------

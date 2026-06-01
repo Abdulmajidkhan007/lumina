@@ -1,7 +1,7 @@
 import type { Post, Media } from '@/types/models';
 import { postIdSchema } from '@/schemas';
 import { mutableUsers, toUserSummary } from './users.fixture';
-import { createSeededRng, seededInt, seededPick } from './seed';
+import { createSeededRng, seededInt } from './seed';
 
 const rng = createSeededRng('lumina-posts-v1');
 

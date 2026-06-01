@@ -1,7 +1,5 @@
-import type { IPostsApi } from '@/data/api/contracts';
-import type { AddCommentInput } from '@/data/api/contracts';
-import type { Post, Comment } from '@/types/models';
-import type { PostId, UserId } from '@/types/models';
+import type { IPostsApi , AddCommentInput } from '@/data/api/contracts';
+import type { Post, Comment , PostId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { commentIdSchema } from '@/schemas';
 import { mutablePosts } from './fixtures/posts.fixture';

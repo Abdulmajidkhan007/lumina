@@ -18,8 +18,7 @@ import { useTheme } from '@/design-system/theme';
 import { SkeletonCircle } from '@/design-system/primitives/Skeleton';
 import { useStoryReels } from '@/data/query/hooks/useStoryReels';
 import { useCurrentUser } from '@/stores/auth.store';
-import type { StoryReel } from '@/types/models';
-import type { UserSummary } from '@/types/models';
+import type { StoryReel , UserSummary } from '@/types/models';
 import { StoryRing } from './StoryRing';
 
 // ---------------------------------------------------------------------------

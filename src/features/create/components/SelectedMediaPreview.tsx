@@ -6,14 +6,12 @@
  * Memoized — re-renders only when selectedIds/tiles change.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   ScrollView,
   StyleSheet,
   View,
-  type ListRenderItemInfo,
 } from 'react-native';
-import { FlatList } from 'react-native';
 import { Image } from 'expo-image';
 
 import { useTheme } from '@/design-system';

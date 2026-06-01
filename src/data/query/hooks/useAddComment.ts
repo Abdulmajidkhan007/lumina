@@ -4,7 +4,6 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query';
 import type { Comment, Post } from '@/types/models';
-import type { PostId } from '@/types/models';
 import type { Paginated } from '@/types/api';
 import type { AddCommentInput } from '@/data/api/contracts';
 import { postsApi } from '@/data/api/client';

@@ -7,8 +7,6 @@
 
 // Metro/Node require is available at runtime but not in the TS lib when
 // expo/tsconfig.base is absent. Declare it narrowly to avoid @types/node.
-declare const require: ((id: string) => unknown) | undefined;
-
 import React, {
   createContext,
   useCallback,
@@ -34,6 +32,8 @@ import {
   type ShadowScale,
   type Tokens,
 } from './tokens';
+
+declare const require: ((id: string) => unknown) | undefined;
 
 // ---------------------------------------------------------------------------
 // Theme shape

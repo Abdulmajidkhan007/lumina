@@ -1,6 +1,4 @@
 // Metro/Node require is available at runtime but may not be in the TS lib.
-declare const require: ((id: string) => unknown) | undefined;
-
 /**
  * Lumina — GradientText
  *
@@ -22,6 +20,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme';
 import { Text, type TextProps } from './Text';
+
+declare const require: ((id: string) => unknown) | undefined;
 
 // ---------------------------------------------------------------------------
 // Attempt to load masked view

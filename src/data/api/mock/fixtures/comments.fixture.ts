@@ -1,5 +1,4 @@
-import type { Comment } from '@/types/models';
-import type { PostId } from '@/types/models';
+import type { Comment , PostId } from '@/types/models';
 import { commentIdSchema, postIdSchema } from '@/schemas';
 import { mutableUsers, toUserSummary } from './users.fixture';
 import { createSeededRng, seededInt } from './seed';

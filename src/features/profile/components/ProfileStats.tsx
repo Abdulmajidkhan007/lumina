@@ -6,7 +6,7 @@
  * Displays formatted counts via formatCount.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/design-system/theme';
