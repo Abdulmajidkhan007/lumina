@@ -1,1 +1,1 @@
-// barrel - utils
+export { formatCount, formatRelativeTime, formatDuration } from './format';

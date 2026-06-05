@@ -1,11 +1,8 @@
-const expoConfig = require('eslint-config-expo');
+const expoConfig = require('eslint-config-expo/flat');
 
 module.exports = [
   ...expoConfig,
   {
-    languageOptions: {
-      sourceType: 'module',
-      ecmaVersion: 2020,
-    },
+    ignores: ['dist/*', '.expo/*', 'node_modules/*'],
   },
 ];

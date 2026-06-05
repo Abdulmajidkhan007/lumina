@@ -43,7 +43,6 @@
   "devDependencies": {
     "typescript": "~5.8.0",
     "@types/react": "~19.0.0",
-    "@types/react-native": "^0.79.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~9.0.0",
     "prettier": "^3.4.0"

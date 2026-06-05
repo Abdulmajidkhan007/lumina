@@ -1,0 +1,70 @@
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * The design system's ThemeProvider reads `colorSchemePreference` from this
+ * store via a dynamic require. Keep the field name in sync with theme.ts.
+ */
+export type ColorSchemePreference = 'light' | 'dark' | 'system';
+
+type PreferencesState = {
+  /** Colour scheme preference — read by design-system/theme/theme.ts */
+  colorSchemePreference: ColorSchemePreference;
+  autoplayVideos: boolean;
+  hapticsEnabled: boolean;
+};
+
+type PreferencesActions = {
+  setColorSchemePreference(pref: ColorSchemePreference): void;
+  setAutoplayVideos(enabled: boolean): void;
+  setHapticsEnabled(enabled: boolean): void;
+};
+
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
+
+export const usePreferencesStore = create<PreferencesState & PreferencesActions>()(
+  persist(
+    (set) => ({
+      colorSchemePreference: 'system',
+      autoplayVideos: true,
+      hapticsEnabled: true,
+
+      setColorSchemePreference(pref) {
+        set({ colorSchemePreference: pref });
+      },
+
+      setAutoplayVideos(enabled) {
+        set({ autoplayVideos: enabled });
+      },
+
+      setHapticsEnabled(enabled) {
+        set({ hapticsEnabled: enabled });
+      },
+    }),
+    {
+      name: 'lumina_preferences',
+      storage: createJSONStorage(() => AsyncStorage),
+    },
+  ),
+);
+
+// ---------------------------------------------------------------------------
+// Selector hooks
+// ---------------------------------------------------------------------------
+
+/** Used by the design system's ThemeProvider to read colour scheme preference */
+export const useThemeMode = () =>
+  usePreferencesStore((s) => s.colorSchemePreference);
+
+export const useAutoplayVideos = () =>
+  usePreferencesStore((s) => s.autoplayVideos);
+
+export const useHapticsEnabled = () =>
+  usePreferencesStore((s) => s.hapticsEnabled);
