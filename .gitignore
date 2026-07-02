@@ -6,7 +6,18 @@ dist
 .env.local
 .env.*.local
 .DS_Store
-ios/Pods
-ios/build
+
+# Android
+android/app/build
 android/build
 android/.gradle
+android/local.properties
+*.keystore
+!debug.keystore
+
+# iOS
+ios/Pods
+ios/build
+ios/*.xcworkspace/xcuserdata
+ios/*.xcodeproj/xcuserdata
+ios/*.xcodeproj/project.xcworkspace/xcuserdata
