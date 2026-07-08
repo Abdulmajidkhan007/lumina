@@ -1,19 +1,39 @@
-// NOTE: @react-native/eslint-config (0.79.2) is legacy .eslintrc format,
-// not flat-config compatible. Using a minimal flat config until an
-// eslint-flat-compat / typescript-eslint setup is added in a later stage.
-module.exports = [
+// Flat ESLint config for bare React Native + TypeScript.
+// (@react-native/eslint-config is legacy .eslintrc format, so we compose
+// typescript-eslint + react-hooks directly.)
+const tseslint = require('typescript-eslint');
+const reactHooks = require('eslint-plugin-react-hooks');
+
+module.exports = tseslint.config(
   {
-    ignores: ['node_modules/**', 'android/**', 'ios/**', 'dist/**', '.expo/**'],
+    ignores: [
+      'node_modules/**',
+      'android/**',
+      'ios/**',
+      'dist/**',
+      '.expo/**',
+      'babel.config.js',
+      'metro.config.js',
+      'react-native.config.js',
+      'eslint.config.js',
+      'index.js',
+    ],
   },
+  ...tseslint.configs.recommended,
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: 'module',
-    },
+    files: ['**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
     rules: {
-      'no-unused-vars': 'warn',
-      'no-undef': 'off',
+      // Classic hook rules only — the v7 compiler-powered rules (immutability,
+      // refs) false-positive on Reanimated's sharedValue.value API.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
-];
+);

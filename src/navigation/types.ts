@@ -60,8 +60,11 @@ export type ProtectedStackParamList = {
 // ---------------------------------------------------------------------------
 
 declare global {
+  // Canonical React Navigation pattern for typing the root param list:
+  // https://reactnavigation.org/docs/typescript
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
-
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface RootParamList extends ProtectedStackParamList {}
   }
 }
