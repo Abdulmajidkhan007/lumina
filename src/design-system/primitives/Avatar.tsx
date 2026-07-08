@@ -7,8 +7,8 @@
 
 import React, { useMemo } from 'react';
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from '@/components/Image';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { useTheme } from '../theme';
 import { Text } from './Text';
@@ -149,7 +149,7 @@ export function Avatar({
   if (hasStoryRing) {
     return (
       <LinearGradient
-        colors={theme.colors.accentGradient}
+        colors={[...theme.colors.accentGradient]}
         start={{ x: 0, y: 1 }}
         end={{ x: 1, y: 0 }}
         style={[

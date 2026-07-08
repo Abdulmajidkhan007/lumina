@@ -22,8 +22,10 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { Image } from '@/components/Image';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -244,7 +246,7 @@ export const NotificationItem = React.memo(
     notification,
   }: NotificationItemProps): React.JSX.Element {
     const theme = useTheme();
-    const router = useRouter();
+    const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
     const { mutate: followUser, isPending: isFollowPending } = useFollowUser();
 
     // We track follow-back state locally — the optimistic mutation updates the
@@ -254,14 +256,14 @@ export const NotificationItem = React.memo(
     const [isFollowingBack, setIsFollowingBack] = React.useState(false);
 
     const onAvatarPress = useCallback(() => {
-      router.push(`/(protected)/user/${notification.actor.id}`);
-    }, [router, notification.actor.id]);
+      navigation.navigate('UserProfile', { id: notification.actor.id });
+    }, [navigation, notification.actor.id]);
 
     const onThumbPress = useCallback(
       (postId: string) => () => {
-        router.push(`/(protected)/post/${postId}`);
+        navigation.navigate('PostDetail', { id: postId });
       },
-      [router],
+      [navigation],
     );
 
     const onFollowBack = useCallback(() => {

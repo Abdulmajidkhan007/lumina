@@ -21,7 +21,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { Text } from '@/design-system/primitives/Text';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -60,7 +60,7 @@ const HEART_SPRING = { damping: 10, stiffness: 400 } as const;
 // ---------------------------------------------------------------------------
 
 interface ActionButtonProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   count?: number;
   color?: string;

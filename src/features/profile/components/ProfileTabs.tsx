@@ -12,7 +12,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { screen } from '@/constants/layout';

@@ -17,8 +17,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -55,7 +57,7 @@ export function PostDetail({
   onViewAllComments,
 }: PostDetailProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
 
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
@@ -83,8 +85,8 @@ export function PostDetail({
   }, []);
 
   const handleAuthorPress = useCallback(() => {
-    router.push(`/(protected)/user/${post.author.id}`);
-  }, [router, post.author.id]);
+    navigation.navigate('UserProfile', { id: post.author.id });
+  }, [navigation, post.author.id]);
 
   const handleMenuOpen = useCallback(() => setMenuOpen(true), []);
   const handleMenuClose = useCallback(() => setMenuOpen(false), []);
@@ -100,8 +102,8 @@ export function PostDetail({
   }, [onViewAllComments]);
 
   const handlePreviewCommentAuthorPress = useCallback((userId: string) => {
-    router.push(`/(protected)/user/${userId}`);
-  }, [router]);
+    navigation.navigate('UserProfile', { id: userId });
+  }, [navigation]);
 
   // ---- Preview comments (capped at 3) ----
   const visiblePreviews = previewComments.slice(0, 3);

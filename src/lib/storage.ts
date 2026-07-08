@@ -1,10 +1,10 @@
 /**
  * Storage utilities:
- *   - secureStorage: thin wrapper around expo-secure-store for auth tokens
+ *   - secureStorage: thin wrapper around react-native-keychain for auth tokens
  *   - asyncStoragePersister: TanStack Query cache persistence via AsyncStorage
  */
 
-import * as SecureStore from 'expo-secure-store';
+import * as Keychain from 'react-native-keychain';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
@@ -13,18 +13,24 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 // ---------------------------------------------------------------------------
 
 const AUTH_TOKEN_KEY = 'lumina_auth_token';
+/** Keychain "username" field — unused by lumina but required by the API. */
+const KEYCHAIN_USERNAME = 'lumina';
 
 export const secureStorage = {
   async getToken(): Promise<string | null> {
-    return SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+    const result = await Keychain.getGenericPassword({ service: AUTH_TOKEN_KEY });
+    // getGenericPassword resolves to `false` (not null) when nothing is stored.
+    return result ? result.password : null;
   },
 
   async setToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+    await Keychain.setGenericPassword(KEYCHAIN_USERNAME, token, {
+      service: AUTH_TOKEN_KEY,
+    });
   },
 
   async deleteToken(): Promise<void> {
-    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    await Keychain.resetGenericPassword({ service: AUTH_TOKEN_KEY });
   },
 };
 

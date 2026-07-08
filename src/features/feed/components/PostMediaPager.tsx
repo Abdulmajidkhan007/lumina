@@ -14,7 +14,7 @@ import {
   type ViewToken,
   type ListRenderItemInfo,
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from '@/components/Image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -24,7 +24,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { screen, feedMediaHeight } from '@/constants/layout';

@@ -21,7 +21,7 @@ import {
   View,
 } from 'react-native';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme , Text , Divider , Avatar } from '@/design-system';
 import { hitSlop } from '@/constants/layout';
@@ -46,7 +46,7 @@ export interface CaptionFormProps {
 // ---------------------------------------------------------------------------
 
 interface ActionRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   onPress?: () => void;
 }

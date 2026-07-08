@@ -12,7 +12,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from '@/components/Image';
 
 import { useTheme } from '@/design-system';
 import { screen } from '@/constants/layout';

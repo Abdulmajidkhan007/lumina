@@ -10,7 +10,9 @@
 
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -37,7 +39,7 @@ export const UserSearchResult = React.memo(function UserSearchResult({
   user,
 }: UserSearchResultProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const { mutate: followUser, isPending } = useFollowUser();
 
@@ -48,8 +50,8 @@ export const UserSearchResult = React.memo(function UserSearchResult({
   const isMe = currentUser?.id === user.id;
 
   const handleRowPress = useCallback(() => {
-    router.push(`/(protected)/user/${user.id}`);
-  }, [router, user.id]);
+    navigation.navigate('UserProfile', { id: user.id });
+  }, [navigation, user.id]);
 
   const handleFollowPress = useCallback(() => {
     const nextFollowing = !localFollowing;

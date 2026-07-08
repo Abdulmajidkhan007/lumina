@@ -18,7 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { useTheme } from '../theme';
 import { Text } from './Text';
@@ -162,7 +162,7 @@ export function Button({
     >
       {variant === 'primary' ? (
         <LinearGradient
-          colors={theme.colors.accentGradient}
+          colors={[...theme.colors.accentGradient]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[baseContainer, variantContainer, styles.gradientFill]}

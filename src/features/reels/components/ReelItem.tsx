@@ -19,8 +19,8 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from '@/components/Image';
+import LinearGradient from 'react-native-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -30,8 +30,10 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { useLikeReel } from '@/data/query/hooks/useLikeReel';
@@ -86,7 +88,7 @@ export const ReelItem = React.memo(function ReelItem({
   isActive,
 }: ReelItemProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const { mutate: likeReel } = useLikeReel();
   const { mutate: saveReel } = useSaveReel();
@@ -126,16 +128,16 @@ export const ReelItem = React.memo(function ReelItem({
   }, [saveReel]);
 
   const handleComment = useCallback(() => {
-    router.push(`/(protected)/comments/${reel.id}`);
-  }, [router, reel.id]);
+    navigation.navigate('Comments', { postId: reel.id });
+  }, [navigation, reel.id]);
 
   const handleShare = useCallback(() => {
     // TODO: share sheet integration
   }, []);
 
   const handleAuthorPress = useCallback((userId: UserId) => {
-    router.push(`/(protected)/user/${userId}`);
-  }, [router]);
+    navigation.navigate('UserProfile', { id: userId });
+  }, [navigation]);
 
   // Bound version for ReelActions + ReelOverlay (both expect () => void)
   const handleAvatarPress = useCallback(() => {

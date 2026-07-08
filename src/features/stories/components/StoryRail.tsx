@@ -12,7 +12,9 @@ import {
   View,
   type ListRenderItemInfo,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { SkeletonCircle } from '@/design-system/primitives/Skeleton';
@@ -53,15 +55,15 @@ function StoryRailSkeleton(): React.JSX.Element {
 
 export function StoryRail(): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const { data: reels, isLoading } = useStoryReels();
 
   const handleRingPress = useCallback(
     (userId: string) => {
-      router.push(`/(protected)/story/${userId}`);
+      navigation.navigate('Story', { userId: userId });
     },
-    [router],
+    [navigation],
   );
 
   const items = React.useMemo<RailItem[]>(() => {

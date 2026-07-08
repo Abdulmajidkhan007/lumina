@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';

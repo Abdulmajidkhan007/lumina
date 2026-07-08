@@ -14,9 +14,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import LinearGradient from 'react-native-linear-gradient';
+import { Image } from '@/components/Image';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -121,7 +121,7 @@ export const StoryRing = React.memo(function StoryRing({
       {/* Ring */}
       {showGradientRing ? (
         <LinearGradient
-          colors={theme.colors.accentGradient}
+          colors={[...theme.colors.accentGradient]}
           start={{ x: 0, y: 1 }}
           end={{ x: 1, y: 0 }}
           style={[

@@ -16,8 +16,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -101,7 +103,7 @@ const Caption = React.memo(function Caption({
 // ---------------------------------------------------------------------------
 
 interface SheetActionProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   color?: string;
   onPress: () => void;
@@ -142,7 +144,7 @@ export const PostCard = React.memo(function PostCard({
   post,
 }: PostCardProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
 
@@ -156,12 +158,12 @@ export const PostCard = React.memo(function PostCard({
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const goToProfile = useCallback(() => {
-    router.push(`/(protected)/user/${post.author.id}`);
-  }, [router, post.author.id]);
+    navigation.navigate('UserProfile', { id: post.author.id });
+  }, [navigation, post.author.id]);
 
   const goToComments = useCallback(() => {
-    router.push(`/(protected)/comments/${post.id}`);
-  }, [router, post.id]);
+    navigation.navigate('Comments', { postId: post.id });
+  }, [navigation, post.id]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!post.isLikedByMe) {

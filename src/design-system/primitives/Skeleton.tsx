@@ -24,7 +24,7 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { useTheme } from '../theme';
 import type { RadiiScale } from '../theme/tokens';

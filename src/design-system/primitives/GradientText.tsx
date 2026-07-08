@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { useTheme } from '../theme';
 import { Text, type TextProps } from './Text';
@@ -83,7 +83,7 @@ export function GradientText({ style, children, ...rest }: GradientTextProps): R
       }
     >
       <LinearGradient
-        colors={theme.colors.accentGradient}
+        colors={[...theme.colors.accentGradient]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.gradient}

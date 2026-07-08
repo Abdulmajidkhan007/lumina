@@ -18,7 +18,7 @@ import {
 export type ImageContentFit = 'cover' | 'contain' | 'fill' | 'none';
 
 export interface ImageProps extends Omit<RNImageProps, 'source' | 'resizeMode'> {
-  source: string | { uri: string } | number;
+  source?: string | { uri: string } | number;
   contentFit?: ImageContentFit;
   /** Accepted for expo-image call-site compatibility; no-ops on core Image. */
   recyclingKey?: string;
@@ -43,7 +43,7 @@ function ImageBase({
   placeholder: _placeholder,
   ...rest
 }: ImageProps): React.JSX.Element {
-  const resolvedSource: ImageSourcePropType = useMemo(
+  const resolvedSource: ImageSourcePropType | undefined = useMemo(
     () => (typeof source === 'string' ? { uri: source } : source),
     [source],
   );

@@ -23,7 +23,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from '@/components/Image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -33,7 +33,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';

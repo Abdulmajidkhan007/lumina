@@ -14,7 +14,7 @@ import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Button } from '@/design-system/primitives/Button';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
 import type { UserSummary } from '@/types/models';
 

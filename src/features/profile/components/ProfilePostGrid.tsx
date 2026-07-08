@@ -9,8 +9,10 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { Image } from '@/components/Image';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { Skeleton } from '@/design-system/primitives/Skeleton';
@@ -105,7 +107,7 @@ export function ProfilePostGrid({
   ListHeaderComponent,
 }: ProfilePostGridProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
 
   const {
     data,
@@ -124,9 +126,9 @@ export function ProfilePostGrid({
 
   const handlePostPress = useCallback(
     (postId: string) => {
-      router.push(`/(protected)/post/${postId}`);
+      navigation.navigate('PostDetail', { id: postId });
     },
-    [router],
+    [navigation],
   );
 
   const handleEndReached = useCallback(() => {

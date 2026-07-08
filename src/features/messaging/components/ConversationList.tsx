@@ -14,7 +14,7 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { SkeletonChatRow, Divider } from '@/design-system';
 import { useTheme } from '@/design-system/theme';

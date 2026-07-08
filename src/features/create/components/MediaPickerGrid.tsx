@@ -17,8 +17,8 @@ import {
   View,
   type ListRenderItemInfo,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from '@/components/Image';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme , Text } from '@/design-system';
 import { grid } from '@/constants/layout';

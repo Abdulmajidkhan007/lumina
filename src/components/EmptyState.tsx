@@ -15,7 +15,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -32,7 +32,7 @@ export interface EmptyStateAction {
 
 export interface EmptyStateProps {
   /** Ionicons icon name */
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   title: string;
   subtitle?: string;
   action?: EmptyStateAction;

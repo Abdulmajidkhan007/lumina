@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -24,7 +24,7 @@ export interface ErrorStateProps {
   message?: string;
   onRetry?: () => void;
   /** Custom Ionicons icon name. Defaults to alert-circle-outline */
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
 }
 
 // ---------------------------------------------------------------------------

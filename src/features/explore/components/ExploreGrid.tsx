@@ -18,8 +18,10 @@ import {
   View,
   type ListRenderItemInfo,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { Image } from '@/components/Image';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { Skeleton } from '@/design-system/primitives/Skeleton';
@@ -123,7 +125,7 @@ const GridCell = React.memo(function GridCell({
 
 export function ExploreGrid(): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
 
   const {
     data,
@@ -143,9 +145,9 @@ export function ExploreGrid(): React.JSX.Element {
 
   const handlePostPress = useCallback(
     (postId: string) => {
-      router.push(`/(protected)/post/${postId}`);
+      navigation.navigate('PostDetail', { id: postId });
     },
-    [router],
+    [navigation],
   );
 
   const renderItem = useCallback(

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -23,7 +23,7 @@ export type SettingsRowRight =
   | { type: 'none' };
 
 export interface SettingsRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   /** Optional subtitle */
   sublabel?: string;

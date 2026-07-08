@@ -1,7 +1,7 @@
 /**
  * Lumina — BlurTabBar
  *
- * Custom animated tab bar using expo-blur BlurView.
+ * Custom animated tab bar using @react-native-community/blur BlurView.
  * Five tabs: Home, Explore, Create (intercepted), Reels, Profile.
  * Active state uses accent gradient color; Reanimated scale/opacity on press.
  * Respects safe-area bottom inset.
@@ -17,9 +17,9 @@ import {
 } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from '@react-native-community/blur';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -39,8 +39,8 @@ import { tabBarHeight } from '@/constants/layout';
 type TabConfig = {
   name: string;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconActive: keyof typeof Ionicons.glyphMap;
+  icon: string;
+  iconActive: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -49,31 +49,31 @@ type TabConfig = {
 
 const TAB_CONFIG: TabConfig[] = [
   {
-    name: 'index',
+    name: 'Feed',
     label: 'Home',
     icon: 'home-outline',
     iconActive: 'home',
   },
   {
-    name: 'search',
+    name: 'Search',
     label: 'Explore',
     icon: 'search-outline',
     iconActive: 'search',
   },
   {
-    name: 'create',
+    name: 'Create',
     label: 'Create',
     icon: 'add-circle-outline',
     iconActive: 'add-circle',
   },
   {
-    name: 'reels',
+    name: 'Reels',
     label: 'Reels',
     icon: 'play-circle-outline',
     iconActive: 'play-circle',
   },
   {
-    name: 'profile',
+    name: 'Profile',
     label: 'Profile',
     icon: 'person-circle-outline',
     iconActive: 'person-circle',
@@ -150,10 +150,10 @@ const TabItem = React.memo(function TabItem({
       accessibilityState={{ selected: isActive }}
     >
       <Animated.View style={[styles.tabItemInner, animatedStyle]}>
-        {config.name === 'create' ? (
+        {config.name === 'Create' ? (
           // Create tab: gradient circle icon
           <LinearGradient
-            colors={theme.colors.accentGradient}
+            colors={[...theme.colors.accentGradient]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.createGradient}
@@ -180,7 +180,7 @@ const TabItem = React.memo(function TabItem({
         ) : (
           <Ionicons name={iconName} size={26} color={iconColor} />
         )}
-        {config.name !== 'create' ? (
+        {config.name !== 'Create' ? (
           <Text
             variant="overline"
             style={[
@@ -270,8 +270,9 @@ export function BlurTabBar({
         />
       ) : (
         <BlurView
-          intensity={80}
-          tint={theme.colorScheme === 'dark' ? 'dark' : 'light'}
+          blurAmount={25}
+          blurType={theme.colorScheme === 'dark' ? 'dark' : 'light'}
+          reducedTransparencyFallbackColor={theme.colors.surface}
           style={StyleSheet.absoluteFillObject}
         />
       )}
@@ -297,7 +298,7 @@ export function BlurTabBar({
               isActive={isFocused}
               onPress={onPress}
               onLongPress={onLongPress}
-              isProfileTab={config.name === 'profile'}
+              isProfileTab={config.name === 'Profile'}
             />
           );
         })}

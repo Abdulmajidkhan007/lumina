@@ -9,8 +9,10 @@
 
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { GradientText } from '@/design-system/primitives/GradientText';
@@ -22,15 +24,15 @@ import { hitSlop } from '@/constants/layout';
 
 export function FeedHeader(): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
 
   const goToNotifications = useCallback(() => {
-    router.push('/(protected)/notifications');
-  }, [router]);
+    navigation.navigate('Notifications');
+  }, [navigation]);
 
   const goToMessages = useCallback(() => {
-    router.push('/(protected)/messages');
-  }, [router]);
+    navigation.navigate('Messages');
+  }, [navigation]);
 
   return (
     <View
