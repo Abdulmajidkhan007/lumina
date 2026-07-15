@@ -15,7 +15,7 @@ import {
 } from '@react-navigation/native';
 
 import { useTheme } from '@/design-system';
-import { RootNavigator } from '@/navigation';
+import { linking, RootNavigator } from '@/navigation';
 import { AppProviders } from '@/providers';
 import { initSentry } from '@/lib/sentry';
 
@@ -43,7 +43,7 @@ function ThemedNavigationContainer(): React.JSX.Element {
   }, [theme]);
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} linking={linking}>
       <RootNavigator />
     </NavigationContainer>
   );

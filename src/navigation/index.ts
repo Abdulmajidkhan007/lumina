@@ -5,6 +5,7 @@ export { AuthStack } from './AuthStack';
 export { ProtectedStack } from './ProtectedStack';
 export { TabsNavigator } from './TabsNavigator';
 export { BrandedSplash } from './BrandedSplash';
+export { linking } from './linking';
 export type {
   AuthStackParamList,
   TabsParamList,
