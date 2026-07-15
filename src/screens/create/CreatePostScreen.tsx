@@ -2,16 +2,21 @@
  * Lumina — Create Post modal
  *
  * Two-step flow:
- *   Step 1 "Select" — large preview + MediaPickerGrid.
+ *   Step 1 "Select" — large preview + MediaPickerGrid (gallery/camera actions
+ *     up top, mock tile grid below as a fallback selection source).
  *   Step 2 "Details" — SelectedMediaPreview thumbnail(s) + CaptionForm.
+ *
+ * Media picked from the gallery/camera and media tapped in the mock grid are
+ * unified into a single `SelectedMedia[]` selection (see
+ * `@/features/create` — `mockTileToSelectedMedia` / `pickedMediaToSelectedMedia`),
+ * so the rest of the flow (preview, caption step, share) is identical
+ * regardless of where the media came from.
  *
  * Share triggers a mock POST (setTimeout ~800ms) then invalidates the feed
  * cache and navigates back.
- *
- * // TODO react-native-image-picker: wire real picker when the native picker lib is added.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -33,6 +38,8 @@ import {
 import { useTheme , Text , Spinner } from '@/design-system';
 import { Image } from '@/components/Image';
 import { hitSlop, screen } from '@/constants/layout';
+import { Config } from '@/constants/config';
+import { formatDuration } from '@/utils/format';
 import { queryClient } from '@/lib';
 import { queryKeys } from '@/data/query/keys';
 import { useCurrentUser } from '@/stores';
@@ -41,9 +48,12 @@ import {
   SelectedMediaPreview,
   CaptionForm,
   useMockGalleryTiles,
+  useMediaPicker,
   createPostSchema,
+  mockTileToSelectedMedia,
+  pickedMediaToSelectedMedia,
 } from '@/features/create';
-import type { CreatePostFormValues , MockMediaTile } from '@/features/create';
+import type { CreatePostFormValues , SelectedMedia } from '@/features/create';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,17 +78,26 @@ export default function CreatePostModal(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const tiles = useMockGalleryTiles();
+  const { pickFromGallery, captureWithCamera } = useMediaPicker();
 
   // ---- Local state ----
   const [step, setStep] = useState<FlowStep>('select');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGalleryLoading, setIsGalleryLoading] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
 
   // ---- Cleanup ref for the mock submit timer ----
   const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ---- Mounted guard — the picker/camera promises can resolve after the
+  // screen has been dismissed (e.g. user backs out while the native picker
+  // is still closing); avoid setState on an unmounted component. ----
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       if (submitTimerRef.current !== null) {
         clearTimeout(submitTimerRef.current);
       }
@@ -96,8 +115,14 @@ export default function CreatePostModal(): React.JSX.Element {
   });
 
   // ---- Derived ----
-  const firstSelectedTile: MockMediaTile | undefined = tiles.find(
-    (t) => t.id === selectedIds[0],
+  const firstSelectedMedia: SelectedMedia | undefined = selectedMedia[0];
+
+  // Ids of mock tiles currently part of the selection — drives the grid's
+  // own checkbox/order-badge UI; media picked via gallery/camera has no
+  // corresponding grid cell.
+  const gridSelectedIds = useMemo(
+    () => selectedMedia.filter((m) => m.source === 'mock').map((m) => m.id),
+    [selectedMedia],
   );
 
   // ---- Slide animation for step transition ----
@@ -113,19 +138,54 @@ export default function CreatePostModal(): React.JSX.Element {
     setStep('select');
   }, []);
 
-  // ---- Tile toggle ----
-  const handleToggle = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const idx = prev.indexOf(id);
-      if (idx !== -1) {
-        // Deselect
-        return prev.filter((x) => x !== id);
-      }
-      // Enforce max count
-      if (prev.length >= 10) return prev;
-      return [...prev, id];
-    });
+  // ---- Mock grid tile toggle ----
+  const handleToggle = useCallback(
+    (id: string) => {
+      setSelectedMedia((prev) => {
+        const idx = prev.findIndex((m) => m.id === id && m.source === 'mock');
+        if (idx !== -1) {
+          // Deselect
+          return prev.filter((_, i) => i !== idx);
+        }
+        // Enforce max count
+        if (prev.length >= Config.MAX_POST_MEDIA_COUNT) return prev;
+        const tile = tiles.find((t) => t.id === id);
+        if (tile === undefined) return prev;
+        return [...prev, mockTileToSelectedMedia(tile)];
+      });
+    },
+    [tiles],
+  );
+
+  // ---- Real media pickers (gallery / camera) ----
+  const appendPickedMedia = useCallback((picked: SelectedMedia[]) => {
+    if (picked.length === 0) return;
+    setSelectedMedia((prev) => [...prev, ...picked].slice(0, Config.MAX_POST_MEDIA_COUNT));
   }, []);
+
+  const handlePickFromGallery = useCallback(() => {
+    setIsGalleryLoading(true);
+    void pickFromGallery()
+      .then((assets) => {
+        if (!isMountedRef.current) return;
+        appendPickedMedia(assets.map(pickedMediaToSelectedMedia));
+      })
+      .finally(() => {
+        if (isMountedRef.current) setIsGalleryLoading(false);
+      });
+  }, [pickFromGallery, appendPickedMedia]);
+
+  const handleCaptureWithCamera = useCallback(() => {
+    setIsCameraLoading(true);
+    void captureWithCamera()
+      .then((assets) => {
+        if (!isMountedRef.current) return;
+        appendPickedMedia(assets.map(pickedMediaToSelectedMedia));
+      })
+      .finally(() => {
+        if (isMountedRef.current) setIsCameraLoading(false);
+      });
+  }, [captureWithCamera, appendPickedMedia]);
 
   // ---- Dismiss ----
   const dismiss = useCallback(() => {
@@ -150,7 +210,7 @@ export default function CreatePostModal(): React.JSX.Element {
   );
 
   // ---- Accessors ----
-  const canAdvance = selectedIds.length > 0;
+  const canAdvance = selectedMedia.length > 0;
 
   // ---------------------------------------------------------------------------
   // Render helpers
@@ -256,7 +316,7 @@ export default function CreatePostModal(): React.JSX.Element {
   function renderSelectStep(): React.JSX.Element {
     return (
       <>
-        {/* Large preview of currently focused tile */}
+        {/* Large preview of currently focused item */}
         <View
           style={[
             styles.previewContainer,
@@ -266,16 +326,44 @@ export default function CreatePostModal(): React.JSX.Element {
             },
           ]}
         >
-          {firstSelectedTile !== undefined ? (
-            <Image
-              source={{ uri: firstSelectedTile.uri }}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-              recyclingKey={`main-preview-${firstSelectedTile.id}`}
-              transition={180}
-              accessibilityLabel="Selected photo preview"
-              accessibilityRole="image"
-            />
+          {firstSelectedMedia !== undefined ? (
+            <>
+              <Image
+                source={{ uri: firstSelectedMedia.uri }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+                recyclingKey={`main-preview-${firstSelectedMedia.id}`}
+                transition={180}
+                accessibilityLabel={
+                  firstSelectedMedia.kind === 'video'
+                    ? 'Selected video preview'
+                    : 'Selected photo preview'
+                }
+                accessibilityRole="image"
+              />
+              {firstSelectedMedia.kind === 'video' ? (
+                <View
+                  style={[
+                    StyleSheet.absoluteFillObject,
+                    styles.videoPreviewOverlay,
+                    { backgroundColor: theme.colors.overlay },
+                  ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                >
+                  <Ionicons name="play-circle" size={64} color="white" />
+                  {firstSelectedMedia.durationMs !== undefined ? (
+                    <Text
+                      variant="callout"
+                      color="inverse"
+                      style={{ marginTop: theme.spacing.xs, fontWeight: '700' }}
+                    >
+                      {formatDuration(firstSelectedMedia.durationMs)}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </>
           ) : (
             <View style={styles.previewPlaceholder} accessibilityElementsHidden>
               <Ionicons
@@ -289,32 +377,38 @@ export default function CreatePostModal(): React.JSX.Element {
                 align="center"
                 style={{ marginTop: theme.spacing.sm }}
               >
-                Tap a photo to select it
+                Choose media from the gallery, camera, or the tiles below
               </Text>
             </View>
           )}
 
           {/* Multi-select badge count */}
-          {selectedIds.length > 1 ? (
+          {selectedMedia.length > 1 ? (
             <View
               style={[
                 styles.multiCountBadge,
                 { backgroundColor: theme.colors.accent },
               ]}
-              accessibilityLabel={`${selectedIds.length} photos selected`}
+              accessibilityLabel={`${selectedMedia.length} items selected`}
             >
               <Text variant="overline" color="inverse" style={{ fontWeight: '700' }}>
-                {selectedIds.length}
+                {selectedMedia.length}
               </Text>
             </View>
           ) : null}
         </View>
 
-        {/* Grid */}
+        {/* Fallback mock grid — real selection happens via the gallery/camera
+            actions rendered as this list's header (see MediaPickerGrid). */}
         <MediaPickerGrid
           tiles={tiles}
-          selectedIds={selectedIds}
+          selectedIds={gridSelectedIds}
           onToggle={handleToggle}
+          onPickFromGallery={handlePickFromGallery}
+          onCaptureWithCamera={handleCaptureWithCamera}
+          isGalleryLoading={isGalleryLoading}
+          isCameraLoading={isCameraLoading}
+          isAtLimit={selectedMedia.length >= Config.MAX_POST_MEDIA_COUNT}
         />
       </>
     );
@@ -327,7 +421,7 @@ export default function CreatePostModal(): React.JSX.Element {
   function renderDetailsStep(): React.JSX.Element {
     return (
       <>
-        <SelectedMediaPreview tiles={tiles} selectedIds={selectedIds} />
+        <SelectedMediaPreview media={selectedMedia} />
         <CaptionForm
           control={control}
           errors={errors}
@@ -393,6 +487,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   previewPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoPreviewOverlay: {
     alignItems: 'center',
     justifyContent: 'center',
   },

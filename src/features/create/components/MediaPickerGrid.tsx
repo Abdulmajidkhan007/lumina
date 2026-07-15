@@ -1,12 +1,15 @@
 /**
  * Lumina — MediaPickerGrid
  *
- * 3-column grid of mock gallery thumbnails backed by picsum.photos seeds.
- * Tapping a cell selects/deselects it (supports multi-select up to
- * Config.MAX_POST_MEDIA_COUNT). Order-badges appear in selection order.
- * Each cell is memoized; the press handler is stable via useCallback.
+ * 3-column grid of mock gallery thumbnails backed by picsum.photos seeds,
+ * kept as a fallback selection source. Tapping a cell selects/deselects it
+ * (supports multi-select up to Config.MAX_POST_MEDIA_COUNT). Order-badges
+ * appear in selection order. Each cell is memoized; the press handler is
+ * stable via useCallback.
  *
- * // TODO expo-image-picker: replace mock tiles with MediaLibrary assets.
+ * The real media entry points — gallery picker and camera capture, both via
+ * react-native-image-picker — render above the grid as the ListHeaderComponent
+ * (see MediaSourceButtons), so the whole "Select" step scrolls as one list.
  */
 
 import React, { useCallback } from 'react';
@@ -23,6 +26,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme , Text } from '@/design-system';
 import { grid } from '@/constants/layout';
 import { Config } from '@/constants/config';
+import { MediaSourceButtons } from './MediaSourceButtons';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,6 +43,19 @@ export interface MediaPickerGridProps {
   tiles: MockMediaTile[];
   selectedIds: string[];
   onToggle: (id: string) => void;
+  /** Launches the OS gallery/library picker (react-native-image-picker). */
+  onPickFromGallery: () => void;
+  /** Launches the device camera (react-native-image-picker). */
+  onCaptureWithCamera: () => void;
+  isGalleryLoading: boolean;
+  isCameraLoading: boolean;
+  /**
+   * Whether Config.MAX_POST_MEDIA_COUNT has been reached across the FULL
+   * selection (mock tiles + real picker media combined) — drives the limit
+   * banner. Not derivable from `selectedIds` alone, since that only reflects
+   * the mock-tile subset of the overall selection.
+   */
+  isAtLimit: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +163,11 @@ export const MediaPickerGrid = React.memo(function MediaPickerGrid({
   tiles,
   selectedIds,
   onToggle,
+  onPickFromGallery,
+  onCaptureWithCamera,
+  isGalleryLoading,
+  isCameraLoading,
+  isAtLimit,
 }: MediaPickerGridProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -189,22 +211,30 @@ export const MediaPickerGrid = React.memo(function MediaPickerGrid({
       style={[styles.list, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={
-        selectedIds.length >= Config.MAX_POST_MEDIA_COUNT ? (
-          <View
-            style={[
-              styles.limitBanner,
-              {
-                backgroundColor: theme.colors.surface,
-                paddingHorizontal: theme.spacing.lg,
-                paddingVertical: theme.spacing.xs,
-              },
-            ]}
-          >
-            <Text variant="caption" color="secondary" align="center">
-              You can select up to {Config.MAX_POST_MEDIA_COUNT} photos or videos.
-            </Text>
-          </View>
-        ) : null
+        <>
+          <MediaSourceButtons
+            onPickFromGallery={onPickFromGallery}
+            onCaptureWithCamera={onCaptureWithCamera}
+            isGalleryLoading={isGalleryLoading}
+            isCameraLoading={isCameraLoading}
+          />
+          {isAtLimit ? (
+            <View
+              style={[
+                styles.limitBanner,
+                {
+                  backgroundColor: theme.colors.surface,
+                  paddingHorizontal: theme.spacing.lg,
+                  paddingVertical: theme.spacing.xs,
+                },
+              ]}
+            >
+              <Text variant="caption" color="secondary" align="center">
+                You can select up to {Config.MAX_POST_MEDIA_COUNT} photos or videos.
+              </Text>
+            </View>
+          ) : null}
+        </>
       }
     />
   );

@@ -3,7 +3,10 @@
  *
  * Horizontal strip of selected media thumbnails shown in Step 2 (Details).
  * When only one item is selected it renders as a larger featured preview.
- * Memoized — re-renders only when selectedIds/tiles change.
+ * Works for both mock-grid tiles and real react-native-image-picker results
+ * via the unified SelectedMedia shape — images render through @/components/Image,
+ * videos render as a dark tile with a play icon and duration label.
+ * Memoized — re-renders only when the media list changes.
  */
 
 import React from 'react';
@@ -12,19 +15,20 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Image } from '@/components/Image';
 
-import { useTheme } from '@/design-system';
+import { useTheme, Text } from '@/design-system';
 import { screen } from '@/constants/layout';
-import type { MockMediaTile } from './MediaPickerGrid';
+import { formatDuration } from '@/utils/format';
+import type { SelectedMedia } from '../types';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface SelectedMediaPreviewProps {
-  tiles: MockMediaTile[];
-  selectedIds: string[];
+  media: SelectedMedia[];
 }
 
 // ---------------------------------------------------------------------------
@@ -37,15 +41,54 @@ const STRIP_ITEM_WIDTH = 80;
 const STRIP_GAP = 4;
 
 // ---------------------------------------------------------------------------
+// VideoTile — dark poster fallback with play icon + duration
+// ---------------------------------------------------------------------------
+
+interface VideoTileProps {
+  durationMs: number | undefined;
+  iconSize: number;
+}
+
+const VideoTile = React.memo(function VideoTile({
+  durationMs,
+  iconSize,
+}: VideoTileProps): React.JSX.Element {
+  const theme = useTheme();
+
+  return (
+    <View
+      style={[
+        StyleSheet.absoluteFillObject,
+        styles.videoTile,
+        { backgroundColor: theme.colors.overlay },
+      ]}
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+    >
+      <Ionicons name="play-circle" size={iconSize} color="white" />
+      {durationMs !== undefined ? (
+        <Text
+          variant="overline"
+          color="inverse"
+          style={styles.durationLabel}
+        >
+          {formatDuration(durationMs)}
+        </Text>
+      ) : null}
+    </View>
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Single-item large preview
 // ---------------------------------------------------------------------------
 
 interface SinglePreviewProps {
-  tile: MockMediaTile;
+  item: SelectedMedia;
 }
 
 const SinglePreview = React.memo(function SinglePreview({
-  tile,
+  item,
 }: SinglePreviewProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -60,14 +103,17 @@ const SinglePreview = React.memo(function SinglePreview({
       ]}
     >
       <Image
-        source={{ uri: tile.uri }}
+        source={{ uri: item.uri }}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
-        recyclingKey={tile.id}
+        recyclingKey={item.id}
         transition={200}
-        accessibilityLabel="Selected photo preview"
+        accessibilityLabel={item.kind === 'video' ? 'Selected video preview' : 'Selected photo preview'}
         accessibilityRole="image"
       />
+      {item.kind === 'video' ? (
+        <VideoTile durationMs={item.durationMs} iconSize={56} />
+      ) : null}
     </View>
   );
 });
@@ -77,12 +123,12 @@ const SinglePreview = React.memo(function SinglePreview({
 // ---------------------------------------------------------------------------
 
 interface StripItemProps {
-  tile: MockMediaTile;
+  item: SelectedMedia;
   orderIndex: number;
 }
 
 const StripItem = React.memo(function StripItem({
-  tile,
+  item,
   orderIndex,
 }: StripItemProps): React.JSX.Element {
   const theme = useTheme();
@@ -95,14 +141,17 @@ const StripItem = React.memo(function StripItem({
       ]}
     >
       <Image
-        source={{ uri: tile.uri }}
+        source={{ uri: item.uri }}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
-        recyclingKey={`strip-${tile.id}`}
+        recyclingKey={`strip-${item.id}`}
         transition={120}
-        accessibilityLabel={`Selected photo ${orderIndex + 1}`}
+        accessibilityLabel={`Selected ${item.kind === 'video' ? 'video' : 'photo'} ${orderIndex + 1}`}
         accessibilityRole="image"
       />
+      {item.kind === 'video' ? (
+        <VideoTile durationMs={item.durationMs} iconSize={24} />
+      ) : null}
       {/* Order badge */}
       <View
         style={[
@@ -122,22 +171,15 @@ const StripItem = React.memo(function StripItem({
 // ---------------------------------------------------------------------------
 
 export const SelectedMediaPreview = React.memo(function SelectedMediaPreview({
-  tiles,
-  selectedIds,
+  media,
 }: SelectedMediaPreviewProps): React.JSX.Element | null {
-  if (selectedIds.length === 0) return null;
-
-  const orderedTiles = selectedIds
-    .map((id) => tiles.find((t) => t.id === id))
-    .filter((t): t is MockMediaTile => t !== undefined);
-
-  if (orderedTiles.length === 0) return null;
+  if (media.length === 0) return null;
 
   // Single item — large preview
-  if (orderedTiles.length === 1) {
-    const tile = orderedTiles[0];
-    if (!tile) return null;
-    return <SinglePreview tile={tile} />;
+  if (media.length === 1) {
+    const item = media[0];
+    if (!item) return null;
+    return <SinglePreview item={item} />;
   }
 
   // Multiple items — horizontal strip
@@ -147,11 +189,11 @@ export const SelectedMediaPreview = React.memo(function SelectedMediaPreview({
       showsHorizontalScrollIndicator={false}
       style={styles.strip}
       contentContainerStyle={styles.stripContent}
-      accessibilityLabel={`${orderedTiles.length} selected photos`}
+      accessibilityLabel={`${media.length} selected media items`}
       accessibilityRole="scrollbar"
     >
-      {orderedTiles.map((tile, idx) => (
-        <StripItem key={tile.id} tile={tile} orderIndex={idx} />
+      {media.map((item, idx) => (
+        <StripItem key={item.id} item={item} orderIndex={idx} />
       ))}
     </ScrollView>
   );
@@ -188,5 +230,13 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  videoTile: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  durationLabel: {
+    marginTop: 4,
+    fontWeight: '700',
   },
 });
