@@ -7,7 +7,8 @@
  * - Long-press to pause
  * - Swipe-down (PanGesture) to dismiss
  * - Author avatar + name + timestamp + close button
- * - expo-image for image stories; poster image for video (TODO: full video)
+ * - expo-image for image stories; real video playback (VideoPlayer) for
+ *   video stories, auto-advancing on video end instead of a fixed timer
  * - Marks stories seen via storiesApi
  */
 
@@ -24,6 +25,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Image } from '@/components/Image';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -75,6 +77,10 @@ export function StoryViewer({
   const [storyIndex, setStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const progress = useSharedValue(0);
+
+  // Duration (ms) of the current video story, reported by VideoPlayer's
+  // onLoad. Drives the progress bar via onProgress instead of a timer.
+  const [videoDurationMs, setVideoDurationMs] = useState(0);
 
   // Track elapsed before pause to resume from correct position
   const elapsedRef = useRef(0);
@@ -130,6 +136,9 @@ export function StoryViewer({
 
   useEffect(() => {
     if (isPaused) return;
+    // Video stories auto-advance via VideoPlayer's onEnd + drive the
+    // progress bar from real playback position instead of a fixed timer.
+    if (story?.media.type === 'video') return;
 
     const remaining = STORY_DURATION_MS * (1 - progress.value);
     startTimeRef.current = Date.now();
@@ -147,12 +156,40 @@ export function StoryViewer({
       }
       cancelAnimation(progress);
     };
-  }, [storyIndex, isPaused, goNext, progress]);
+  }, [storyIndex, isPaused, goNext, progress, story]);
 
   // Mark current story seen on mount/index change
   useEffect(() => {
     markSeen(storyIndex);
   }, [markSeen, storyIndex]);
+
+  // Reset the known video duration whenever the story changes so a stale
+  // duration from the previous video can't be used to compute progress.
+  useEffect(() => {
+    setVideoDurationMs(0);
+  }, [storyIndex]);
+
+  // ---------------------------------------------------------------------------
+  // Video story callbacks — progress bar driven by real playback position
+  // ---------------------------------------------------------------------------
+
+  const handleVideoLoad = useCallback((durationMs: number) => {
+    setVideoDurationMs(durationMs);
+  }, []);
+
+  const handleVideoProgress = useCallback(
+    (positionMs: number) => {
+      if (videoDurationMs > 0) {
+        progress.value = Math.min(positionMs / videoDurationMs, 1);
+      }
+    },
+    [progress, videoDurationMs],
+  );
+
+  const handleVideoEnd = useCallback(() => {
+    progress.value = 1;
+    goNext();
+  }, [goNext, progress]);
 
   // ---------------------------------------------------------------------------
   // Gestures
@@ -214,22 +251,31 @@ export function StoryViewer({
 
   if (story == null) return <View style={styles.container} />;
 
-  const mediaUri =
-    story.media.type === 'video'
-      ? (story.media.thumbnailUri ?? story.media.uri)
-      : story.media.uri;
-
   return (
     <GestureDetector gesture={composed}>
       <Animated.View style={[styles.container, containerStyle]}>
         {/* Background media */}
-        <Image
-          source={{ uri: mediaUri }}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-          transition={100}
-          accessibilityLabel="Story image"
-        />
+        {story.media.type === 'video' ? (
+          <VideoPlayer
+            uri={story.media.uri}
+            paused={isPaused}
+            repeat={false}
+            resizeMode="cover"
+            posterUri={story.media.thumbnailUri}
+            onLoad={handleVideoLoad}
+            onProgress={handleVideoProgress}
+            onEnd={handleVideoEnd}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ) : (
+          <Image
+            source={{ uri: story.media.uri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            transition={100}
+            accessibilityLabel="Story image"
+          />
+        )}
 
         {/* Dark gradient overlay at top/bottom */}
         <View style={styles.topGradient} pointerEvents="none" />
@@ -325,8 +371,6 @@ export function StoryViewer({
             accessibilityLabel="Next story"
           />
         </View>
-
-        {/* TODO: video playback — using poster/thumbnail above for now */}
       </Animated.View>
     </GestureDetector>
   );

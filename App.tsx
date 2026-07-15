@@ -17,6 +17,11 @@ import {
 import { useTheme } from '@/design-system';
 import { RootNavigator } from '@/navigation';
 import { AppProviders } from '@/providers';
+import { initSentry } from '@/lib/sentry';
+
+// Must run before anything else so early startup errors are captured.
+// No-ops until `Config.SENTRY_DSN` (src/constants/config.ts) is configured.
+initSentry();
 
 function ThemedNavigationContainer(): React.JSX.Element {
   const theme = useTheme();

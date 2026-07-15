@@ -24,6 +24,13 @@ export const Config = {
 
   /** Avatar placeholder URI (used when avatarUrl is null) */
   AVATAR_PLACEHOLDER_URI: 'https://picsum.photos/seed/lumina-default/150/150',
+
+  /**
+   * Sentry DSN. Left empty by default — `initSentry()` (src/lib/sentry.ts)
+   * no-ops until this is populated with a real DSN from the Sentry project
+   * settings. Fill this in before shipping to get crash/error reporting.
+   */
+  SENTRY_DSN: '',
 } as const;
 
 export type ConfigShape = typeof Config;

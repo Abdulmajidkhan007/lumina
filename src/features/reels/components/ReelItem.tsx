@@ -2,24 +2,30 @@
  * Lumina — ReelItem
  *
  * Fullscreen reel "slide" for the vertical pager. Renders:
- * - expo-image poster (cover fill) with a play badge
+ * - Real video playback (VideoPlayer) for the active + adjacent items, with
+ *   a poster (cover fill) fallback for everything else, plus a play badge
  * - Top + bottom dark gradient overlays for legibility
  * - Right-side ReelActions column
  * - Bottom-left ReelOverlay (username, caption, audio)
- * - Double-tap anywhere on the poster to like (Reanimated heart pop)
+ * - Bottom-right mute toggle overlay
+ * - Double-tap anywhere on the video/poster to like (Reanimated heart pop)
  *
- * Only the "active" item (tracked by ReelsPager) shows the overlay UI;
- * inactive items just show the poster to keep memory low.
+ * Only the "active" item (tracked by ReelsPager) shows the overlay UI and
+ * autoplays; adjacent items preload the video (muted, paused) so playback
+ * starts instantly on swipe, and everything further away just shows the
+ * poster to keep memory low.
  *
  * Memoized. All callbacks must be stable.
  */
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
 import { Image } from '@/components/Image';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import LinearGradient from 'react-native-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -40,7 +46,8 @@ import { useLikeReel } from '@/data/query/hooks/useLikeReel';
 import { useSaveReel } from '@/data/query/hooks/useSaveReel';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
 import { useCurrentUser } from '@/stores/auth.store';
-import { screen } from '@/constants/layout';
+import { useAutoplayVideos } from '@/stores/preferences.store';
+import { hitSlop, screen } from '@/constants/layout';
 import type { Reel, ReelId, UserId } from '@/types/models';
 
 import { ReelActions } from './ReelActions';
@@ -53,6 +60,8 @@ import { ReelOverlay } from './ReelOverlay';
 export interface ReelItemProps {
   reel: Reel;
   isActive: boolean;
+  /** True for items directly before/after the active one — preloads video. */
+  isAdjacent?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,13 +95,19 @@ function HeartPopOverlay({
 export const ReelItem = React.memo(function ReelItem({
   reel,
   isActive,
+  isAdjacent = false,
 }: ReelItemProps): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
+  const autoplayVideos = useAutoplayVideos();
   const { mutate: likeReel } = useLikeReel();
   const { mutate: saveReel } = useSaveReel();
   const { mutate: followUser } = useFollowUser();
+
+  // Local mute preference — defaults muted like most short-video feeds;
+  // the user can toggle it per-reel via the bottom-right overlay button.
+  const [isMuted, setIsMuted] = useState(true);
 
   // Stable ref so gesture closure always has the latest value without
   // re-creating the gesture object on every render.
@@ -150,6 +165,10 @@ export const ReelItem = React.memo(function ReelItem({
     followUser({ userId: reel.author.id, follow: true });
   }, [followUser, reel.author.id]);
 
+  const handleToggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Double-tap gesture
   // ---------------------------------------------------------------------------
@@ -166,6 +185,9 @@ export const ReelItem = React.memo(function ReelItem({
   // ---------------------------------------------------------------------------
 
   const thumbnailUri = reel.video.thumbnailUri ?? reel.video.uri;
+  // Mount the real player for the active item plus its immediate neighbors
+  // so playback starts instantly on swipe; everything else keeps the poster.
+  const shouldLoadVideo = isActive || isAdjacent;
   const isMe = currentUser?.id === reel.author.id;
   // We use isFollowedByMe from author if available; fall back to false
   // UserSummary doesn't carry isFollowedByMe so we use a local check via
@@ -178,16 +200,28 @@ export const ReelItem = React.memo(function ReelItem({
       style={[styles.container, { width: screen.width, height: screen.height }]}
       accessibilityLabel={`Reel by ${reel.author.username}`}
     >
-      {/* Poster / thumbnail */}
-      <Image
-        source={{ uri: thumbnailUri }}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        recyclingKey={reel.id}
-        accessibilityRole="image"
-        accessibilityLabel={`Reel thumbnail by ${reel.author.username}`}
-        transition={150}
-      />
+      {/* Video (active + adjacent items) or static poster (everything else) */}
+      {shouldLoadVideo ? (
+        <VideoPlayer
+          uri={reel.video.uri}
+          paused={!isActive || !autoplayVideos}
+          muted={isMuted}
+          repeat
+          resizeMode="cover"
+          posterUri={thumbnailUri}
+          style={StyleSheet.absoluteFillObject}
+        />
+      ) : (
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          recyclingKey={reel.id}
+          accessibilityRole="image"
+          accessibilityLabel={`Reel thumbnail by ${reel.author.username}`}
+          transition={150}
+        />
+      )}
 
       {/* Top gradient — for any header UI */}
       <LinearGradient
@@ -219,6 +253,22 @@ export const ReelItem = React.memo(function ReelItem({
       {/* Only render interactive UI when active to save memory */}
       {isActive ? (
         <>
+          {/* Mute toggle — bottom-right overlay on the video */}
+          <Pressable
+            onPress={handleToggleMute}
+            hitSlop={hitSlop.md}
+            accessibilityRole="button"
+            accessibilityLabel={isMuted ? 'Unmute reel' : 'Mute reel'}
+            accessibilityState={{ selected: isMuted }}
+            style={[styles.muteButton, { backgroundColor: theme.colors.overlay }]}
+          >
+            <Ionicons
+              name={isMuted ? 'volume-mute' : 'volume-high'}
+              size={20}
+              color="#FFFFFF"
+            />
+          </Pressable>
+
           {/* Right-side action column */}
           <View style={styles.actionsColumn}>
             <ReelActions
@@ -303,6 +353,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     right: 14,
+  },
+  muteButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   overlayContainer: {
     position: 'absolute',

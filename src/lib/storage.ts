@@ -1,12 +1,12 @@
 /**
  * Storage utilities:
  *   - secureStorage: thin wrapper around react-native-keychain for auth tokens
- *   - asyncStoragePersister: TanStack Query cache persistence via AsyncStorage
+ *   - asyncStoragePersister: TanStack Query cache persistence via MMKV
  */
 
 import * as Keychain from 'react-native-keychain';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { mmkvAsyncStorageLike } from './mmkv';
 
 // ---------------------------------------------------------------------------
 // Secure token storage — auth tokens only
@@ -35,11 +35,18 @@ export const secureStorage = {
 };
 
 // ---------------------------------------------------------------------------
-// AsyncStorage-backed persister for TanStack Query offline cache
+// MMKV-backed persister for TanStack Query offline cache
 // ---------------------------------------------------------------------------
 
+/**
+ * NOTE: this is now backed by MMKV (via `mmkvAsyncStorageLike`), not
+ * AsyncStorage. The export name `asyncStoragePersister` is kept as-is so
+ * existing consumers (e.g. `src/providers/index.tsx`) keep compiling
+ * unchanged — `@tanstack/query-async-storage-persister` only requires an
+ * AsyncStorage-*shaped* interface, which MMKV is wrapped to satisfy.
+ */
 export const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
+  storage: mmkvAsyncStorageLike,
   key: 'lumina_query_cache',
   throttleTime: 1000,
 });

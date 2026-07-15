@@ -110,7 +110,11 @@ export function ReelsPager(): React.JSX.Element {
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<Reel>) => (
-      <ReelItem reel={item} isActive={index === activeIndex} />
+      <ReelItem
+        reel={item}
+        isActive={index === activeIndex}
+        isAdjacent={Math.abs(index - activeIndex) === 1}
+      />
     ),
     [activeIndex],
   );
