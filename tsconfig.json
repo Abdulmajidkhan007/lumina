@@ -2,13 +2,25 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "strict": true,
-    "types": ["react-native"],
+    "types": [
+      "react-native",
+      "jest"
+    ],
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": ["src", "types", "App.tsx", "index.js"]
+  "include": [
+    "src",
+    "types",
+    "App.tsx",
+    "index.js"
+  ]
 }
