@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -50,6 +51,7 @@ const BIO_MAX = 150;
 
 export default function EditProfileScreen(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
 
@@ -90,10 +92,10 @@ export default function EditProfileScreen(): React.JSX.Element {
       // TODO: call mutation to persist profile update
       // For now, show a brief success alert and navigate back
       await new Promise<void>((resolve) => setTimeout(resolve, 600));
-      Alert.alert('Saved', 'Your profile has been updated.');
+      Alert.alert(t('editProfile.savedTitle'), t('editProfile.savedMessage'));
       navigation.goBack();
     },
-    [navigation],
+    [navigation, t],
   );
 
   const handleChangePhoto = useCallback(() => {
@@ -119,7 +121,7 @@ export default function EditProfileScreen(): React.JSX.Element {
           onPress={goBack}
           hitSlop={hitSlop.md}
           accessibilityRole="button"
-          accessibilityLabel="Cancel"
+          accessibilityLabel={t('editProfile.cancel')}
         >
           <Ionicons
             name="arrow-back-outline"
@@ -128,7 +130,7 @@ export default function EditProfileScreen(): React.JSX.Element {
           />
         </Pressable>
         <Text variant="bodyStrong" color="primary">
-          Edit Profile
+          {t('editProfile.title')}
         </Text>
         {isSubmitting ? (
           <Spinner size="sm" />
@@ -138,14 +140,14 @@ export default function EditProfileScreen(): React.JSX.Element {
             disabled={!isDirty || isSubmitting}
             hitSlop={hitSlop.md}
             accessibilityRole="button"
-            accessibilityLabel="Save changes"
+            accessibilityLabel={t('editProfile.save')}
             accessibilityState={{ disabled: !isDirty || isSubmitting }}
           >
             <Text
               variant="bodyStrong"
               color={isDirty ? 'accent' : 'tertiary'}
             >
-              Save
+              {t('editProfile.save')}
             </Text>
           </Pressable>
         )}
@@ -172,7 +174,7 @@ export default function EditProfileScreen(): React.JSX.Element {
                 uri={currentUser?.avatarUrl ?? undefined}
                 displayName={currentUser?.displayName}
                 size="2xl"
-                accessibilityLabel="Your profile photo"
+                accessibilityLabel={t('editProfile.avatarAccessibilityLabel')}
               />
               <Pressable
                 onPress={handleChangePhoto}
@@ -184,7 +186,7 @@ export default function EditProfileScreen(): React.JSX.Element {
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Change profile photo"
+                accessibilityLabel={t('editProfile.changePhoto')}
               >
                 <Ionicons name="camera" size={14} color="#FFFFFF" />
               </Pressable>
@@ -193,14 +195,14 @@ export default function EditProfileScreen(): React.JSX.Element {
               onPress={handleChangePhoto}
               hitSlop={hitSlop.sm}
               accessibilityRole="button"
-              accessibilityLabel="Change profile photo"
+              accessibilityLabel={t('editProfile.changePhoto')}
             >
               <Text
                 variant="callout"
                 color="accent"
                 style={{ marginTop: theme.spacing.sm }}
               >
-                Change photo
+                {t('editProfile.changePhoto')}
               </Text>
             </Pressable>
           </View>
@@ -216,8 +218,8 @@ export default function EditProfileScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value, ref } }) => (
                 <Input
                   ref={ref}
-                  label="Display name"
-                  placeholder="Your name"
+                  label={t('editProfile.displayNameLabel')}
+                  placeholder={t('editProfile.displayNamePlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -236,8 +238,8 @@ export default function EditProfileScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value, ref } }) => (
                 <Input
                   ref={ref}
-                  label="Username"
-                  placeholder="username"
+                  label={t('editProfile.usernameLabel')}
+                  placeholder={t('editProfile.usernamePlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -263,8 +265,8 @@ export default function EditProfileScreen(): React.JSX.Element {
                 <View style={{ marginBottom: theme.spacing.lg }}>
                   <Input
                     ref={ref}
-                    label="Bio"
-                    placeholder="Tell the world about yourself…"
+                    label={t('editProfile.bioLabel')}
+                    placeholder={t('editProfile.bioPlaceholder')}
                     value={value ?? ''}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -300,14 +302,14 @@ export default function EditProfileScreen(): React.JSX.Element {
             >
               <View style={styles.switchLabel}>
                 <Text variant="callout" color="primary">
-                  Private account
+                  {t('editProfile.privateLabel')}
                 </Text>
                 <Text
                   variant="caption"
                   color="secondary"
                   style={{ marginTop: theme.spacing.xxs }}
                 >
-                  Only approved followers can see your posts
+                  {t('editProfile.privateDescription')}
                 </Text>
               </View>
               <Controller
@@ -322,7 +324,7 @@ export default function EditProfileScreen(): React.JSX.Element {
                       true: theme.colors.accent,
                     }}
                     thumbColor={theme.colors.surface}
-                    accessibilityLabel="Private account"
+                    accessibilityLabel={t('editProfile.privateLabel')}
                     accessibilityRole="switch"
                     accessibilityState={{ checked: value }}
                   />
@@ -334,14 +336,14 @@ export default function EditProfileScreen(): React.JSX.Element {
           {/* Bottom save button */}
           <View style={[{ paddingHorizontal: theme.spacing.lg, marginTop: theme.spacing.xl }]}>
             <Button
-              label="Save changes"
+              label={t('editProfile.save')}
               variant="primary"
               size="md"
               fullWidth
               loading={isSubmitting}
               disabled={!isDirty || isSubmitting}
               onPress={handleSubmit(onSubmit)}
-              accessibilityLabel="Save profile changes"
+              accessibilityLabel={t('editProfile.save')}
             />
           </View>
         </ScrollView>

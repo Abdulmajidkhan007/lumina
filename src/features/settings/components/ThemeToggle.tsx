@@ -7,6 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -21,7 +22,7 @@ import type { ColorSchemePreference } from '@/stores/preferences.store';
 interface ThemeOption {
   value: ColorSchemePreference;
   icon: 'sunny-outline' | 'moon-outline' | 'phone-portrait-outline';
-  label: string;
+  labelKey: 'settings.rows.theme.light' | 'settings.rows.theme.dark' | 'settings.rows.theme.system';
 }
 
 // ---------------------------------------------------------------------------
@@ -29,9 +30,9 @@ interface ThemeOption {
 // ---------------------------------------------------------------------------
 
 const OPTIONS: ThemeOption[] = [
-  { value: 'light', icon: 'sunny-outline', label: 'Light' },
-  { value: 'dark', icon: 'moon-outline', label: 'Dark' },
-  { value: 'system', icon: 'phone-portrait-outline', label: 'System' },
+  { value: 'light', icon: 'sunny-outline', labelKey: 'settings.rows.theme.light' },
+  { value: 'dark', icon: 'moon-outline', labelKey: 'settings.rows.theme.dark' },
+  { value: 'system', icon: 'phone-portrait-outline', labelKey: 'settings.rows.theme.system' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -40,6 +41,7 @@ const OPTIONS: ThemeOption[] = [
 
 export function ThemeToggle(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { colorSchemePreference, setColorSchemePreference } = usePreferencesStore();
 
   const handleSelect = useCallback(
@@ -64,6 +66,7 @@ export function ThemeToggle(): React.JSX.Element {
     >
       {OPTIONS.map((opt) => {
         const isActive = colorSchemePreference === opt.value;
+        const label = t(opt.labelKey);
         return (
           <Pressable
             key={opt.value}
@@ -80,7 +83,7 @@ export function ThemeToggle(): React.JSX.Element {
               },
             ]}
             accessibilityRole="radio"
-            accessibilityLabel={`${opt.label} theme`}
+            accessibilityLabel={label}
             accessibilityState={{ selected: isActive }}
           >
             <Ionicons
@@ -94,7 +97,7 @@ export function ThemeToggle(): React.JSX.Element {
               align="center"
               style={{ marginTop: 2 }}
             >
-              {opt.label}
+              {label}
             </Text>
           </Pressable>
         );

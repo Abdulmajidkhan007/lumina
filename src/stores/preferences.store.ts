@@ -12,17 +12,27 @@ import { mmkvZustandStorage } from '@/lib/mmkv';
  */
 export type ColorSchemePreference = 'light' | 'dark' | 'system';
 
+/**
+ * App locale preference — read by src/i18n/index.ts to initialise and
+ * update i18next's active language. 'system' defers to the device locale
+ * where available and falls back to English otherwise.
+ */
+export type AppLocale = 'en' | 'uz' | 'system';
+
 type PreferencesState = {
   /** Colour scheme preference — read by design-system/theme/theme.ts */
   colorSchemePreference: ColorSchemePreference;
   autoplayVideos: boolean;
   hapticsEnabled: boolean;
+  /** App locale preference — read by src/i18n/index.ts */
+  locale: AppLocale;
 };
 
 type PreferencesActions = {
   setColorSchemePreference(pref: ColorSchemePreference): void;
   setAutoplayVideos(enabled: boolean): void;
   setHapticsEnabled(enabled: boolean): void;
+  setLocale(locale: AppLocale): void;
 };
 
 // ---------------------------------------------------------------------------
@@ -35,6 +45,7 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
       colorSchemePreference: 'system',
       autoplayVideos: true,
       hapticsEnabled: true,
+      locale: 'system',
 
       setColorSchemePreference(pref) {
         set({ colorSchemePreference: pref });
@@ -46,6 +57,10 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
 
       setHapticsEnabled(enabled) {
         set({ hapticsEnabled: enabled });
+      },
+
+      setLocale(locale) {
+        set({ locale });
       },
     }),
     {
@@ -68,3 +83,6 @@ export const useAutoplayVideos = () =>
 
 export const useHapticsEnabled = () =>
   usePreferencesStore((s) => s.hapticsEnabled);
+
+/** Used by src/i18n to resolve and react to the active app locale */
+export const useLocale = () => usePreferencesStore((s) => s.locale);

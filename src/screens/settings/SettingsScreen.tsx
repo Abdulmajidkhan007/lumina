@@ -5,24 +5,26 @@
  * and a danger Log Out row.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
 import { useAuthStore } from '@/stores/auth.store';
-import { usePreferencesStore } from '@/stores/preferences.store';
+import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { ThemeToggle } from '@/features/settings/components/ThemeToggle';
+import { setAppLocale } from '@/i18n';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -30,10 +32,12 @@ import { ThemeToggle } from '@/features/settings/components/ThemeToggle';
 
 export default function SettingsScreen(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const clearSession = useAuthStore((s) => s.clearSession);
   const { autoplayVideos, hapticsEnabled, setAutoplayVideos, setHapticsEnabled } =
     usePreferencesStore();
+  const locale = useLocale();
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
@@ -43,12 +47,12 @@ export default function SettingsScreen(): React.JSX.Element {
 
   const handleSignOut = useCallback(() => {
     Alert.alert(
-      'Sign out',
-      'Are you sure you want to sign out of Lumina?',
+      t('settings.logoutConfirm.title'),
+      t('settings.logoutConfirm.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('settings.logoutConfirm.cancel'), style: 'cancel' },
         {
-          text: 'Sign out',
+          text: t('settings.logoutConfirm.confirm'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -60,7 +64,7 @@ export default function SettingsScreen(): React.JSX.Element {
         },
       ],
     );
-  }, [clearSession]);
+  }, [clearSession, t]);
 
   const handleAutoplayChange = useCallback(
     (v: boolean) => setAutoplayVideos(v),
@@ -71,6 +75,27 @@ export default function SettingsScreen(): React.JSX.Element {
     (v: boolean) => setHapticsEnabled(v),
     [setHapticsEnabled],
   );
+
+  const currentLanguageLabel = useMemo(() => {
+    switch (locale) {
+      case 'en':
+        return t('settings.rows.language.english');
+      case 'uz':
+        return t('settings.rows.language.uzbek');
+      case 'system':
+      default:
+        return t('settings.rows.language.system');
+    }
+  }, [locale, t]);
+
+  const handleLanguagePress = useCallback(() => {
+    Alert.alert(t('settings.rows.language.label'), undefined, [
+      { text: t('settings.rows.language.english'), onPress: () => setAppLocale('en') },
+      { text: t('settings.rows.language.uzbek'), onPress: () => setAppLocale('uz') },
+      { text: t('settings.rows.language.system'), onPress: () => setAppLocale('system') },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  }, [t]);
 
   const noop = useCallback(() => {}, []);
 
@@ -93,7 +118,7 @@ export default function SettingsScreen(): React.JSX.Element {
           onPress={goBack}
           hitSlop={hitSlop.md}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('settings.goBack')}
         >
           <Ionicons
             name="arrow-back-outline"
@@ -102,7 +127,7 @@ export default function SettingsScreen(): React.JSX.Element {
           />
         </Pressable>
         <Text variant="bodyStrong" color="primary">
-          Settings
+          {t('settings.title')}
         </Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -116,29 +141,29 @@ export default function SettingsScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
       >
         {/* Account */}
-        <SettingsSection title="Account">
+        <SettingsSection title={t('settings.sections.account')}>
           <SettingsRow
             icon="person-outline"
-            label="Edit Profile"
+            label={t('settings.rows.editProfile')}
             onPress={goToEditProfile}
-            accessibilityLabel="Edit your profile"
+            accessibilityLabel={t('settings.rows.editProfile')}
           />
           <SettingsRow
             icon="lock-closed-outline"
-            label="Change Password"
+            label={t('settings.rows.changePassword')}
             onPress={noop}
-            accessibilityLabel="Change your password"
+            accessibilityLabel={t('settings.rows.changePassword')}
           />
           <SettingsRow
             icon="notifications-outline"
-            label="Notifications"
+            label={t('settings.rows.notifications')}
             onPress={noop}
-            accessibilityLabel="Notification settings"
+            accessibilityLabel={t('settings.rows.notifications')}
           />
         </SettingsSection>
 
         {/* Preferences */}
-        <SettingsSection title="Preferences">
+        <SettingsSection title={t('settings.sections.preferences')}>
           {/* Theme toggle sits inside its own padded row */}
           <View style={{ paddingTop: theme.spacing.sm }}>
             <Text
@@ -146,74 +171,81 @@ export default function SettingsScreen(): React.JSX.Element {
               color="primary"
               style={{ paddingHorizontal: theme.spacing.lg }}
             >
-              Appearance
+              {t('settings.rows.appearance')}
             </Text>
             <ThemeToggle />
           </View>
           <Divider mx={theme.spacing.lg} />
           <SettingsRow
             icon="play-circle-outline"
-            label="Autoplay videos"
+            label={t('settings.rows.autoplay')}
             right={{
               type: 'switch',
               value: autoplayVideos,
               onValueChange: handleAutoplayChange,
             }}
-            accessibilityLabel="Autoplay videos"
+            accessibilityLabel={t('settings.rows.autoplay')}
           />
           <SettingsRow
             icon="phone-portrait-outline"
-            label="Haptic feedback"
+            label={t('settings.rows.haptics')}
             right={{
               type: 'switch',
               value: hapticsEnabled,
               onValueChange: handleHapticsChange,
             }}
-            accessibilityLabel="Haptic feedback"
+            accessibilityLabel={t('settings.rows.haptics')}
+          />
+          <SettingsRow
+            icon="language-outline"
+            label={t('settings.rows.language.label')}
+            sublabel={currentLanguageLabel}
+            onPress={handleLanguagePress}
+            accessibilityLabel={t('settings.rows.language.label')}
           />
         </SettingsSection>
 
         {/* Privacy */}
-        <SettingsSection title="Privacy">
+        <SettingsSection title={t('settings.sections.privacy')}>
           <SettingsRow
             icon="eye-off-outline"
-            label="Private account"
+            label={t('settings.rows.privateAccount')}
             onPress={noop}
-            accessibilityLabel="Private account settings"
+            accessibilityLabel={t('settings.rows.privateAccount')}
           />
           <SettingsRow
             icon="hand-left-outline"
-            label="Blocked accounts"
+            label={t('settings.rows.blockedAccounts')}
             onPress={noop}
-            accessibilityLabel="Blocked accounts"
+            accessibilityLabel={t('settings.rows.blockedAccounts')}
           />
           <SettingsRow
             icon="share-social-outline"
-            label="Activity status"
+            label={t('settings.rows.activityStatus')}
             onPress={noop}
-            accessibilityLabel="Activity status settings"
+            accessibilityLabel={t('settings.rows.activityStatus')}
           />
         </SettingsSection>
 
         {/* Support */}
-        <SettingsSection title="Support">
+        <SettingsSection title={t('settings.sections.support')}>
           <SettingsRow
             icon="help-circle-outline"
-            label="Help Centre"
+            label={t('settings.rows.helpCentre')}
             onPress={noop}
-            accessibilityLabel="Help Centre"
+            accessibilityLabel={t('settings.rows.helpCentre')}
           />
           <SettingsRow
             icon="document-text-outline"
-            label="Privacy Policy"
+            label={t('settings.rows.privacyPolicy')}
             onPress={noop}
-            accessibilityLabel="Privacy Policy"
+            accessibilityLabel={t('settings.rows.privacyPolicy')}
           />
           <SettingsRow
             icon="information-circle-outline"
-            label="About Lumina"
+            label={t('settings.rows.aboutLumina')}
             onPress={noop}
-            accessibilityLabel="About Lumina"
+            accessibilityLabel={t('settings.rows.aboutLumina')}
           />
         </SettingsSection>
 
@@ -221,11 +253,11 @@ export default function SettingsScreen(): React.JSX.Element {
         <SettingsSection>
           <SettingsRow
             icon="log-out-outline"
-            label="Log out"
+            label={t('settings.rows.logout')}
             right={{ type: 'none' }}
             danger
             onPress={handleSignOut}
-            accessibilityLabel="Log out of Lumina"
+            accessibilityLabel={t('settings.rows.logout')}
           />
         </SettingsSection>
       </ScrollView>

@@ -22,6 +22,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -45,6 +46,7 @@ type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordScreen(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +83,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
         style={[styles.backButton, { padding: theme.spacing.lg }]}
         hitSlop={hitSlop.md}
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('auth.forgotPassword.goBack')}
       >
         <Ionicons
           name="arrow-back-outline"
@@ -130,7 +132,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                 align="center"
                 style={{ marginBottom: theme.spacing.sm }}
               >
-                Check your email
+                {t('auth.forgotPassword.successTitle')}
               </Text>
               <Text
                 variant="callout"
@@ -138,18 +140,18 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                 align="center"
                 style={{ marginBottom: theme.spacing['3xl'], maxWidth: 280 }}
               >
-                We sent a reset link to{' '}
+                {t('auth.forgotPassword.successMessagePrefix')}{' '}
                 <Text variant="callout" color="primary">
                   {getValues('email')}
                 </Text>
-                . Follow the instructions to reset your password.
+                {t('auth.forgotPassword.successMessageSuffix')}
               </Text>
               <Button
-                label="Back to sign in"
+                label={t('auth.forgotPassword.backToLogin')}
                 variant="secondary"
                 size="md"
                 onPress={goBack}
-                accessibilityLabel="Return to sign in screen"
+                accessibilityLabel={t('auth.forgotPassword.backToLoginAccessibilityLabel')}
               />
             </View>
           ) : (
@@ -160,15 +162,14 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                 color="primary"
                 style={{ marginBottom: theme.spacing.sm }}
               >
-                Forgot password?
+                {t('auth.forgotPassword.title')}
               </Text>
               <Text
                 variant="callout"
                 color="secondary"
                 style={{ marginBottom: theme.spacing['3xl'], maxWidth: 300 }}
               >
-                Enter your email address and we&apos;ll send you instructions
-                to reset your password.
+                {t('auth.forgotPassword.subtitle')}
               </Text>
 
               <View style={{ gap: theme.spacing.xl }}>
@@ -178,8 +179,8 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                   render={({ field: { onChange, onBlur, value, ref } }) => (
                     <Input
                       ref={ref}
-                      label="Email"
-                      placeholder="you@example.com"
+                      label={t('auth.forgotPassword.emailLabel')}
+                      placeholder={t('auth.forgotPassword.emailPlaceholder')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -190,19 +191,19 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                       returnKeyType="done"
                       onSubmitEditing={handleSubmit(onSubmit)}
                       textContentType="emailAddress"
-                      accessibilityLabel="Email address"
+                      accessibilityLabel={t('auth.forgotPassword.emailLabel')}
                     />
                   )}
                 />
 
                 <Button
-                  label="Send reset link"
+                  label={t('auth.forgotPassword.submit')}
                   variant="primary"
                   size="lg"
                   fullWidth
                   loading={isLoading}
                   onPress={handleSubmit(onSubmit)}
-                  accessibilityLabel="Send password reset link"
+                  accessibilityLabel={t('auth.forgotPassword.submitAccessibilityLabel')}
                 />
               </View>
             </View>

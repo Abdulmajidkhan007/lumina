@@ -24,6 +24,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 
 import { loginSchema } from '@/schemas/auth.schema';
 import type { LoginInput } from '@/types/forms';
@@ -36,6 +37,7 @@ import { hitSlop } from '@/constants/layout';
 
 export default function LoginScreen(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const loginMutation = useLogin();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -73,7 +75,9 @@ export default function LoginScreen(): React.JSX.Element {
     <Pressable
       onPress={togglePasswordVisible}
       hitSlop={hitSlop.sm}
-      accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+      accessibilityLabel={
+        passwordVisible ? t('auth.login.hidePassword') : t('auth.login.showPassword')
+      }
       accessibilityRole="button"
     >
       <Ionicons
@@ -119,7 +123,7 @@ export default function LoginScreen(): React.JSX.Element {
               align="center"
               style={{ marginTop: theme.spacing.xl }}
             >
-              Welcome back
+              {t('auth.login.title')}
             </Text>
             <Text
               variant="callout"
@@ -127,7 +131,7 @@ export default function LoginScreen(): React.JSX.Element {
               align="center"
               style={{ marginTop: theme.spacing.xs }}
             >
-              Sign in to continue
+              {t('auth.login.subtitle')}
             </Text>
           </View>
 
@@ -139,8 +143,8 @@ export default function LoginScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value, ref } }) => (
                 <Input
                   ref={ref}
-                  label="Email or phone"
-                  placeholder="you@example.com"
+                  label={t('auth.login.identifierLabel')}
+                  placeholder={t('auth.login.identifierPlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -151,7 +155,7 @@ export default function LoginScreen(): React.JSX.Element {
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   textContentType="emailAddress"
-                  accessibilityLabel="Email or phone"
+                  accessibilityLabel={t('auth.login.identifierLabel')}
                 />
               )}
             />
@@ -162,8 +166,8 @@ export default function LoginScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   ref={passwordRef}
-                  label="Password"
-                  placeholder="Password"
+                  label={t('auth.login.passwordLabel')}
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -173,7 +177,7 @@ export default function LoginScreen(): React.JSX.Element {
                   onSubmitEditing={handleSubmit(onSubmit)}
                   textContentType="password"
                   rightElement={passwordIcon}
-                  accessibilityLabel="Password"
+                  accessibilityLabel={t('auth.login.passwordLabel')}
                 />
               )}
             />
@@ -183,10 +187,10 @@ export default function LoginScreen(): React.JSX.Element {
               onPress={goToForgotPassword}
               style={styles.forgotRow}
               accessibilityRole="button"
-              accessibilityLabel="Forgot password"
+              accessibilityLabel={t('auth.login.forgotPassword')}
             >
               <Text variant="callout" color="accent">
-                Forgot password?
+                {t('auth.login.forgotPassword')}
               </Text>
             </Pressable>
 
@@ -207,34 +211,34 @@ export default function LoginScreen(): React.JSX.Element {
                 <Text variant="caption" color="danger" align="center">
                   {loginMutation.error instanceof Error
                     ? loginMutation.error.message
-                    : 'Sign in failed. Please try again.'}
+                    : t('auth.login.genericError')}
                 </Text>
               </View>
             ) : null}
 
             <Button
-              label="Sign in"
+              label={t('auth.login.submit')}
               variant="primary"
               size="lg"
               fullWidth
               loading={loginMutation.isPending}
               onPress={handleSubmit(onSubmit)}
-              accessibilityLabel="Sign in to Lumina"
+              accessibilityLabel={t('auth.login.submitAccessibilityLabel')}
             />
           </View>
 
           {/* Footer */}
           <View style={[styles.footer, { marginTop: theme.spacing['3xl'] }]}>
             <Text variant="callout" color="secondary">
-              Don&apos;t have an account?{' '}
+              {t('auth.login.noAccount')}{' '}
             </Text>
             <Pressable
               onPress={goToSignup}
               accessibilityRole="button"
-              accessibilityLabel="Create account"
+              accessibilityLabel={t('auth.login.signUpAccessibilityLabel')}
             >
               <Text variant="callout" color="accent">
-                Sign up
+                {t('auth.login.signUp')}
               </Text>
             </Pressable>
           </View>

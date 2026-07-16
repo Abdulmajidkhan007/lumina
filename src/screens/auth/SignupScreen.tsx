@@ -23,6 +23,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 
 import { signupSchema } from '@/schemas/auth.schema';
 import type { SignupInput } from '@/types/forms';
@@ -35,6 +36,7 @@ import { hitSlop } from '@/constants/layout';
 
 export default function SignupScreen(): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const signupMutation = useSignup();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -75,7 +77,9 @@ export default function SignupScreen(): React.JSX.Element {
     <Pressable
       onPress={togglePassword}
       hitSlop={hitSlop.sm}
-      accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+      accessibilityLabel={
+        passwordVisible ? t('auth.signup.hidePassword') : t('auth.signup.showPassword')
+      }
       accessibilityRole="button"
     >
       <Ionicons
@@ -90,7 +94,11 @@ export default function SignupScreen(): React.JSX.Element {
     <Pressable
       onPress={toggleConfirm}
       hitSlop={hitSlop.sm}
-      accessibilityLabel={confirmVisible ? 'Hide confirm password' : 'Show confirm password'}
+      accessibilityLabel={
+        confirmVisible
+          ? t('auth.signup.hideConfirmPassword')
+          : t('auth.signup.showConfirmPassword')
+      }
       accessibilityRole="button"
     >
       <Ionicons
@@ -136,7 +144,7 @@ export default function SignupScreen(): React.JSX.Element {
               align="center"
               style={{ marginTop: theme.spacing.xl }}
             >
-              Create your account
+              {t('auth.signup.title')}
             </Text>
           </View>
 
@@ -148,8 +156,8 @@ export default function SignupScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value, ref } }) => (
                 <Input
                   ref={ref}
-                  label="Email"
-                  placeholder="you@example.com"
+                  label={t('auth.signup.emailLabel')}
+                  placeholder={t('auth.signup.emailPlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -160,7 +168,7 @@ export default function SignupScreen(): React.JSX.Element {
                   returnKeyType="next"
                   onSubmitEditing={() => usernameRef.current?.focus()}
                   textContentType="emailAddress"
-                  accessibilityLabel="Email address"
+                  accessibilityLabel={t('auth.signup.emailLabel')}
                 />
               )}
             />
@@ -171,8 +179,8 @@ export default function SignupScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   ref={usernameRef}
-                  label="Username"
-                  placeholder="yourhandle"
+                  label={t('auth.signup.usernameLabel')}
+                  placeholder={t('auth.signup.usernamePlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -182,7 +190,7 @@ export default function SignupScreen(): React.JSX.Element {
                   returnKeyType="next"
                   onSubmitEditing={() => displayNameRef.current?.focus()}
                   textContentType="username"
-                  accessibilityLabel="Username"
+                  accessibilityLabel={t('auth.signup.usernameLabel')}
                 />
               )}
             />
@@ -193,8 +201,8 @@ export default function SignupScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   ref={displayNameRef}
-                  label="Display name"
-                  placeholder="Your Name"
+                  label={t('auth.signup.displayNameLabel')}
+                  placeholder={t('auth.signup.displayNamePlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -203,7 +211,7 @@ export default function SignupScreen(): React.JSX.Element {
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   textContentType="name"
-                  accessibilityLabel="Display name"
+                  accessibilityLabel={t('auth.signup.displayNameLabel')}
                 />
               )}
             />
@@ -214,8 +222,8 @@ export default function SignupScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   ref={passwordRef}
-                  label="Password"
-                  placeholder="Min. 8 characters"
+                  label={t('auth.signup.passwordLabel')}
+                  placeholder={t('auth.signup.passwordPlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -225,7 +233,7 @@ export default function SignupScreen(): React.JSX.Element {
                   onSubmitEditing={() => confirmRef.current?.focus()}
                   textContentType="newPassword"
                   rightElement={passwordIcon}
-                  accessibilityLabel="Password"
+                  accessibilityLabel={t('auth.signup.passwordLabel')}
                 />
               )}
             />
@@ -236,8 +244,8 @@ export default function SignupScreen(): React.JSX.Element {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   ref={confirmRef}
-                  label="Confirm password"
-                  placeholder="Repeat password"
+                  label={t('auth.signup.confirmPasswordLabel')}
+                  placeholder={t('auth.signup.confirmPasswordPlaceholder')}
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -247,7 +255,7 @@ export default function SignupScreen(): React.JSX.Element {
                   onSubmitEditing={handleSubmit(onSubmit)}
                   textContentType="newPassword"
                   rightElement={confirmIcon}
-                  accessibilityLabel="Confirm password"
+                  accessibilityLabel={t('auth.signup.confirmPasswordLabel')}
                 />
               )}
             />
@@ -269,34 +277,34 @@ export default function SignupScreen(): React.JSX.Element {
                 <Text variant="caption" color="danger" align="center">
                   {signupMutation.error instanceof Error
                     ? signupMutation.error.message
-                    : 'Sign up failed. Please try again.'}
+                    : t('auth.signup.genericError')}
                 </Text>
               </View>
             ) : null}
 
             <Button
-              label="Create account"
+              label={t('auth.signup.submit')}
               variant="primary"
               size="lg"
               fullWidth
               loading={signupMutation.isPending}
               onPress={handleSubmit(onSubmit)}
-              accessibilityLabel="Create Lumina account"
+              accessibilityLabel={t('auth.signup.submitAccessibilityLabel')}
             />
           </View>
 
           {/* Footer */}
           <View style={[styles.footer, { marginTop: theme.spacing['3xl'] }]}>
             <Text variant="callout" color="secondary">
-              Already have an account?{' '}
+              {t('auth.signup.haveAccount')}{' '}
             </Text>
             <Pressable
               onPress={goToLogin}
               accessibilityRole="button"
-              accessibilityLabel="Sign in"
+              accessibilityLabel={t('auth.signup.signInAccessibilityLabel')}
             >
               <Text variant="callout" color="accent">
-                Sign in
+                {t('auth.signup.signIn')}
               </Text>
             </Pressable>
           </View>

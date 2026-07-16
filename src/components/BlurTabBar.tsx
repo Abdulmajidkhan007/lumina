@@ -25,6 +25,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -36,9 +37,18 @@ import { tabBarHeight } from '@/constants/layout';
 // Types
 // ---------------------------------------------------------------------------
 
+/** Translation keys for tab labels — resolved via t() at render time so the
+ *  module-level config below stays locale-agnostic. */
+type TabLabelKey =
+  | 'tabs.home'
+  | 'tabs.explore'
+  | 'tabs.create'
+  | 'tabs.reels'
+  | 'tabs.profile';
+
 type TabConfig = {
   name: string;
-  label: string;
+  labelKey: TabLabelKey;
   icon: string;
   iconActive: string;
 };
@@ -50,31 +60,31 @@ type TabConfig = {
 const TAB_CONFIG: TabConfig[] = [
   {
     name: 'Feed',
-    label: 'Home',
+    labelKey: 'tabs.home',
     icon: 'home-outline',
     iconActive: 'home',
   },
   {
     name: 'Search',
-    label: 'Explore',
+    labelKey: 'tabs.explore',
     icon: 'search-outline',
     iconActive: 'search',
   },
   {
     name: 'Create',
-    label: 'Create',
+    labelKey: 'tabs.create',
     icon: 'add-circle-outline',
     iconActive: 'add-circle',
   },
   {
     name: 'Reels',
-    label: 'Reels',
+    labelKey: 'tabs.reels',
     icon: 'play-circle-outline',
     iconActive: 'play-circle',
   },
   {
     name: 'Profile',
-    label: 'Profile',
+    labelKey: 'tabs.profile',
     icon: 'person-circle-outline',
     iconActive: 'person-circle',
   },
@@ -102,7 +112,9 @@ const TabItem = React.memo(function TabItem({
   isProfileTab,
 }: TabItemProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const currentUser = useCurrentUser();
+  const label = t(config.labelKey);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -146,7 +158,7 @@ const TabItem = React.memo(function TabItem({
       onPressOut={handlePressOut}
       style={styles.tabItem}
       accessibilityRole="tab"
-      accessibilityLabel={config.label}
+      accessibilityLabel={label}
       accessibilityState={{ selected: isActive }}
     >
       <Animated.View style={[styles.tabItemInner, animatedStyle]}>
@@ -188,7 +200,7 @@ const TabItem = React.memo(function TabItem({
               { color: iconColor },
             ]}
           >
-            {config.label}
+            {label}
           </Text>
         ) : null}
       </Animated.View>

@@ -1,0 +1,132 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "retry": "Qayta urinish",
+    "loading": "Yuklanmoqda…",
+    "error": "Xatolik yuz berdi"
+  },
+  "tabs": {
+    "home": "Bosh sahifa",
+    "explore": "Qidiruv",
+    "create": "Yaratish",
+    "reels": "Reels",
+    "profile": "Profil"
+  },
+  "auth": {
+    "login": {
+      "title": "Xush kelibsiz",
+      "subtitle": "Davom etish uchun tizimga kiring",
+      "identifierLabel": "Email yoki telefon",
+      "identifierPlaceholder": "you@example.com",
+      "passwordLabel": "Parol",
+      "passwordPlaceholder": "Parol",
+      "showPassword": "Parolni ko'rsatish",
+      "hidePassword": "Parolni yashirish",
+      "forgotPassword": "Parolni unutdingizmi?",
+      "submit": "Kirish",
+      "submitAccessibilityLabel": "Lumina'ga kirish",
+      "noAccount": "Hisobingiz yo'qmi?",
+      "signUp": "Ro'yxatdan o'tish",
+      "signUpAccessibilityLabel": "Hisob yaratish",
+      "genericError": "Kirishda xatolik yuz berdi. Qayta urinib ko'ring."
+    },
+    "signup": {
+      "title": "Hisob yarating",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "usernameLabel": "Foydalanuvchi nomi",
+      "usernamePlaceholder": "foydalanuvchinomi",
+      "displayNameLabel": "Ko'rsatiladigan ism",
+      "displayNamePlaceholder": "Ismingiz",
+      "passwordLabel": "Parol",
+      "passwordPlaceholder": "Kamida 8 ta belgi",
+      "confirmPasswordLabel": "Parolni tasdiqlang",
+      "confirmPasswordPlaceholder": "Parolni takrorlang",
+      "showPassword": "Parolni ko'rsatish",
+      "hidePassword": "Parolni yashirish",
+      "showConfirmPassword": "Tasdiqlash parolini ko'rsatish",
+      "hideConfirmPassword": "Tasdiqlash parolini yashirish",
+      "submit": "Hisob yaratish",
+      "submitAccessibilityLabel": "Lumina hisobini yaratish",
+      "haveAccount": "Hisobingiz bormi?",
+      "signIn": "Kirish",
+      "signInAccessibilityLabel": "Kirish",
+      "genericError": "Ro'yxatdan o'tishda xatolik yuz berdi. Qayta urinib ko'ring."
+    },
+    "forgotPassword": {
+      "title": "Parolni unutdingizmi?",
+      "subtitle": "Email manzilingizni kiriting — biz sizga parolni tiklash bo'yicha ko'rsatmalarni yuboramiz.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Havolani yuborish",
+      "submitAccessibilityLabel": "Parolni tiklash havolasini yuborish",
+      "goBack": "Orqaga",
+      "successTitle": "Emailingizni tekshiring",
+      "successMessagePrefix": "Parolni tiklash havolasini",
+      "successMessageSuffix": " manziliga yubordik. Parolni tiklash uchun ko'rsatmalarga amal qiling.",
+      "backToLogin": "Kirish sahifasiga qaytish",
+      "backToLoginAccessibilityLabel": "Kirish sahifasiga qaytish"
+    }
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "goBack": "Orqaga",
+    "sections": {
+      "account": "Hisob",
+      "preferences": "Sozlamalar",
+      "privacy": "Maxfiylik",
+      "support": "Yordam"
+    },
+    "rows": {
+      "editProfile": "Profilni tahrirlash",
+      "changePassword": "Parolni o'zgartirish",
+      "notifications": "Bildirishnomalar",
+      "appearance": "Ko'rinish",
+      "theme": {
+        "light": "Yorug'",
+        "dark": "Qorong'i",
+        "system": "Tizim"
+      },
+      "autoplay": "Videolarni avtomatik ijro etish",
+      "haptics": "Tebranish signali",
+      "language": {
+        "label": "Til",
+        "english": "Inglizcha",
+        "uzbek": "O'zbekcha",
+        "system": "Tizim tili"
+      },
+      "privateAccount": "Yopiq hisob",
+      "blockedAccounts": "Bloklangan hisoblar",
+      "activityStatus": "Faollik holati",
+      "helpCentre": "Yordam markazi",
+      "privacyPolicy": "Maxfiylik siyosati",
+      "aboutLumina": "Lumina haqida",
+      "logout": "Chiqish"
+    },
+    "logoutConfirm": {
+      "title": "Chiqish",
+      "message": "Lumina'dan chiqishga aminmisiz?",
+      "confirm": "Chiqish",
+      "cancel": "Bekor qilish"
+    }
+  },
+  "editProfile": {
+    "title": "Profilni tahrirlash",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "displayNameLabel": "Ko'rsatiladigan ism",
+    "displayNamePlaceholder": "Ismingiz",
+    "usernameLabel": "Foydalanuvchi nomi",
+    "usernamePlaceholder": "foydalanuvchinomi",
+    "bioLabel": "Bio",
+    "bioPlaceholder": "O'zingiz haqingizda yozing…",
+    "privateLabel": "Yopiq hisob",
+    "privateDescription": "Faqat tasdiqlangan obunachilar postlaringizni ko'ra oladi",
+    "changePhoto": "Rasmni almashtirish",
+    "avatarAccessibilityLabel": "Profil rasmingiz",
+    "savedTitle": "Saqlandi",
+    "savedMessage": "Profilingiz yangilandi."
+  }
+}

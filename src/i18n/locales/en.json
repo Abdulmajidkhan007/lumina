@@ -1,0 +1,132 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "retry": "Retry",
+    "loading": "Loading…",
+    "error": "Something went wrong"
+  },
+  "tabs": {
+    "home": "Home",
+    "explore": "Explore",
+    "create": "Create",
+    "reels": "Reels",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to continue",
+      "identifierLabel": "Email or phone",
+      "identifierPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "submitAccessibilityLabel": "Sign in to Lumina",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "signUpAccessibilityLabel": "Create account",
+      "genericError": "Sign in failed. Please try again."
+    },
+    "signup": {
+      "title": "Create your account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "yourhandle",
+      "displayNameLabel": "Display name",
+      "displayNamePlaceholder": "Your Name",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "showConfirmPassword": "Show confirm password",
+      "hideConfirmPassword": "Hide confirm password",
+      "submit": "Create account",
+      "submitAccessibilityLabel": "Create Lumina account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "signInAccessibilityLabel": "Sign in",
+      "genericError": "Sign up failed. Please try again."
+    },
+    "forgotPassword": {
+      "title": "Forgot password?",
+      "subtitle": "Enter your email address and we'll send you instructions to reset your password.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "submitAccessibilityLabel": "Send password reset link",
+      "goBack": "Go back",
+      "successTitle": "Check your email",
+      "successMessagePrefix": "We sent a reset link to",
+      "successMessageSuffix": ". Follow the instructions to reset your password.",
+      "backToLogin": "Back to sign in",
+      "backToLoginAccessibilityLabel": "Return to sign in screen"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "goBack": "Go back",
+    "sections": {
+      "account": "Account",
+      "preferences": "Preferences",
+      "privacy": "Privacy",
+      "support": "Support"
+    },
+    "rows": {
+      "editProfile": "Edit Profile",
+      "changePassword": "Change Password",
+      "notifications": "Notifications",
+      "appearance": "Appearance",
+      "theme": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "autoplay": "Autoplay videos",
+      "haptics": "Haptic feedback",
+      "language": {
+        "label": "Language",
+        "english": "English",
+        "uzbek": "O'zbekcha",
+        "system": "System"
+      },
+      "privateAccount": "Private account",
+      "blockedAccounts": "Blocked accounts",
+      "activityStatus": "Activity status",
+      "helpCentre": "Help Centre",
+      "privacyPolicy": "Privacy Policy",
+      "aboutLumina": "About Lumina",
+      "logout": "Log out"
+    },
+    "logoutConfirm": {
+      "title": "Sign out",
+      "message": "Are you sure you want to sign out of Lumina?",
+      "confirm": "Sign out",
+      "cancel": "Cancel"
+    }
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "cancel": "Cancel",
+    "save": "Save",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "Your name",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "username",
+    "bioLabel": "Bio",
+    "bioPlaceholder": "Tell the world about yourself…",
+    "privateLabel": "Private account",
+    "privateDescription": "Only approved followers can see your posts",
+    "changePhoto": "Change photo",
+    "avatarAccessibilityLabel": "Your profile photo",
+    "savedTitle": "Saved",
+    "savedMessage": "Your profile has been updated."
+  }
+}
