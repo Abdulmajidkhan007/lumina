@@ -1,0 +1,70 @@
+name: Release AAB
+
+# Manual trigger: builds the signed Android App Bundle for Google Play.
+# Requires repository secrets:
+#   LUMINA_KEYSTORE_BASE64 — base64 of the upload keystore
+#   LUMINA_STORE_PASSWORD  — keystore password
+#   LUMINA_KEY_ALIAS       — key alias (lumina-upload)
+#   LUMINA_KEY_PASSWORD    — key password
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-aab:
+    name: Signed Android App Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check signing secrets
+        env:
+          KS: ${{ secrets.LUMINA_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KS" ]; then
+            echo "::error::LUMINA_KEYSTORE_BASE64 secret is missing. Add the four LUMINA_* secrets in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Decode upload keystore
+        env:
+          KS: ${{ secrets.LUMINA_KEYSTORE_BASE64 }}
+        run: echo "$KS" | base64 -d > android/app/upload.keystore
+
+      - name: Build signed AAB
+        env:
+          LUMINA_UPLOAD_STORE_FILE: upload.keystore
+          LUMINA_UPLOAD_STORE_PASSWORD: ${{ secrets.LUMINA_STORE_PASSWORD }}
+          LUMINA_UPLOAD_KEY_ALIAS: ${{ secrets.LUMINA_KEY_ALIAS }}
+          LUMINA_UPLOAD_KEY_PASSWORD: ${{ secrets.LUMINA_KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumina-play-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f android/app/upload.keystore
