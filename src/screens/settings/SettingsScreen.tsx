@@ -5,7 +5,7 @@
  * and a danger Log Out row.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,14 +17,29 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
+import { Sheet } from '@/design-system/primitives/Sheet';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
+import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { ThemeToggle } from '@/features/settings/components/ThemeToggle';
 import { setAppLocale } from '@/i18n';
+
+// ---------------------------------------------------------------------------
+// Language picker options — order shown in the Sheet: English, Русский,
+// O'zbekcha, System. `as const` keeps `labelKey` narrowed to the literal
+// translation-key union so `t()` stays type-checked.
+// ---------------------------------------------------------------------------
+
+const LANGUAGE_OPTIONS = [
+  { locale: 'en', labelKey: 'settings.rows.language.english' },
+  { locale: 'ru', labelKey: 'settings.rows.language.russian' },
+  { locale: 'uz', labelKey: 'settings.rows.language.uzbek' },
+  { locale: 'system', labelKey: 'settings.rows.language.system' },
+] as const satisfies ReadonlyArray<{ locale: AppLocale; labelKey: string }>;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -38,6 +53,7 @@ export default function SettingsScreen(): React.JSX.Element {
   const { autoplayVideos, hapticsEnabled, setAutoplayVideos, setHapticsEnabled } =
     usePreferencesStore();
   const locale = useLocale();
+  const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
@@ -80,6 +96,8 @@ export default function SettingsScreen(): React.JSX.Element {
     switch (locale) {
       case 'en':
         return t('settings.rows.language.english');
+      case 'ru':
+        return t('settings.rows.language.russian');
       case 'uz':
         return t('settings.rows.language.uzbek');
       case 'system':
@@ -88,14 +106,18 @@ export default function SettingsScreen(): React.JSX.Element {
     }
   }, [locale, t]);
 
-  const handleLanguagePress = useCallback(() => {
-    Alert.alert(t('settings.rows.language.label'), undefined, [
-      { text: t('settings.rows.language.english'), onPress: () => setAppLocale('en') },
-      { text: t('settings.rows.language.uzbek'), onPress: () => setAppLocale('uz') },
-      { text: t('settings.rows.language.system'), onPress: () => setAppLocale('system') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  }, [t]);
+  const openLanguageSheet = useCallback(() => {
+    setLanguageSheetVisible(true);
+  }, []);
+
+  const closeLanguageSheet = useCallback(() => {
+    setLanguageSheetVisible(false);
+  }, []);
+
+  const handleSelectLocale = useCallback((next: AppLocale) => {
+    setAppLocale(next);
+    setLanguageSheetVisible(false);
+  }, []);
 
   const noop = useCallback(() => {}, []);
 
@@ -200,7 +222,7 @@ export default function SettingsScreen(): React.JSX.Element {
             icon="language-outline"
             label={t('settings.rows.language.label')}
             sublabel={currentLanguageLabel}
-            onPress={handleLanguagePress}
+            onPress={openLanguageSheet}
             accessibilityLabel={t('settings.rows.language.label')}
           />
         </SettingsSection>
@@ -261,6 +283,49 @@ export default function SettingsScreen(): React.JSX.Element {
           />
         </SettingsSection>
       </ScrollView>
+
+      {/* Language picker sheet */}
+      <Sheet visible={languageSheetVisible} onDismiss={closeLanguageSheet}>
+        <Text
+          variant="bodyStrong"
+          color="primary"
+          style={[
+            styles.languageSheetTitle,
+            { paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md },
+          ]}
+        >
+          {t('settings.rows.language.label')}
+        </Text>
+        {LANGUAGE_OPTIONS.map((option) => {
+          const isActive = locale === option.locale;
+          return (
+            <Pressable
+              key={option.locale}
+              onPress={() => handleSelectLocale(option.locale)}
+              style={[
+                styles.languageRow,
+                { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t(option.labelKey)}
+              accessibilityState={{ selected: isActive }}
+            >
+              <Text variant="callout" color="primary">
+                {t(option.labelKey)}
+              </Text>
+              {isActive ? (
+                <Ionicons
+                  name="checkmark"
+                  size={20}
+                  color={theme.colors.accent}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </Sheet>
     </SafeAreaView>
   );
 }
@@ -282,5 +347,13 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 16,
+  },
+  languageSheetTitle: {
+    // padding applied inline via theme spacing
+  },
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });

@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
@@ -52,6 +52,20 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   const handleFollow = useCallback(() => {
     followUser({ userId: user.id, follow: !user.isFollowedByMe });
   }, [followUser, user.id, user.isFollowedByMe]);
+
+  const handleShareProfile = useCallback(() => {
+    const share = async (): Promise<void> => {
+      try {
+        await Share.share({
+          message: `https://lumina.app/user/${user.id}`,
+        });
+      } catch {
+        // Share sheet dismissed or failed — no action needed.
+      }
+      onShareProfile?.();
+    };
+    void share();
+  }, [user.id, onShareProfile]);
 
   return (
     <View
@@ -140,7 +154,7 @@ export const ProfileHeader = React.memo(function ProfileHeader({
               variant="secondary"
               size="sm"
               style={styles.actionButton}
-              onPress={onShareProfile}
+              onPress={handleShareProfile}
               accessibilityLabel="Share your profile"
             />
           </>

@@ -1,10 +1,10 @@
 /**
  * Lumina — i18n bootstrap
  *
- * Initialises i18next + react-i18next with the English and Uzbek resource
- * bundles. The active language is driven by `usePreferencesStore`'s
- * `locale` field ('en' | 'uz' | 'system'):
- *   - 'en' / 'uz' map directly to a bundled language.
+ * Initialises i18next + react-i18next with the English, Uzbek, and Russian
+ * resource bundles. The active language is driven by `usePreferencesStore`'s
+ * `locale` field ('en' | 'uz' | 'ru' | 'system'):
+ *   - 'en' / 'uz' / 'ru' map directly to a bundled language.
  *   - 'system' would ideally defer to the device locale, but Lumina is a
  *     bare React Native app that intentionally avoids extra native modules
  *     just for locale detection — so 'system' falls back to English for
@@ -23,6 +23,7 @@ import type { AppLocale } from '@/stores/preferences.store';
 
 import en from './locales/en.json';
 import uz from './locales/uz.json';
+import ru from './locales/ru.json';
 
 // ---------------------------------------------------------------------------
 // Resources
@@ -33,6 +34,7 @@ export const defaultNS = 'translation' as const;
 const resources = {
   en: { translation: en },
   uz: { translation: uz },
+  ru: { translation: ru },
 } as const;
 
 export type SupportedLanguage = keyof typeof resources;
@@ -43,7 +45,7 @@ export type SupportedLanguage = keyof typeof resources;
 
 /** Maps the persisted app locale preference to a bundled i18next language. */
 function resolveLanguage(locale: AppLocale): SupportedLanguage {
-  if (locale === 'en' || locale === 'uz') {
+  if (locale === 'en' || locale === 'uz' || locale === 'ru') {
     return locale;
   }
   // 'system' — no device-locale lookup wired up yet; default to English.

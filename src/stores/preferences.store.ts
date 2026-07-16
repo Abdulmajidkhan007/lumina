@@ -17,7 +17,7 @@ export type ColorSchemePreference = 'light' | 'dark' | 'system';
  * update i18next's active language. 'system' defers to the device locale
  * where available and falls back to English otherwise.
  */
-export type AppLocale = 'en' | 'uz' | 'system';
+export type AppLocale = 'en' | 'uz' | 'ru' | 'system';
 
 type PreferencesState = {
   /** Colour scheme preference — read by design-system/theme/theme.ts */

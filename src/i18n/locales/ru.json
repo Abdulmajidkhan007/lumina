@@ -1,0 +1,133 @@
+{
+  "common": {
+    "ok": "ОК",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "retry": "Повторить",
+    "loading": "Загрузка…",
+    "error": "Что-то пошло не так"
+  },
+  "tabs": {
+    "home": "Главная",
+    "explore": "Поиск",
+    "create": "Создать",
+    "reels": "Reels",
+    "profile": "Профиль"
+  },
+  "auth": {
+    "login": {
+      "title": "С возвращением",
+      "subtitle": "Войдите, чтобы продолжить",
+      "identifierLabel": "Email или телефон",
+      "identifierPlaceholder": "you@example.com",
+      "passwordLabel": "Пароль",
+      "passwordPlaceholder": "Пароль",
+      "showPassword": "Показать пароль",
+      "hidePassword": "Скрыть пароль",
+      "forgotPassword": "Забыли пароль?",
+      "submit": "Войти",
+      "submitAccessibilityLabel": "Войти в Lumina",
+      "noAccount": "Нет аккаунта?",
+      "signUp": "Зарегистрироваться",
+      "signUpAccessibilityLabel": "Создать аккаунт",
+      "genericError": "Не удалось войти. Попробуйте ещё раз."
+    },
+    "signup": {
+      "title": "Создайте аккаунт",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "usernameLabel": "Имя пользователя",
+      "usernamePlaceholder": "yourhandle",
+      "displayNameLabel": "Отображаемое имя",
+      "displayNamePlaceholder": "Ваше имя",
+      "passwordLabel": "Пароль",
+      "passwordPlaceholder": "Минимум 8 символов",
+      "confirmPasswordLabel": "Подтвердите пароль",
+      "confirmPasswordPlaceholder": "Повторите пароль",
+      "showPassword": "Показать пароль",
+      "hidePassword": "Скрыть пароль",
+      "showConfirmPassword": "Показать подтверждение пароля",
+      "hideConfirmPassword": "Скрыть подтверждение пароля",
+      "submit": "Создать аккаунт",
+      "submitAccessibilityLabel": "Создать аккаунт Lumina",
+      "haveAccount": "Уже есть аккаунт?",
+      "signIn": "Войти",
+      "signInAccessibilityLabel": "Войти",
+      "genericError": "Не удалось зарегистрироваться. Попробуйте ещё раз."
+    },
+    "forgotPassword": {
+      "title": "Забыли пароль?",
+      "subtitle": "Введите свой email — мы отправим инструкции по восстановлению пароля.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Отправить ссылку",
+      "submitAccessibilityLabel": "Отправить ссылку для сброса пароля",
+      "goBack": "Назад",
+      "successTitle": "Проверьте почту",
+      "successMessagePrefix": "Мы отправили ссылку для восстановления на",
+      "successMessageSuffix": ". Следуйте инструкциям, чтобы сбросить пароль.",
+      "backToLogin": "Вернуться ко входу",
+      "backToLoginAccessibilityLabel": "Вернуться на экран входа"
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "goBack": "Назад",
+    "sections": {
+      "account": "Аккаунт",
+      "preferences": "Настройки",
+      "privacy": "Конфиденциальность",
+      "support": "Поддержка"
+    },
+    "rows": {
+      "editProfile": "Редактировать профиль",
+      "changePassword": "Изменить пароль",
+      "notifications": "Уведомления",
+      "appearance": "Внешний вид",
+      "theme": {
+        "light": "Светлая",
+        "dark": "Тёмная",
+        "system": "Системная"
+      },
+      "autoplay": "Автовоспроизведение видео",
+      "haptics": "Тактильный отклик",
+      "language": {
+        "label": "Язык",
+        "english": "English",
+        "russian": "Русский",
+        "uzbek": "O'zbekcha",
+        "system": "Системный"
+      },
+      "privateAccount": "Закрытый аккаунт",
+      "blockedAccounts": "Заблокированные аккаунты",
+      "activityStatus": "Статус активности",
+      "helpCentre": "Центр помощи",
+      "privacyPolicy": "Политика конфиденциальности",
+      "aboutLumina": "О Lumina",
+      "logout": "Выйти"
+    },
+    "logoutConfirm": {
+      "title": "Выйти",
+      "message": "Вы уверены, что хотите выйти из Lumina?",
+      "confirm": "Выйти",
+      "cancel": "Отмена"
+    }
+  },
+  "editProfile": {
+    "title": "Редактировать профиль",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "displayNameLabel": "Отображаемое имя",
+    "displayNamePlaceholder": "Ваше имя",
+    "usernameLabel": "Имя пользователя",
+    "usernamePlaceholder": "username",
+    "bioLabel": "О себе",
+    "bioPlaceholder": "Расскажите о себе миру…",
+    "privateLabel": "Закрытый аккаунт",
+    "privateDescription": "Только подтверждённые подписчики смогут видеть ваши публикации",
+    "changePhoto": "Изменить фото",
+    "avatarAccessibilityLabel": "Ваше фото профиля",
+    "savedTitle": "Сохранено",
+    "savedMessage": "Ваш профиль обновлён."
+  }
+}
