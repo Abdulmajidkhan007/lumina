@@ -179,8 +179,45 @@ jest.mock('react-native-video', () => {
 // @react-native-firebase/* — empty factories, only needed if a test's import
 // graph happens to reach them (none of the current suites do).
 // ---------------------------------------------------------------------------
-jest.mock('@react-native-firebase/app', () => ({ __esModule: true, default: () => ({}) }));
-jest.mock('@react-native-firebase/auth', () => ({ __esModule: true, default: () => ({}) }));
-jest.mock('@react-native-firebase/firestore', () => ({ __esModule: true, default: () => ({}) }));
+jest.mock('@react-native-firebase/app', () => ({
+  __esModule: true,
+  default: () => ({}),
+  // No native config in tests -> isFirebaseConfigured() is false and the
+  // api client falls back to the mock provider.
+  getApps: () => [],
+  getApp: () => ({}),
+}));
+jest.mock('@react-native-firebase/auth', () => ({
+  __esModule: true,
+  default: () => ({}),
+  getAuth: () => ({ currentUser: null }),
+}));
+jest.mock('@react-native-firebase/firestore', () => ({
+  __esModule: true,
+  default: () => ({}),
+  getFirestore: () => ({}),
+  collection: () => ({}),
+  doc: () => ({}),
+  getDoc: async () => ({ exists: () => false }),
+  getDocs: async () => ({ docs: [], empty: true, size: 0 }),
+  query: () => ({}),
+  where: () => ({}),
+  orderBy: () => ({}),
+  startAfter: () => ({}),
+  limit: () => ({}),
+  documentId: () => ({}),
+  increment: () => ({}),
+  runTransaction: async () => undefined,
+  writeBatch: () => ({ update: () => undefined, commit: async () => undefined }),
+  setDoc: async () => undefined,
+  updateDoc: async () => undefined,
+}));
 jest.mock('@react-native-firebase/messaging', () => ({ __esModule: true, default: () => ({}) }));
-jest.mock('@react-native-firebase/storage', () => ({ __esModule: true, default: () => ({}) }));
+jest.mock('@react-native-firebase/storage', () => ({
+  __esModule: true,
+  default: () => ({}),
+  getStorage: () => ({}),
+  ref: () => ({}),
+  putFile: async () => undefined,
+  getDownloadURL: async () => '',
+}));

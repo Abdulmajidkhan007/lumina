@@ -36,8 +36,8 @@ import { isFirebaseConfigured } from '@/lib/firebase';
 
 type ApiProvider = 'mock' | 'supabase' | 'firebase';
 
-// ↓ ONE-LINE SWAP: change 'mock' to 'supabase' (or another provider)
-const API_PROVIDER: ApiProvider = 'mock';
+// ↓ ONE-LINE SWAP: 'mock' | 'firebase' | 'supabase'
+const API_PROVIDER: ApiProvider = 'firebase';
 
 // ---------------------------------------------------------------------------
 // Factory
