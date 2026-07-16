@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Lumina — Cloud Storage security rules.
+// Paste into: Firebase Console -> Storage -> Rules -> Publish.
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Media is user-generated and app-visible to any signed-in user.
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+    // Users may only write under their own folder, max 50 MB per file.
+    match /posts/{uid}/{fileName} {
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 50 * 1024 * 1024;
+    }
+    match /avatars/{uid}/{fileName} {
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 10 * 1024 * 1024;
+    }
+  }
+}

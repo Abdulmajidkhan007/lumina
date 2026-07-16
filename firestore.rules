@@ -1,0 +1,116 @@
+rules_version = '2';
+
+// Lumina — Firestore security rules.
+// Paste into: Firebase Console -> Firestore Database -> Rules -> Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // True when an update touches ONLY the listed fields (counter bumps).
+    function onlyKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---------------- users ----------------
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if isOwner(uid);
+      // Owner edits own profile; anyone signed-in may only bump social counters
+      // (follow/unfollow transactions touch the other user's counts).
+      allow update: if isOwner(uid)
+                    || (signedIn() && onlyKeys(['followerCount', 'followingCount', 'postCount']));
+      allow delete: if false;
+
+      match /saves/{postId} {
+        allow read, write: if isOwner(uid);
+      }
+      match /seenStories/{storyId} {
+        allow read, write: if isOwner(uid);
+      }
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isOwner(uid);
+        // Other users generate notifications for you (like/comment/follow).
+        allow create: if signedIn();
+      }
+    }
+
+    // ---------------- posts ----------------
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if signedIn()
+                    && (resource.data.authorId == request.auth.uid
+                        || onlyKeys(['likeCount', 'commentCount']));
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+      match /likes/{uid} {
+        allow read: if signedIn();
+        allow write: if isOwner(uid);
+      }
+      match /saves/{uid} {
+        allow read: if signedIn();
+        allow write: if isOwner(uid);
+      }
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    // ---------------- reels ----------------
+    match /reels/{reelId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if signedIn()
+                    && (resource.data.authorId == request.auth.uid
+                        || onlyKeys(['likeCount', 'commentCount', 'shareCount']));
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+      match /likes/{uid} {
+        allow read: if signedIn();
+        allow write: if isOwner(uid);
+      }
+      match /saves/{uid} {
+        allow read: if signedIn();
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ---------------- stories ----------------
+    match /stories/{storyId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    // ---------------- follows ----------------
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.followerId == request.auth.uid;
+    }
+
+    // ---------------- messaging ----------------
+    match /conversations/{conversationId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if signedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow update: if signedIn() && request.auth.uid in resource.data.participantIds;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read, create: if signedIn()
+          && request.auth.uid in
+             get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
