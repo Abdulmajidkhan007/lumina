@@ -13,10 +13,10 @@ import {
   signOut,
 } from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
 import type { IAuthApi, AuthSession } from '@/data/api/contracts';
 import type { User } from '@/types/models';
-import type { LoginInput, SignupInput } from '@/types/forms';
+import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
 import { userSchema } from '@/schemas';
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase';
 import type { UserDocFields } from './helpers';
@@ -147,6 +147,22 @@ export class FirebaseAuthApi implements IAuthApi {
     if (!current) {
       throw new Error('Not authenticated');
     }
+    return this.fetchOrCreateProfile(current);
+  }
+
+  async updateProfile(input: EditProfileInput): Promise<User> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current) {
+      throw new Error('Not authenticated');
+    }
+    const bio = input.bio && input.bio.length > 0 ? input.bio : null;
+    await updateDoc(usersCollectionDoc(current.uid), {
+      displayName: input.displayName,
+      username: input.username,
+      usernameLower: input.username.toLowerCase(),
+      bio,
+      isPrivate: input.isPrivate,
+    });
     return this.fetchOrCreateProfile(current);
   }
 }

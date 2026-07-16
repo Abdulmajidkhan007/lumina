@@ -26,6 +26,8 @@ type AuthState = {
 type AuthActions = {
   setSession(session: AuthSession): void;
   clearSession(): void;
+  /** Swaps the session's user object in place, keeping the existing token */
+  updateCurrentUser(user: User): void;
   /** Reads the stored token and fetches the current user to rehydrate state */
   hydrate(): Promise<void>;
 };
@@ -34,7 +36,7 @@ type AuthActions = {
 // Store
 // ---------------------------------------------------------------------------
 
-export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
+export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
   session: null,
   status: 'idle',
 
@@ -46,6 +48,12 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   clearSession() {
     void secureStorage.deleteToken();
     set({ session: null, status: 'unauthenticated' });
+  },
+
+  updateCurrentUser(user: User) {
+    const { session } = get();
+    if (!session) return;
+    set({ session: { ...session, user } });
   },
 
   async hydrate() {

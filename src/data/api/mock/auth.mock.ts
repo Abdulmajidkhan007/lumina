@@ -1,6 +1,6 @@
 import type { IAuthApi, AuthSession } from '@/data/api/contracts';
 import type { User } from '@/types/models';
-import type { LoginInput, SignupInput } from '@/types/forms';
+import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
 import { userIdSchema } from '@/schemas';
 import { currentUser, mutableUsers } from './fixtures';
 import { mockDelay } from './latency';
@@ -45,6 +45,20 @@ export class MockAuthApi implements IAuthApi {
 
   async me(): Promise<User> {
     await mockDelay();
+    return currentUser;
+  }
+
+  async updateProfile(input: EditProfileInput): Promise<User> {
+    await mockDelay();
+    currentUser.displayName = input.displayName;
+    currentUser.username = input.username;
+    currentUser.bio = input.bio && input.bio.length > 0 ? input.bio : null;
+    currentUser.isPrivate = input.isPrivate;
+
+    const idx = mutableUsers.findIndex((u) => u.id === currentUser.id);
+    if (idx !== -1) {
+      mutableUsers[idx] = currentUser;
+    }
     return currentUser;
   }
 }

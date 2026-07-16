@@ -12,8 +12,8 @@
  * so the rest of the flow (preview, caption step, share) is identical
  * regardless of where the media came from.
  *
- * Share triggers a mock POST (setTimeout ~800ms) then invalidates the feed
- * cache and navigates back.
+ * Share calls `useCreatePost` (postsApi.createPost under the hood), which
+ * invalidates the feed cache on success; the screen then navigates back.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -40,8 +40,8 @@ import { Image } from '@/components/Image';
 import { hitSlop, screen } from '@/constants/layout';
 import { Config } from '@/constants/config';
 import { formatDuration } from '@/utils/format';
-import { queryClient } from '@/lib';
-import { queryKeys } from '@/data/query/keys';
+import { useCreatePost } from '@/data/query/hooks';
+import type { CreatePostInput } from '@/data/api/contracts';
 import { useCurrentUser } from '@/stores';
 import {
   MediaPickerGrid,
@@ -83,12 +83,12 @@ export default function CreatePostModal(): React.JSX.Element {
   // ---- Local state ----
   const [step, setStep] = useState<FlowStep>('select');
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
 
-  // ---- Cleanup ref for the mock submit timer ----
-  const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ---- Create post mutation ----
+  const createPostMutation = useCreatePost();
+  const isSubmitting = createPostMutation.isPending;
 
   // ---- Mounted guard — the picker/camera promises can resolve after the
   // screen has been dismissed (e.g. user backs out while the native picker
@@ -98,9 +98,6 @@ export default function CreatePostModal(): React.JSX.Element {
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
-      if (submitTimerRef.current !== null) {
-        clearTimeout(submitTimerRef.current);
-      }
     };
   }, []);
 
@@ -194,19 +191,27 @@ export default function CreatePostModal(): React.JSX.Element {
 
   // ---- Submit ----
   const onSubmit = useCallback(
-    (_values: CreatePostFormValues) => {
-      if (isSubmitting) return;
-      setIsSubmitting(true);
+    (values: CreatePostFormValues) => {
+      if (isSubmitting || selectedMedia.length === 0) return;
 
-      // Mock create — TODO: wire to real postsApi.createPost when available
-      submitTimerRef.current = setTimeout(() => {
-        setIsSubmitting(false);
-        // Invalidate feed so new post appears on navigate back
-        void queryClient.invalidateQueries({ queryKey: queryKeys.feed() });
-        navigation.goBack();
-      }, 800);
+      const input: CreatePostInput = {
+        media: selectedMedia.map((m) => ({
+          uri: m.uri,
+          type: m.kind,
+          width: m.width,
+          height: m.height,
+          durationMs: m.durationMs,
+        })),
+        caption: values.caption,
+      };
+
+      createPostMutation.mutate(input, {
+        onSuccess: () => {
+          if (isMountedRef.current) navigation.goBack();
+        },
+      });
     },
-    [isSubmitting, navigation],
+    [isSubmitting, selectedMedia, createPostMutation, navigation],
   );
 
   // ---- Accessors ----
@@ -428,6 +433,27 @@ export default function CreatePostModal(): React.JSX.Element {
           avatarUri={currentUser?.avatarUrl ?? undefined}
           displayName={currentUser?.displayName ?? undefined}
         />
+        {createPostMutation.isError ? (
+          <View
+            style={[
+              styles.errorBanner,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.danger,
+                borderRadius: theme.radii.md,
+                marginHorizontal: theme.spacing.lg,
+                padding: theme.spacing.md,
+              },
+            ]}
+            accessibilityRole="alert"
+          >
+            <Text variant="caption" color="danger" align="center">
+              {createPostMutation.error instanceof Error
+                ? createPostMutation.error.message
+                : 'Something went wrong while sharing this post.'}
+            </Text>
+          </View>
+        ) : null}
       </>
     );
   }
@@ -504,5 +530,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorBanner: {
+    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 12,
   },
 });

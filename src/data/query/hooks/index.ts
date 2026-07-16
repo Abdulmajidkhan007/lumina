@@ -21,3 +21,5 @@ export { useSendMessage } from './useSendMessage';
 export { useLikeReel } from './useLikeReel';
 export { useSaveReel } from './useSaveReel';
 export { useMarkNotificationsRead } from './useMarkNotificationsRead';
+export { useCreatePost } from './useCreatePost';
+export { useUpdateProfile } from './useUpdateProfile';

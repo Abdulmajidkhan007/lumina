@@ -1,5 +1,5 @@
 import type { User } from '@/types/models';
-import type { LoginInput, SignupInput } from '@/types/forms';
+import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
 
 // ---------------------------------------------------------------------------
 // Auth session shape returned from login / getSession
@@ -20,4 +20,5 @@ export interface IAuthApi {
   logout(): Promise<void>;
   getSession(): Promise<AuthSession | null>;
   me(): Promise<User>;
+  updateProfile(input: EditProfileInput): Promise<User>;
 }

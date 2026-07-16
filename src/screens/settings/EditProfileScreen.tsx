@@ -37,6 +37,7 @@ import { Spinner } from '@/design-system/primitives/Spinner';
 import { useCurrentUser } from '@/stores/auth.store';
 import { editProfileSchema } from '@/schemas';
 import type { EditProfileInput } from '@/types/forms';
+import { useUpdateProfile } from '@/data/query/hooks';
 import { hitSlop } from '@/constants/layout';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,7 @@ export default function EditProfileScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
+  const updateProfileMutation = useUpdateProfile();
 
   const {
     control,
@@ -88,14 +90,19 @@ export default function EditProfileScreen(): React.JSX.Element {
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
   const onSubmit = useCallback(
-    async (_data: EditProfileInput) => {
-      // TODO: call mutation to persist profile update
-      // For now, show a brief success alert and navigate back
-      await new Promise<void>((resolve) => setTimeout(resolve, 600));
-      Alert.alert(t('editProfile.savedTitle'), t('editProfile.savedMessage'));
-      navigation.goBack();
+    async (data: EditProfileInput) => {
+      try {
+        await updateProfileMutation.mutateAsync(data);
+        Alert.alert(t('editProfile.savedTitle'), t('editProfile.savedMessage'));
+        navigation.goBack();
+      } catch (error) {
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Could not save your profile. Please try again.',
+        );
+      }
     },
-    [navigation, t],
+    [navigation, t, updateProfileMutation],
   );
 
   const handleChangePhoto = useCallback(() => {

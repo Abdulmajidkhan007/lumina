@@ -1,7 +1,7 @@
-import type { IPostsApi , AddCommentInput } from '@/data/api/contracts';
-import type { Post, Comment , PostId, UserId } from '@/types/models';
+import type { IPostsApi , AddCommentInput, CreatePostInput } from '@/data/api/contracts';
+import type { Post, Comment , Media, PostId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
-import { commentIdSchema } from '@/schemas';
+import { commentIdSchema, postIdSchema } from '@/schemas';
 import { mutablePosts } from './fixtures/posts.fixture';
 import { mutableComments } from './fixtures/comments.fixture';
 import { currentUser, toUserSummary } from './fixtures/users.fixture';
@@ -85,6 +85,40 @@ export class MockPostsApi implements IPostsApi {
     const post = mutablePosts.find((p) => p.id === input.postId);
     if (post) post.commentCount += 1;
     return newComment;
+  }
+
+  async createPost(input: CreatePostInput): Promise<Post> {
+    await mockDelay();
+    const media: Media[] = input.media.map((m) =>
+      m.type === 'video'
+        ? {
+            type: 'video',
+            uri: m.uri,
+            width: m.width ?? 1080,
+            height: m.height ?? 1080,
+            ...(m.durationMs !== undefined ? { durationMs: m.durationMs } : {}),
+          }
+        : {
+            type: 'image',
+            uri: m.uri,
+            width: m.width ?? 1080,
+            height: m.height ?? 1080,
+          },
+    );
+    const newPost: Post = {
+      id: postIdSchema.parse(`post-live-${Date.now()}`),
+      author: toUserSummary(currentUser),
+      media,
+      caption: input.caption.length > 0 ? input.caption : null,
+      likeCount: 0,
+      commentCount: 0,
+      isLikedByMe: false,
+      isSavedByMe: false,
+      createdAt: new Date().toISOString(),
+      ...(input.location !== undefined ? { location: input.location } : {}),
+    };
+    mutablePosts.unshift(newPost);
+    return newPost;
   }
 
   async getUserPosts(userId: UserId, params: FeedParams): Promise<Paginated<Post>> {

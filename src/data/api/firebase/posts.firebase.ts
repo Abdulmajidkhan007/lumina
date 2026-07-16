@@ -13,9 +13,10 @@
  *      as null rather than omitted so top-level comments can be queried with
  *      `where('parentId', '==', null)`).
  *
- * Posts themselves are never created through IPostsApi (there is no
- * `createPost` method on the contract) — this collection is populated by
- * whatever seeding/admin process owns content creation.
+ * `createPost` uploads any local-URI media to Cloud Storage
+ * (`posts/{uid}/{timestamp}_{index}`) via `uploadMedia`, then writes the
+ * post doc with the resulting download URLs and increments the author's
+ * `postCount`.
  */
 import {
   collection,
@@ -26,7 +27,7 @@ import {
   updateDoc,
   where,
 } from '@react-native-firebase/firestore';
-import type { IPostsApi, AddCommentInput } from '@/data/api/contracts';
+import type { IPostsApi, AddCommentInput, CreatePostInput } from '@/data/api/contracts';
 import type { Post, Comment, PostId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { postSchema, commentSchema } from '@/schemas';
@@ -43,6 +44,7 @@ import {
   setMembershipFlag,
   type RawDoc,
 } from './helpers';
+import { uploadMedia } from './upload';
 
 interface PostDocFields {
   authorId: string;
@@ -130,6 +132,64 @@ export class FirebasePostsApi implements IPostsApi {
       postSchema,
     );
     return { items, nextCursor };
+  }
+
+  async createPost(input: CreatePostInput): Promise<Post> {
+    const uid = requireCurrentUid();
+    const author = await fetchUserSummary(uid);
+    if (!author) {
+      throw new Error('Current user profile not found');
+    }
+    const now = Date.now();
+    const media: Media[] = await Promise.all(
+      input.media.map(async (item, i): Promise<Media> => {
+        const uri = item.uri.startsWith('http')
+          ? item.uri
+          : await uploadMedia(item.uri, `posts/${uid}/${now}_${i}`);
+        return item.type === 'video'
+          ? {
+              type: 'video',
+              uri,
+              width: item.width ?? 1080,
+              height: item.height ?? 1080,
+              ...(item.durationMs !== undefined ? { durationMs: item.durationMs } : {}),
+            }
+          : {
+              type: 'image',
+              uri,
+              width: item.width ?? 1080,
+              height: item.height ?? 1080,
+            };
+      }),
+    );
+
+    const createdAt = new Date(now).toISOString();
+    const newRef = doc(postsCollection());
+    const postDoc: PostDocFields = {
+      authorId: uid,
+      author,
+      media,
+      caption: input.caption.length > 0 ? input.caption : null,
+      likeCount: 0,
+      commentCount: 0,
+      createdAt,
+      ...(input.location ? { location: input.location } : {}),
+    };
+    await setDoc(newRef, postDoc);
+    await updateDoc(doc(getFirebaseFirestore(), 'users', uid), { postCount: increment(1) });
+
+    return postSchema.parse({
+      id: newRef.id,
+      author,
+      media,
+      caption: postDoc.caption,
+      likeCount: 0,
+      commentCount: 0,
+      isLikedByMe: false,
+      isSavedByMe: false,
+      createdAt,
+      ...(input.location ? { location: input.location } : {}),
+    });
   }
 
   async getPost(id: PostId): Promise<Post> {
