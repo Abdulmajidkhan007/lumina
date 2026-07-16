@@ -12,10 +12,19 @@ concurrency:
 jobs:
   ios-unsigned-ipa:
     name: iOS build (unsigned)
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      # RN 0.79's pinned fmt pod fails to compile under the newest clang on
+      # macos-latest; pin the newest Xcode 16.x, which RN 0.79 supports.
+      - name: Select Xcode 16
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          test -n "$XCODE_PATH" || { echo "No Xcode 16 found:"; ls /Applications | grep -i xcode; exit 1; }
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
 
       - uses: actions/setup-node@v4
         with:
