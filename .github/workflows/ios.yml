@@ -1,0 +1,66 @@
+name: iOS
+
+# Manual trigger only — macOS runners consume 10x minutes on private repos,
+# so we build iOS on demand rather than on every push.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-unsigned-ipa:
+    name: iOS build (unsigned)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios
+        run: |
+          if [ -f ../Gemfile ]; then
+            bundle install
+            bundle exec pod install
+          else
+            pod install
+          fi
+
+      - name: Build (Release, device, no code signing)
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -workspace Lumina.xcworkspace \
+            -scheme Lumina \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned .ipa
+        working-directory: ios
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Lumina.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry Lumina-unsigned.ipa Payload
+          ls -lh Lumina-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumina-unsigned-ipa
+          path: ios/Lumina-unsigned.ipa
+          retention-days: 14
