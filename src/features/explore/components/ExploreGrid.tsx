@@ -1,7 +1,7 @@
 /**
  * Lumina — ExploreGrid
  *
- * 3-column FlatList of explore post thumbnails. Uses expo-image for
+ * 3-column FlashList of explore post thumbnails. Uses expo-image for
  * fast thumbnail rendering. Tapping a cell navigates to the post detail.
  *
  * Infinite scroll via useExplore.fetchNextPage on onEndReached.
@@ -11,13 +11,12 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   View,
-  type ListRenderItemInfo,
 } from 'react-native';
+import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from '@/components/Image';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -151,7 +150,7 @@ export function ExploreGrid(): React.JSX.Element {
   );
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Post>) => (
+    ({ item }: ListRenderItemInfo<Post>): React.JSX.Element => (
       <GridCell post={item} onPress={handlePostPress} />
     ),
     [handlePostPress],
@@ -189,18 +188,13 @@ export function ExploreGrid(): React.JSX.Element {
   }
 
   return (
-    <FlatList<Post>
+    <FlashList<Post>
       data={posts}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       numColumns={3}
-      columnWrapperStyle={styles.columnWrapper}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.5}
-      removeClippedSubviews
-      windowSize={5}
-      maxToRenderPerBatch={9}
-      initialNumToRender={12}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl

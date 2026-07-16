@@ -1,7 +1,7 @@
 /**
  * Lumina — FeedList
  *
- * Infinite-scroll FlatList of PostCards.
+ * Infinite-scroll FlashList of PostCards.
  * - StoryRail as ListHeaderComponent
  * - onEndReached -> fetchNextPage
  * - ListFooterComponent spinner
@@ -12,12 +12,12 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
-  FlatList,
   RefreshControl,
   View,
-  type ListRenderItemInfo,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 
 import { useTheme } from '@/design-system/theme';
 import { SkeletonFeedCard } from '@/design-system/primitives/Skeleton';
@@ -96,6 +96,7 @@ function LoadingSkeleton(): React.JSX.Element {
 export function FeedList(): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
 
   const {
     data,
@@ -137,13 +138,21 @@ export function FeedList(): React.JSX.Element {
   );
 
   const listContentStyle = useMemo(
-    () => ({ paddingBottom: insets.bottom + theme.spacing['4xl'], flexGrow: 1 as const }),
+    () => ({ paddingBottom: insets.bottom + theme.spacing['4xl'] }),
     [insets.bottom, theme.spacing],
   );
 
   const listStyle = useMemo(
     () => ({ backgroundColor: theme.colors.background }),
     [theme.colors.background],
+  );
+
+  // FlashList's contentContainerStyle does not support flexGrow, so the
+  // empty/loading/error content (which centers itself via flex: 1) needs an
+  // explicit full-height wrapper instead.
+  const emptyComponentStyle = useMemo(
+    () => ({ minHeight: windowHeight - insets.top - insets.bottom }),
+    [windowHeight, insets.top, insets.bottom],
   );
 
   const renderEmpty = useCallback(() => {
@@ -179,13 +188,14 @@ export function FeedList(): React.JSX.Element {
   }
 
   return (
-    <FlatList
+    <FlashList<Post>
       data={isLoading ? [] : posts}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       ListHeaderComponent={renderHeader}
       ListFooterComponent={renderFooter}
       ListEmptyComponent={renderEmpty}
+      ListEmptyComponentStyle={emptyComponentStyle}
       onEndReached={handleEndReached}
       onEndReachedThreshold={END_REACHED_THRESHOLD}
       refreshControl={
@@ -199,7 +209,6 @@ export function FeedList(): React.JSX.Element {
       contentContainerStyle={listContentStyle}
       style={listStyle}
       showsVerticalScrollIndicator={false}
-      removeClippedSubviews
       accessibilityRole="list"
       accessibilityLabel="Feed posts"
     />
