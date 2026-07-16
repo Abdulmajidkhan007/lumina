@@ -34,5 +34,6 @@ Specialized agents live in `.claude/agents/` (committed to the repo so they surv
 | Module audits (no-any, re-renders, leaks) | `rn-code-reviewer` | sonnet |
 
 - Delegate matching tasks; execute directly only what no agent covers (orchestration, git, quick lookups).
+- **This routing table applies ONLY to the main orchestrator session.** If you are a subagent executing an assigned task, do the work yourself with Read/Write/Edit/Bash — NEVER spawn another agent.
 - Overlap note: use the built-in `/code-review` skill for PR/diff reviews; use `rn-code-reviewer` for deep module audits.
 - If agents fail on session limits, finish critical-path work directly rather than blocking.

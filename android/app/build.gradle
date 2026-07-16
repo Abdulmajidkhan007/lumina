@@ -119,3 +119,8 @@ dependencies {
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
+
+// Firebase: only active once google-services.json is added (see README).
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}

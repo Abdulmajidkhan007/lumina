@@ -27,6 +27,8 @@ import {
   MockMessagesApi,
   MockNotificationsApi,
 } from './mock';
+import { createFirebaseApis } from './firebase';
+import { isFirebaseConfigured } from '@/lib/firebase';
 
 // ---------------------------------------------------------------------------
 // Provider union — add 'supabase' | 'firebase' | 'custom' as you integrate
@@ -67,8 +69,16 @@ function createApis(provider: ApiProvider): {
       throw new Error('Supabase provider not yet implemented');
 
     case 'firebase':
-      // TODO: import and instantiate Firebase implementations here
-      throw new Error('Firebase provider not yet implemented');
+      if (!isFirebaseConfigured()) {
+        // Native config files (google-services.json / GoogleService-Info.plist)
+        // are missing — fall back to mock so the app never crashes.
+        console.warn(
+          '[api/client] API_PROVIDER is "firebase" but Firebase is not configured. ' +
+            'Add google-services.json / GoogleService-Info.plist and rebuild. Falling back to mock.',
+        );
+        return createApis('mock');
+      }
+      return createFirebaseApis();
   }
 }
 
