@@ -9,11 +9,12 @@
  */
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   signInWithEmailAndPassword,
   signOut,
 } from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
 import type { IAuthApi, AuthSession } from '@/data/api/contracts';
 import type { User } from '@/types/models';
 import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
@@ -164,5 +165,31 @@ export class FirebaseAuthApi implements IAuthApi {
       isPrivate: input.isPrivate,
     });
     return this.fetchOrCreateProfile(current);
+  }
+
+  /**
+   * Permanently deletes the signed-in user: the `users/{uid}` Firestore doc
+   * first, then the Firebase Auth credential itself. Firebase requires a
+   * "recent" sign-in for this — if the session is stale it throws
+   * `auth/requires-recent-login`, which we rethrow with actionable copy
+   * since the client has no password on hand to silently reauthenticate.
+   */
+  async deleteAccount(): Promise<void> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current) {
+      throw new Error('Not authenticated');
+    }
+
+    await deleteDoc(usersCollectionDoc(current.uid));
+
+    try {
+      await deleteUser(current);
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code === 'auth/requires-recent-login') {
+        throw new Error('Please log out, log back in, and try again.');
+      }
+      throw error;
+    }
   }
 }

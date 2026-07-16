@@ -21,4 +21,11 @@ export interface IAuthApi {
   getSession(): Promise<AuthSession | null>;
   me(): Promise<User>;
   updateProfile(input: EditProfileInput): Promise<User>;
+  /**
+   * Permanently deletes the current user's account (Play Store / App Store
+   * in-app account deletion requirement). Removes the backing profile
+   * record and the auth credential, then the caller is expected to clear
+   * any local session state.
+   */
+  deleteAccount(): Promise<void>;
 }

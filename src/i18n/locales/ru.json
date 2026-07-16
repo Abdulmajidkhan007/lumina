@@ -104,12 +104,19 @@
       "helpCentre": "Центр помощи",
       "privacyPolicy": "Политика конфиденциальности",
       "aboutLumina": "О Lumina",
-      "logout": "Выйти"
+      "logout": "Выйти",
+      "deleteAccount": "Удалить аккаунт"
     },
     "logoutConfirm": {
       "title": "Выйти",
       "message": "Вы уверены, что хотите выйти из Lumina?",
       "confirm": "Выйти",
+      "cancel": "Отмена"
+    },
+    "deleteConfirm": {
+      "title": "Удалить аккаунт",
+      "message": "Это навсегда удалит ваш аккаунт Lumina, профиль и все связанные данные. Это действие нельзя отменить.",
+      "confirm": "Удалить",
       "cancel": "Отмена"
     }
   },

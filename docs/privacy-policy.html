@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Lumina</title>
+<style>
+  :root {
+    --accent: #C44FE8;
+    --bg: #ffffff;
+    --text: #1c1c1e;
+    --text-secondary: #55555a;
+    --border: #e8e8ea;
+    --surface: #faf7fc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121014;
+      --text: #f2f0f4;
+      --text-secondary: #b8b4bd;
+      --border: #2a2730;
+      --surface: #1c1a20;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  header {
+    margin-bottom: 32px;
+  }
+  .badge {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    color: var(--text);
+  }
+  .meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+  }
+  h2 {
+    font-size: 19px;
+    color: var(--accent);
+    margin: 36px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  p {
+    color: var(--text);
+    margin: 0 0 14px;
+  }
+  ul {
+    margin: 0 0 14px;
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  strong { color: var(--text); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 0 0 16px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  a:hover { text-decoration: underline; }
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+  code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 16px;
+    font-size: 15px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .scroll-x {
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Lumina</div>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Effective date: July 2026</p>
+  </header>
+
+  <p>
+    This Privacy Policy explains how <strong>Lumina</strong> ("the app", "we", "our"), developed by
+    <strong>Abdulmajidkhan007</strong>, collects, uses, stores, and protects information when you use the app.
+    Lumina is a social app for sharing posts, photos, reels, and messages with other users.
+  </p>
+
+  <h2>1. Information We Collect</h2>
+  <p>We collect only the information needed to provide Lumina's core social features:</p>
+  <div class="scroll-x">
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Examples</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Account information</td>
+          <td>Email address and password, used to create and authenticate your account.</td>
+        </tr>
+        <tr>
+          <td>Profile information</td>
+          <td>Display name, username, bio, and profile photo that you choose to add.</td>
+        </tr>
+        <tr>
+          <td>User content</td>
+          <td>Posts, photos, reels/videos, comments, and direct messages you create or send within the app.</td>
+        </tr>
+        <tr>
+          <td>Device push token</td>
+          <td>A token issued by Firebase Cloud Messaging so we can deliver notifications (e.g. new likes, comments, or messages) to your device.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. Where Your Data Is Stored</h2>
+  <p>
+    All data described above is stored using <strong>Google Firebase</strong> infrastructure, specifically:
+  </p>
+  <ul>
+    <li><strong>Firebase Authentication</strong> — manages your account credentials and sign-in sessions.</li>
+    <li><strong>Cloud Firestore</strong> — stores your profile information, posts, comments, and messages.</li>
+    <li><strong>Firebase Cloud Storage</strong> — stores photos, videos, and other media you upload.</li>
+    <li><strong>Firebase Cloud Messaging (FCM)</strong> — stores your device push token to deliver notifications.</li>
+  </ul>
+  <p>
+    We do not operate any separate servers of our own — Firebase is the sole backend provider for Lumina.
+  </p>
+
+  <h2>3. How We Use Your Data</h2>
+  <p>Your data is used exclusively to operate the app's core functionality, including:</p>
+  <ul>
+    <li>Creating and securing your account.</li>
+    <li>Displaying your profile, posts, reels, and comments to other users as you configure (public or private).</li>
+    <li>Delivering direct messages between you and other users.</li>
+    <li>Sending push notifications about activity relevant to you.</li>
+  </ul>
+  <div class="card">
+    <strong>We do not show ads, and we do not sell, rent, or share your personal data with third parties for
+    advertising or marketing purposes.</strong>
+  </div>
+
+  <h2>4. Data Retention &amp; Deletion</h2>
+  <p>
+    Your data is retained for as long as your account remains active. You are in full control of your account and
+    can request deletion at any time:
+  </p>
+  <ul>
+    <li>
+      <strong>In-app deletion:</strong> Open Lumina and go to <strong>Settings → Delete account</strong>. This
+      permanently removes your profile data and your Firebase Authentication record.
+    </li>
+    <li>
+      <strong>By email:</strong> If you are unable to use the in-app option, email
+      <a href="mailto:santexnika.atoyo@gmail.com">santexnika.atoyo@gmail.com</a> from the address associated with
+      your account and we will delete your account and associated data.
+    </li>
+  </ul>
+  <p>
+    See our <a href="account-deletion.html">Account Deletion</a> page for step-by-step instructions.
+  </p>
+
+  <h2>5. Children's Privacy</h2>
+  <p>
+    Lumina is not directed at children under the age of 13, and we do not knowingly collect personal information
+    from anyone under 13. If you believe a child under 13 has provided us with personal information, please
+    contact us at the email below so we can remove it.
+  </p>
+
+  <h2>6. Data Security</h2>
+  <p>
+    We rely on Firebase's built-in security infrastructure, including encryption in transit and access rules that
+    restrict data to authenticated users, to help protect your information. No method of electronic storage or
+    transmission is 100% secure, and we cannot guarantee absolute security.
+  </p>
+
+  <h2>7. Changes to This Policy</h2>
+  <p>
+    We may update this Privacy Policy from time to time to reflect changes in our practices or for legal reasons.
+    Any changes will be posted on this page with an updated effective date. Continued use of Lumina after a
+    change constitutes acceptance of the updated policy.
+  </p>
+
+  <h2>8. Contact Us</h2>
+  <p>
+    If you have any questions about this Privacy Policy or how your data is handled, contact us at:
+    <br />
+    <a href="mailto:santexnika.atoyo@gmail.com">santexnika.atoyo@gmail.com</a>
+  </p>
+
+  <footer>
+    <p>Lumina — Privacy Policy · Effective July 2026 · <a href="index.html">Back to home</a></p>
+  </footer>
+</div>
+</body>
+</html>

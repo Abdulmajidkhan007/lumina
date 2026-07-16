@@ -104,12 +104,19 @@
       "helpCentre": "Yordam markazi",
       "privacyPolicy": "Maxfiylik siyosati",
       "aboutLumina": "Lumina haqida",
-      "logout": "Chiqish"
+      "logout": "Chiqish",
+      "deleteAccount": "Hisobni o'chirish"
     },
     "logoutConfirm": {
       "title": "Chiqish",
       "message": "Lumina'dan chiqishga aminmisiz?",
       "confirm": "Chiqish",
+      "cancel": "Bekor qilish"
+    },
+    "deleteConfirm": {
+      "title": "Hisobni o'chirish",
+      "message": "Bu Lumina hisobingizni, profilingizni va unga tegishli barcha ma'lumotlarni butunlay o'chiradi. Bu amalni bekor qilib bo'lmaydi.",
+      "confirm": "O'chirish",
       "cancel": "Bekor qilish"
     }
   },

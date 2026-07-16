@@ -104,12 +104,19 @@
       "helpCentre": "Help Centre",
       "privacyPolicy": "Privacy Policy",
       "aboutLumina": "About Lumina",
-      "logout": "Log out"
+      "logout": "Log out",
+      "deleteAccount": "Delete account"
     },
     "logoutConfirm": {
       "title": "Sign out",
       "message": "Are you sure you want to sign out of Lumina?",
       "confirm": "Sign out",
+      "cancel": "Cancel"
+    },
+    "deleteConfirm": {
+      "title": "Delete account",
+      "message": "This permanently deletes your Lumina account, profile, and all associated data. This action cannot be undone.",
+      "confirm": "Delete",
       "cancel": "Cancel"
     }
   },

@@ -38,6 +38,12 @@ export class MockAuthApi implements IAuthApi {
     await mockDelay();
   }
 
+  async deleteAccount(): Promise<void> {
+    // No real backend session to tear down in mock mode — mirrors `logout`
+    // and lets the caller (useDeleteAccount) clear the local auth session.
+    await mockDelay();
+  }
+
   async getSession(): Promise<AuthSession | null> {
     await mockDelay();
     return { token: MOCK_TOKEN, user: currentUser };

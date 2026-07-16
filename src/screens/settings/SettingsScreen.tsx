@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
+import { useDeleteAccount } from '@/data/query/hooks';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
@@ -54,6 +55,7 @@ export default function SettingsScreen(): React.JSX.Element {
     usePreferencesStore();
   const locale = useLocale();
   const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
+  const deleteAccountMutation = useDeleteAccount();
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
@@ -81,6 +83,29 @@ export default function SettingsScreen(): React.JSX.Element {
       ],
     );
   }, [clearSession, t]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      t('settings.deleteConfirm.title'),
+      t('settings.deleteConfirm.message'),
+      [
+        { text: t('settings.deleteConfirm.cancel'), style: 'cancel' },
+        {
+          text: t('settings.deleteConfirm.confirm'),
+          style: 'destructive',
+          onPress: () => {
+            deleteAccountMutation.mutate(undefined, {
+              onError: (error) => {
+                Alert.alert(t('common.error'), error.message, [
+                  { text: t('common.ok') },
+                ]);
+              },
+            });
+          },
+        },
+      ],
+    );
+  }, [deleteAccountMutation, t]);
 
   const handleAutoplayChange = useCallback(
     (v: boolean) => setAutoplayVideos(v),
@@ -280,6 +305,18 @@ export default function SettingsScreen(): React.JSX.Element {
             danger
             onPress={handleSignOut}
             accessibilityLabel={t('settings.rows.logout')}
+          />
+          <SettingsRow
+            icon="trash-outline"
+            label={
+              deleteAccountMutation.isPending
+                ? t('common.loading')
+                : t('settings.rows.deleteAccount')
+            }
+            right={{ type: 'none' }}
+            danger
+            onPress={deleteAccountMutation.isPending ? undefined : handleDeleteAccount}
+            accessibilityLabel={t('settings.rows.deleteAccount')}
           />
         </SettingsSection>
       </ScrollView>

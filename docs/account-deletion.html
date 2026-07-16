@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Delete Your Account — Lumina</title>
+<style>
+  :root {
+    --accent: #C44FE8;
+    --bg: #ffffff;
+    --text: #1c1c1e;
+    --text-secondary: #55555a;
+    --border: #e8e8ea;
+    --surface: #faf7fc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121014;
+      --text: #f2f0f4;
+      --text-secondary: #b8b4bd;
+      --border: #2a2730;
+      --surface: #1c1a20;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  .badge {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 26px;
+    margin: 0 0 8px;
+  }
+  .meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 32px;
+  }
+  h2 {
+    font-size: 18px;
+    color: var(--accent);
+    margin: 32px 0 12px;
+  }
+  p {
+    margin: 0 0 14px;
+  }
+  ol {
+    padding-left: 22px;
+    margin: 0 0 16px;
+  }
+  ol li {
+    margin-bottom: 10px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 0 0 20px;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  a:hover { text-decoration: underline; }
+  ul.notes {
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: 14.5px;
+  }
+  ul.notes li { margin-bottom: 8px; }
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge">Lumina</div>
+  <h1>How to Delete Your Account</h1>
+  <p class="meta">Applies to the Lumina mobile app</p>
+
+  <p>
+    You can permanently delete your Lumina account and all associated data directly from within the app, in under
+    a minute.
+  </p>
+
+  <h2>In the app</h2>
+  <div class="card">
+    <ol>
+      <li><span class="step-num">1</span>Open Lumina and go to your profile.</li>
+      <li><span class="step-num">2</span>Tap <strong>Settings</strong>.</li>
+      <li><span class="step-num">3</span>Scroll to the bottom and tap <strong>Delete account</strong>.</li>
+      <li><span class="step-num">4</span>Confirm the deletion when prompted.</li>
+    </ol>
+  </div>
+
+  <p>
+    Once confirmed, your profile, posts, photos, reels, messages, and authentication record are permanently
+    removed and cannot be recovered.
+  </p>
+
+  <h2>What gets deleted</h2>
+  <ul class="notes">
+    <li>Your profile information (username, display name, bio, avatar).</li>
+    <li>Your account's authentication credentials (email/password sign-in).</li>
+    <li>Your device push notification token.</li>
+  </ul>
+  <p style="color: var(--text-secondary); font-size: 14.5px;">
+    Content you shared that involves other users (e.g. messages sent to another person's inbox, comments on
+    other users' posts) may remain visible to those users as part of their own conversation history, consistent
+    with how the app's messaging and commenting features work.
+  </p>
+
+  <h2>Can't access the app?</h2>
+  <p>
+    If you're unable to sign in or use the in-app option, email us at
+    <a href="mailto:santexnika.atoyo@gmail.com">santexnika.atoyo@gmail.com</a> from the email address associated
+    with your account, and we will delete your account and data on your behalf.
+  </p>
+
+  <p>
+    For details on what data we collect and how it's used, see our
+    <a href="privacy-policy.html">Privacy Policy</a>.
+  </p>
+
+  <footer>
+    <p>Lumina — Account Deletion · <a href="index.html">Back to home</a></p>
+  </footer>
+</div>
+</body>
+</html>
