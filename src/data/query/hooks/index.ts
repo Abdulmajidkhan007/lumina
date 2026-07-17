@@ -11,6 +11,7 @@ export { useConversations } from './useConversations';
 export { useMessages } from './useMessages';
 export { useNotifications } from './useNotifications';
 export { useSearchUsers } from './useSearchUsers';
+export { useResetPassword } from './useResetPassword';
 
 // Mutation hooks
 export { useLikePost } from './useLikePost';

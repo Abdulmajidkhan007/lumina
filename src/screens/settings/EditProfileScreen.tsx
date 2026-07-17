@@ -3,11 +3,11 @@
  *
  * React Hook Form + zodResolver(editProfileSchema).
  * Fields: displayName, username, bio (multiline + char count), isPrivate switch.
- * Avatar with "Change photo" affordance (// TODO: real picker).
- * Save performs an optimistic update (// TODO: persist via mutation).
+ * Avatar with "Change photo" affordance backed by useMediaPicker (single image).
+ * Save persists the form fields + optional picked avatar via useUpdateProfile.
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -26,6 +26,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import {
+  launchImageLibrary,
+  type ImagePickerResponse,
+} from 'react-native-image-picker';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
@@ -56,6 +60,7 @@ export default function EditProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const updateProfileMutation = useUpdateProfile();
+  const [avatarLocalUri, setAvatarLocalUri] = useState<string | undefined>(undefined);
 
   const {
     control,
@@ -87,12 +92,15 @@ export default function EditProfileScreen(): React.JSX.Element {
 
   const bioValue = watch('bio') ?? '';
 
+  // A picked avatar makes the form savable even if no text field changed.
+  const canSave = isDirty || avatarLocalUri !== undefined;
+
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
   const onSubmit = useCallback(
     async (data: EditProfileInput) => {
       try {
-        await updateProfileMutation.mutateAsync(data);
+        await updateProfileMutation.mutateAsync({ input: data, avatarLocalUri });
         Alert.alert(t('editProfile.savedTitle'), t('editProfile.savedMessage'));
         navigation.goBack();
       } catch (error) {
@@ -102,11 +110,21 @@ export default function EditProfileScreen(): React.JSX.Element {
         );
       }
     },
-    [navigation, t, updateProfileMutation],
+    [avatarLocalUri, navigation, t, updateProfileMutation],
   );
 
-  const handleChangePhoto = useCallback(() => {
-    // TODO: launch image picker
+  const handleChangePhoto = useCallback(async () => {
+    const response: ImagePickerResponse = await new Promise((resolve) => {
+      launchImageLibrary(
+        { mediaType: 'photo', selectionLimit: 1, quality: 0.9 },
+        resolve,
+      );
+    });
+
+    if (response.didCancel === true || response.errorCode !== undefined) return;
+
+    const uri = response.assets?.[0]?.uri;
+    if (uri !== undefined) setAvatarLocalUri(uri);
   }, []);
 
   return (
@@ -144,15 +162,15 @@ export default function EditProfileScreen(): React.JSX.Element {
         ) : (
           <Pressable
             onPress={handleSubmit(onSubmit)}
-            disabled={!isDirty || isSubmitting}
+            disabled={!canSave || isSubmitting}
             hitSlop={hitSlop.md}
             accessibilityRole="button"
             accessibilityLabel={t('editProfile.save')}
-            accessibilityState={{ disabled: !isDirty || isSubmitting }}
+            accessibilityState={{ disabled: !canSave || isSubmitting }}
           >
             <Text
               variant="bodyStrong"
-              color={isDirty ? 'accent' : 'tertiary'}
+              color={canSave ? 'accent' : 'tertiary'}
             >
               {t('editProfile.save')}
             </Text>
@@ -178,7 +196,7 @@ export default function EditProfileScreen(): React.JSX.Element {
           <View style={[styles.avatarSection, { paddingVertical: theme.spacing['2xl'] }]}>
             <View style={styles.avatarWrapper}>
               <Avatar
-                uri={currentUser?.avatarUrl ?? undefined}
+                uri={avatarLocalUri ?? currentUser?.avatarUrl ?? undefined}
                 displayName={currentUser?.displayName}
                 size="2xl"
                 accessibilityLabel={t('editProfile.avatarAccessibilityLabel')}
@@ -348,7 +366,7 @@ export default function EditProfileScreen(): React.JSX.Element {
               size="md"
               fullWidth
               loading={isSubmitting}
-              disabled={!isDirty || isSubmitting}
+              disabled={!canSave || isSubmitting}
               onPress={handleSubmit(onSubmit)}
               accessibilityLabel={t('editProfile.save')}
             />

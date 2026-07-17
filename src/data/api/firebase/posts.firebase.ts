@@ -42,6 +42,7 @@ import {
   requireCurrentUid,
   getCurrentUid,
   setMembershipFlag,
+  withReadableErrors,
   type RawDoc,
 } from './helpers';
 import { uploadMedia } from './upload';
@@ -118,20 +119,22 @@ function buildCommentCandidate(raw: RawDoc): unknown {
 
 export class FirebasePostsApi implements IPostsApi {
   async getFeed(params: FeedParams): Promise<Paginated<Post>> {
-    const constraints = params.userId ? [where('authorId', '==', params.userId)] : [];
-    const { docs, nextCursor } = await queryCreatedAtPage(
-      postsCollection(),
-      constraints,
-      params.cursor,
-      params.limit,
-    );
-    const viewerUid = getCurrentUid();
-    const items = await buildValidatedList(
-      docs,
-      (raw) => buildPostCandidate(raw, viewerUid),
-      postSchema,
-    );
-    return { items, nextCursor };
+    return withReadableErrors('feed', async () => {
+      const constraints = params.userId ? [where('authorId', '==', params.userId)] : [];
+      const { docs, nextCursor } = await queryCreatedAtPage(
+        postsCollection(),
+        constraints,
+        params.cursor,
+        params.limit,
+      );
+      const viewerUid = getCurrentUid();
+      const items = await buildValidatedList(
+        docs,
+        (raw) => buildPostCandidate(raw, viewerUid),
+        postSchema,
+      );
+      return { items, nextCursor };
+    });
   }
 
   async createPost(input: CreatePostInput): Promise<Post> {
@@ -283,18 +286,20 @@ export class FirebasePostsApi implements IPostsApi {
   }
 
   async getUserPosts(userId: UserId, params: FeedParams): Promise<Paginated<Post>> {
-    const { docs, nextCursor } = await queryCreatedAtPage(
-      postsCollection(),
-      [where('authorId', '==', userId)],
-      params.cursor,
-      params.limit,
-    );
-    const viewerUid = getCurrentUid();
-    const items = await buildValidatedList(
-      docs,
-      (raw) => buildPostCandidate(raw, viewerUid),
-      postSchema,
-    );
-    return { items, nextCursor };
+    return withReadableErrors('user posts', async () => {
+      const { docs, nextCursor } = await queryCreatedAtPage(
+        postsCollection(),
+        [where('authorId', '==', userId)],
+        params.cursor,
+        params.limit,
+      );
+      const viewerUid = getCurrentUid();
+      const items = await buildValidatedList(
+        docs,
+        (raw) => buildPostCandidate(raw, viewerUid),
+        postSchema,
+      );
+      return { items, nextCursor };
+    });
   }
 }

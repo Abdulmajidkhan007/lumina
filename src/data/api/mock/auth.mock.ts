@@ -54,17 +54,25 @@ export class MockAuthApi implements IAuthApi {
     return currentUser;
   }
 
-  async updateProfile(input: EditProfileInput): Promise<User> {
+  async updateProfile(input: EditProfileInput, avatarLocalUri?: string): Promise<User> {
     await mockDelay();
     currentUser.displayName = input.displayName;
     currentUser.username = input.username;
     currentUser.bio = input.bio && input.bio.length > 0 ? input.bio : null;
     currentUser.isPrivate = input.isPrivate;
+    if (avatarLocalUri) {
+      currentUser.avatarUrl = avatarLocalUri;
+    }
 
     const idx = mutableUsers.findIndex((u) => u.id === currentUser.id);
     if (idx !== -1) {
       mutableUsers[idx] = currentUser;
     }
     return currentUser;
+  }
+
+  async resetPassword(_email: string): Promise<void> {
+    // No real email to send in mock mode — just simulate network latency.
+    await mockDelay();
   }
 }

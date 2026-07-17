@@ -5,11 +5,16 @@ import { authApi } from '@/data/api/client';
 import { useAuthStore } from '@/stores/auth.store';
 import { queryKeys } from '../keys';
 
+export interface UpdateProfileVariables {
+  input: EditProfileInput;
+  avatarLocalUri?: string;
+}
+
 export function useUpdateProfile() {
   const qc = useQueryClient();
 
-  return useMutation<User, Error, EditProfileInput>({
-    mutationFn: (input) => authApi.updateProfile(input),
+  return useMutation<User, Error, UpdateProfileVariables>({
+    mutationFn: ({ input, avatarLocalUri }) => authApi.updateProfile(input, avatarLocalUri),
 
     onSuccess: (user) => {
       useAuthStore.getState().updateCurrentUser(user);

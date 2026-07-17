@@ -10,6 +10,7 @@
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from '@react-native-firebase/auth';
@@ -21,6 +22,7 @@ import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
 import { userSchema } from '@/schemas';
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase';
 import type { UserDocFields } from './helpers';
+import { uploadMedia } from './upload';
 
 const EMAIL_LIKE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -151,20 +153,31 @@ export class FirebaseAuthApi implements IAuthApi {
     return this.fetchOrCreateProfile(current);
   }
 
-  async updateProfile(input: EditProfileInput): Promise<User> {
+  async updateProfile(input: EditProfileInput, avatarLocalUri?: string): Promise<User> {
     const current = getFirebaseAuth().currentUser;
     if (!current) {
       throw new Error('Not authenticated');
     }
     const bio = input.bio && input.bio.length > 0 ? input.bio : null;
+    const isLocalUri = !!avatarLocalUri && !avatarLocalUri.startsWith('http');
+    const avatarUrl = isLocalUri
+      ? await uploadMedia(avatarLocalUri as string, `avatars/${current.uid}/${Date.now()}`)
+      : undefined;
+
     await updateDoc(usersCollectionDoc(current.uid), {
       displayName: input.displayName,
       username: input.username,
       usernameLower: input.username.toLowerCase(),
       bio,
       isPrivate: input.isPrivate,
+      ...(avatarUrl !== undefined ? { avatarUrl } : {}),
     });
     return this.fetchOrCreateProfile(current);
+  }
+
+  /** Delegates to Firebase Auth — errors (e.g. `auth/invalid-email`) propagate as-is. */
+  async resetPassword(email: string): Promise<void> {
+    await sendPasswordResetEmail(getFirebaseAuth(), email);
   }
 
   /**

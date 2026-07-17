@@ -79,6 +79,36 @@ export function decodeCursor(cursor: string): { orderValue: string; id: string }
 }
 
 /**
+ * Applies a list of query constraints to `base` one at a time via the
+ * modular `query()` API, instead of spreading the whole array into a single
+ * variadic call.
+ *
+ * `query()`'s real implementation (see `_apply` on each constraint object)
+ * folds constraints onto the query one by one internally anyway, so calling
+ * it once per constraint is behaviourally identical to a single N-ary call —
+ * but it means every call site here only ever passes exactly two, properly
+ * typed arguments (`query(q, constraint)`), which is the overload
+ * `query<T>(query: Query<T>, ...queryConstraints: QueryConstraint[])` resolves
+ * unambiguously without any `as`/`never[]` cast. Spreading a large,
+ * dynamically-sized, precast array into one call is what previously forced
+ * the `as unknown as never[]` escape hatch; chaining avoids that entirely and
+ * has proven more resilient under Hermes release-bundle minification, where
+ * the earlier cast+spread form intermittently produced
+ * "Cannot read property 'call' of undefined" while building the feed/profile
+ * queries.
+ */
+function applyConstraints(
+  base: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query,
+  constraints: FirestoreQueryConstraint[],
+): FirebaseFirestoreTypes.Query {
+  let current: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query = base;
+  for (const constraint of constraints) {
+    current = query(current, constraint);
+  }
+  return current;
+}
+
+/**
  * Runs a cursor-paginated query ordered by `orderField` (then by document ID
  * as a tiebreaker) and returns the raw docs for this page plus the next
  * cursor. Callers turn `docs` into domain models (see `buildValidatedList`).
@@ -99,12 +129,7 @@ export async function queryCursorPage(
     ...(decoded ? [startAfter(decoded.orderValue, decoded.id)] : []),
     limit(limitCount),
   ];
-  // RNFirebase's query() overloads don't accept a mixed constraint union via
-  // spread even though every element is individually valid — collapse the
-  // array to the non-filter constraint shape the first overload expects.
-  const snapshot = await getDocs(
-    query(base, ...(constraints as unknown as never[])),
-  );
+  const snapshot = await getDocs(applyConstraints(base, constraints));
   const docs: RawDoc[] = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
     id: docSnap.id,
     data: docSnap.data(),
@@ -237,4 +262,22 @@ export async function fetchUserSummary(id: string): Promise<UserSummary | null> 
   };
   const result = userSummarySchema.safeParse(candidate);
   return result.success ? result.data : null;
+}
+
+// ---------------------------------------------------------------------------
+// Defensive error surfacing — a last line of defence around query-building
+// paths so an unexpected engine/SDK-internal failure (e.g. a cryptic
+// "Cannot read property 'call' of undefined" from a native module edge case)
+// never reaches the UI as-is. Logs the real error for diagnostics and
+// rethrows a message that is actually actionable.
+// ---------------------------------------------------------------------------
+
+export async function withReadableErrors<T>(operation: string, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    console.error(`[firebase] ${operation} failed:`, error);
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to load ${operation}. ${detail}`);
+  }
 }

@@ -1,8 +1,8 @@
 /**
  * Lumina — Forgot Password screen
  *
- * Email field + submit. Shows a success confirmation state after submitting.
- * Mock implementation (no real API call needed at this stage).
+ * Email field + submit. Shows a success confirmation state once the reset
+ * request resolves; shows an inline error banner if it fails.
  */
 
 import React, { useCallback, useState } from 'react';
@@ -29,6 +29,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { Input } from '@/design-system/primitives/Input';
 import { Button } from '@/design-system/primitives/Button';
 import { hitSlop } from '@/constants/layout';
+import { useResetPassword } from '@/data/query/hooks';
 
 // ---------------------------------------------------------------------------
 // Local schema — just the email field
@@ -49,7 +50,7 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [submitted, setSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const resetPasswordMutation = useResetPassword();
 
   const {
     control,
@@ -61,13 +62,17 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
     defaultValues: { email: '' },
   });
 
-  const onSubmit = useCallback(async (_data: ForgotPasswordInput) => {
-    setIsLoading(true);
-    // Mock delay — replace with real API call
-    await new Promise<void>((resolve) => setTimeout(resolve, 1200));
-    setIsLoading(false);
-    setSubmitted(true);
-  }, []);
+  const onSubmit = useCallback(
+    async (data: ForgotPasswordInput) => {
+      try {
+        await resetPasswordMutation.mutateAsync(data.email);
+        setSubmitted(true);
+      } catch {
+        // Error state is surfaced inline via resetPasswordMutation.isError below.
+      }
+    },
+    [resetPasswordMutation],
+  );
 
   const goBack = useCallback(() => {
     navigation.goBack();
@@ -196,12 +201,33 @@ export default function ForgotPasswordScreen(): React.JSX.Element {
                   )}
                 />
 
+                {resetPasswordMutation.isError ? (
+                  <View
+                    style={[
+                      styles.errorBanner,
+                      {
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.danger,
+                        borderRadius: theme.radii.md,
+                        padding: theme.spacing.md,
+                      },
+                    ]}
+                    accessibilityRole="alert"
+                  >
+                    <Text variant="caption" color="danger" align="center">
+                      {resetPasswordMutation.error instanceof Error
+                        ? resetPasswordMutation.error.message
+                        : 'Could not send reset instructions. Please try again.'}
+                    </Text>
+                  </View>
+                ) : null}
+
                 <Button
                   label={t('auth.forgotPassword.submit')}
                   variant="primary"
                   size="lg"
                   fullWidth
-                  loading={isLoading}
+                  loading={resetPasswordMutation.isPending}
                   onPress={handleSubmit(onSubmit)}
                   accessibilityLabel={t('auth.forgotPassword.submitAccessibilityLabel')}
                 />
@@ -239,5 +265,8 @@ const styles = StyleSheet.create({
   successIcon: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorBanner: {
+    borderWidth: 1,
   },
 });

@@ -191,6 +191,7 @@ jest.mock('@react-native-firebase/auth', () => ({
   __esModule: true,
   default: () => ({}),
   getAuth: () => ({ currentUser: null }),
+  sendPasswordResetEmail: async () => undefined,
 }));
 jest.mock('@react-native-firebase/firestore', () => ({
   __esModule: true,
