@@ -24,6 +24,14 @@ import MessageThreadScreen from '@/screens/messages/MessageThreadScreen';
 import SettingsScreen from '@/screens/settings/SettingsScreen';
 import EditProfileScreen from '@/screens/settings/EditProfileScreen';
 import CreatePostScreen from '@/screens/create/CreatePostScreen';
+import ChangePasswordScreen from '@/screens/settings/ChangePasswordScreen';
+import NotificationsSettingsScreen from '@/screens/settings/NotificationsSettingsScreen';
+import PrivacyScreen from '@/screens/settings/PrivacyScreen';
+import BlockedAccountsScreen from '@/screens/settings/BlockedAccountsScreen';
+import ActivityStatusScreen from '@/screens/settings/ActivityStatusScreen';
+import HelpCentreScreen from '@/screens/settings/HelpCentreScreen';
+import PrivacyPolicyScreen from '@/screens/settings/PrivacyPolicyScreen';
+import AboutScreen from '@/screens/settings/AboutScreen';
 
 const Stack = createNativeStackNavigator<ProtectedStackParamList>();
 
@@ -102,6 +110,54 @@ export function ProtectedStack(): React.JSX.Element {
         name="CreatePost"
         component={CreatePostScreen}
         options={{ presentation: 'modal' }}
+      />
+
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="NotificationsSettings"
+        component={NotificationsSettingsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="BlockedAccounts"
+        component={BlockedAccountsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="ActivityStatus"
+        component={ActivityStatusScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="HelpCentre"
+        component={HelpCentreScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ animation: 'slide_from_right' }}
       />
     </Stack.Navigator>
   );

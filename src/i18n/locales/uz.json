@@ -136,5 +136,80 @@
     "avatarAccessibilityLabel": "Profil rasmingiz",
     "savedTitle": "Saqlandi",
     "savedMessage": "Profilingiz yangilandi."
+  },
+  "changePassword": {
+    "title": "Parolni o'zgartirish",
+    "goBack": "Orqaga",
+    "newPasswordLabel": "Yangi parol",
+    "newPasswordPlaceholder": "Kamida 8 ta belgi",
+    "confirmPasswordLabel": "Yangi parolni tasdiqlang",
+    "confirmPasswordPlaceholder": "Yangi parolni takrorlang",
+    "showPassword": "Parolni ko'rsatish",
+    "hidePassword": "Parolni yashirish",
+    "submit": "Parolni yangilash",
+    "comingSoonTitle": "Tez orada",
+    "comingSoonMessage": "Ilova ichida parolni o'zgartirish tez orada qo'shiladi. Hozircha kirish sahifasidagi \"Parolni unutdingizmi?\" orqali tiklang.",
+    "done": "Tayyor"
+  },
+  "notificationsSettings": {
+    "title": "Bildirishnomalar",
+    "goBack": "Orqaga",
+    "pushLabel": "Push-bildirishnomalar",
+    "pushDescription": "Lumina ushbu qurilmaga bildirishnoma yuborishiga ruxsat bering",
+    "likesLabel": "Layklar",
+    "likesDescription": "Kimdir postingiz yoki izohingizni yoqtirganda",
+    "commentsLabel": "Izohlar",
+    "commentsDescription": "Kimdir postingizga izoh qoldirganda",
+    "followsLabel": "Yangi obunachilar",
+    "followsDescription": "Kimdir sizga obuna bo'lganda"
+  },
+  "privacy": {
+    "title": "Maxfiylik",
+    "goBack": "Orqaga",
+    "privateAccountLabel": "Yopiq hisob",
+    "privateAccountDescription": "Faqat tasdiqlangan obunachilar postlaringiz va storilaringizni ko'ra oladi"
+  },
+  "blockedAccounts": {
+    "title": "Bloklangan hisoblar",
+    "goBack": "Orqaga",
+    "emptyTitle": "Bloklangan hisoblar yo'q",
+    "emptySubtitle": "Siz bloklagan hisoblar shu yerda ko'rinadi. Ular profilingizni ko'ra olmaydi va siz bilan bog'lana olmaydi."
+  },
+  "activityStatus": {
+    "title": "Faollik holati",
+    "goBack": "Orqaga",
+    "label": "Faollik holatini ko'rsatish",
+    "description": "Siz obuna bo'lgan odamlar Lumina'da oxirgi marta qachon faol bo'lganingizni ko'rishiga ruxsat bering"
+  },
+  "helpCentre": {
+    "title": "Yordam markazi",
+    "goBack": "Orqaga",
+    "intro": "Yordam kerakmi? Biz bilan bog'lanish yo'llari va tez-tez so'raladigan savollarga javoblar shu yerda.",
+    "contactTitle": "Biz bilan bog'laning",
+    "contactDescription": "Jamoamizga xat yozing, imkon qadar tezroq javob beramiz.",
+    "faqTitle": "Tez-tez so'raladigan savollar",
+    "faq1Question": "Parolimni qanday tiklayman?",
+    "faq1Answer": "Sozlamalar > Parolni o'zgartirish bo'limiga o'ting yoki kirish sahifasidagi \"Parolni unutdingizmi?\" dan foydalaning.",
+    "faq2Question": "Hisobimni qanday yopiq qilaman?",
+    "faq2Answer": "Sozlamalar > Maxfiylik bo'limiga o'ting va \"Yopiq hisob\"ni yoqing.",
+    "faq3Question": "Hisobimni qanday o'chiraman?",
+    "faq3Answer": "Sozlamalarga o'ting, pastga tushing va \"Hisobni o'chirish\"ni bosing."
+  },
+  "privacyPolicyScreen": {
+    "title": "Maxfiylik siyosati",
+    "goBack": "Orqaga",
+    "lastUpdated": "Oxirgi yangilanish: 2026-yil yanvar",
+    "body": "Lumina maxfiyligingizni hurmat qiladi. Biz faqat ilovani ishlatish uchun zarur bo'lgan ma'lumotlarni — profilingiz, postlaringiz va siz ulashishni tanlagan faoliyatni — yig'amiz va ma'lumotlaringizni hech qachon uchinchi tomonlarga sotmaymiz. Istalgan vaqtda Sozlamalar orqali ma'lumotlaringiz nusxasini so'rashingiz yoki hisobingizni o'chirishingiz mumkin.\n\nUshbu siyosat bo'yicha savollar uchun quyidagi manzil orqali biz bilan bog'laning."
+  },
+  "about": {
+    "title": "Lumina haqida",
+    "goBack": "Orqaga",
+    "appName": "Lumina",
+    "tagline": "Yorug'ligingizni ulashing.",
+    "versionLabel": "Versiya",
+    "contactTitle": "Aloqa",
+    "contactDescription": "Savollar, fikr-mulohaza yoki taklif — sizdan eshitishdan mamnun bo'lamiz.",
+    "privacyPolicyLink": "Maxfiylik siyosati",
+    "madeWith": "Ulashishni sevganlar uchun g'amxo'rlik bilan yaratilgan."
   }
 }

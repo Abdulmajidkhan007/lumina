@@ -52,6 +52,14 @@ export type ProtectedStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   CreatePost: undefined;
+  ChangePassword: undefined;
+  NotificationsSettings: undefined;
+  Privacy: undefined;
+  BlockedAccounts: undefined;
+  ActivityStatus: undefined;
+  HelpCentre: undefined;
+  PrivacyPolicy: undefined;
+  About: undefined;
 };
 
 // ---------------------------------------------------------------------------

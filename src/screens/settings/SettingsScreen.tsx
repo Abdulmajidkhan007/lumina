@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
-import { Sheet } from '@/design-system/primitives/Sheet';
+import { ConfirmDialog } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
@@ -27,20 +27,8 @@ import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { ThemeToggle } from '@/features/settings/components/ThemeToggle';
+import { LanguagePicker, LANGUAGE_OPTIONS } from '@/features/settings/components/LanguagePicker';
 import { setAppLocale } from '@/i18n';
-
-// ---------------------------------------------------------------------------
-// Language picker options — order shown in the Sheet: English, Русский,
-// O'zbekcha, System. `as const` keeps `labelKey` narrowed to the literal
-// translation-key union so `t()` stays type-checked.
-// ---------------------------------------------------------------------------
-
-const LANGUAGE_OPTIONS = [
-  { locale: 'en', labelKey: 'settings.rows.language.english' },
-  { locale: 'ru', labelKey: 'settings.rows.language.russian' },
-  { locale: 'uz', labelKey: 'settings.rows.language.uzbek' },
-  { locale: 'system', labelKey: 'settings.rows.language.system' },
-] as const satisfies ReadonlyArray<{ locale: AppLocale; labelKey: string }>;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -54,7 +42,9 @@ export default function SettingsScreen(): React.JSX.Element {
   const { autoplayVideos, hapticsEnabled, setAutoplayVideos, setHapticsEnabled } =
     usePreferencesStore();
   const locale = useLocale();
-  const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
+  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+  const [logoutDialogVisible, setLogoutDialogVisible] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const deleteAccountMutation = useDeleteAccount();
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
@@ -63,48 +53,62 @@ export default function SettingsScreen(): React.JSX.Element {
     navigation.navigate('EditProfile');
   }, [navigation]);
 
-  const handleSignOut = useCallback(() => {
-    Alert.alert(
-      t('settings.logoutConfirm.title'),
-      t('settings.logoutConfirm.message'),
-      [
-        { text: t('settings.logoutConfirm.cancel'), style: 'cancel' },
-        {
-          text: t('settings.logoutConfirm.confirm'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await authApi.logout();
-            } finally {
-              clearSession();
-            }
-          },
-        },
-      ],
-    );
-  }, [clearSession, t]);
+  const goToChangePassword = useCallback(() => {
+    navigation.navigate('ChangePassword');
+  }, [navigation]);
 
-  const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      t('settings.deleteConfirm.title'),
-      t('settings.deleteConfirm.message'),
-      [
-        { text: t('settings.deleteConfirm.cancel'), style: 'cancel' },
-        {
-          text: t('settings.deleteConfirm.confirm'),
-          style: 'destructive',
-          onPress: () => {
-            deleteAccountMutation.mutate(undefined, {
-              onError: (error) => {
-                Alert.alert(t('common.error'), error.message, [
-                  { text: t('common.ok') },
-                ]);
-              },
-            });
-          },
-        },
-      ],
-    );
+  const goToNotificationsSettings = useCallback(() => {
+    navigation.navigate('NotificationsSettings');
+  }, [navigation]);
+
+  const goToPrivacy = useCallback(() => {
+    navigation.navigate('Privacy');
+  }, [navigation]);
+
+  const goToBlockedAccounts = useCallback(() => {
+    navigation.navigate('BlockedAccounts');
+  }, [navigation]);
+
+  const goToActivityStatus = useCallback(() => {
+    navigation.navigate('ActivityStatus');
+  }, [navigation]);
+
+  const goToHelpCentre = useCallback(() => {
+    navigation.navigate('HelpCentre');
+  }, [navigation]);
+
+  const goToPrivacyPolicy = useCallback(() => {
+    navigation.navigate('PrivacyPolicy');
+  }, [navigation]);
+
+  const goToAbout = useCallback(() => {
+    navigation.navigate('About');
+  }, [navigation]);
+
+  const openLogoutDialog = useCallback(() => setLogoutDialogVisible(true), []);
+  const closeLogoutDialog = useCallback(() => setLogoutDialogVisible(false), []);
+
+  const openDeleteDialog = useCallback(() => setDeleteDialogVisible(true), []);
+  const closeDeleteDialog = useCallback(() => setDeleteDialogVisible(false), []);
+
+  const handleConfirmSignOut = useCallback(() => {
+    setLogoutDialogVisible(false);
+    void (async () => {
+      try {
+        await authApi.logout();
+      } finally {
+        clearSession();
+      }
+    })();
+  }, [clearSession]);
+
+  const handleConfirmDeleteAccount = useCallback(() => {
+    setDeleteDialogVisible(false);
+    deleteAccountMutation.mutate(undefined, {
+      onError: (error) => {
+        Alert.alert(t('common.error'), error.message, [{ text: t('common.ok') }]);
+      },
+    });
   }, [deleteAccountMutation, t]);
 
   const handleAutoplayChange = useCallback(
@@ -117,34 +121,28 @@ export default function SettingsScreen(): React.JSX.Element {
     [setHapticsEnabled],
   );
 
-  const currentLanguageLabel = useMemo(() => {
-    switch (locale) {
-      case 'en':
-        return t('settings.rows.language.english');
-      case 'ru':
-        return t('settings.rows.language.russian');
-      case 'uz':
-        return t('settings.rows.language.uzbek');
-      case 'system':
-      default:
-        return t('settings.rows.language.system');
-    }
-  }, [locale, t]);
+  const currentLanguageOption = useMemo(
+    () => LANGUAGE_OPTIONS.find((option) => option.locale === locale) ?? LANGUAGE_OPTIONS[3],
+    [locale],
+  );
 
-  const openLanguageSheet = useCallback(() => {
-    setLanguageSheetVisible(true);
+  const currentLanguageLabel = useMemo(
+    () => `${currentLanguageOption.flag} ${t(currentLanguageOption.labelKey)}`,
+    [currentLanguageOption, t],
+  );
+
+  const openLanguagePicker = useCallback(() => {
+    setLanguagePickerVisible(true);
   }, []);
 
-  const closeLanguageSheet = useCallback(() => {
-    setLanguageSheetVisible(false);
+  const closeLanguagePicker = useCallback(() => {
+    setLanguagePickerVisible(false);
   }, []);
 
   const handleSelectLocale = useCallback((next: AppLocale) => {
     setAppLocale(next);
-    setLanguageSheetVisible(false);
+    setLanguagePickerVisible(false);
   }, []);
-
-  const noop = useCallback(() => {}, []);
 
   return (
     <SafeAreaView
@@ -198,13 +196,13 @@ export default function SettingsScreen(): React.JSX.Element {
           <SettingsRow
             icon="lock-closed-outline"
             label={t('settings.rows.changePassword')}
-            onPress={noop}
+            onPress={goToChangePassword}
             accessibilityLabel={t('settings.rows.changePassword')}
           />
           <SettingsRow
             icon="notifications-outline"
             label={t('settings.rows.notifications')}
-            onPress={noop}
+            onPress={goToNotificationsSettings}
             accessibilityLabel={t('settings.rows.notifications')}
           />
         </SettingsSection>
@@ -247,7 +245,7 @@ export default function SettingsScreen(): React.JSX.Element {
             icon="language-outline"
             label={t('settings.rows.language.label')}
             sublabel={currentLanguageLabel}
-            onPress={openLanguageSheet}
+            onPress={openLanguagePicker}
             accessibilityLabel={t('settings.rows.language.label')}
           />
         </SettingsSection>
@@ -257,19 +255,19 @@ export default function SettingsScreen(): React.JSX.Element {
           <SettingsRow
             icon="eye-off-outline"
             label={t('settings.rows.privateAccount')}
-            onPress={noop}
+            onPress={goToPrivacy}
             accessibilityLabel={t('settings.rows.privateAccount')}
           />
           <SettingsRow
             icon="hand-left-outline"
             label={t('settings.rows.blockedAccounts')}
-            onPress={noop}
+            onPress={goToBlockedAccounts}
             accessibilityLabel={t('settings.rows.blockedAccounts')}
           />
           <SettingsRow
             icon="share-social-outline"
             label={t('settings.rows.activityStatus')}
-            onPress={noop}
+            onPress={goToActivityStatus}
             accessibilityLabel={t('settings.rows.activityStatus')}
           />
         </SettingsSection>
@@ -279,19 +277,19 @@ export default function SettingsScreen(): React.JSX.Element {
           <SettingsRow
             icon="help-circle-outline"
             label={t('settings.rows.helpCentre')}
-            onPress={noop}
+            onPress={goToHelpCentre}
             accessibilityLabel={t('settings.rows.helpCentre')}
           />
           <SettingsRow
             icon="document-text-outline"
             label={t('settings.rows.privacyPolicy')}
-            onPress={noop}
+            onPress={goToPrivacyPolicy}
             accessibilityLabel={t('settings.rows.privacyPolicy')}
           />
           <SettingsRow
             icon="information-circle-outline"
             label={t('settings.rows.aboutLumina')}
-            onPress={noop}
+            onPress={goToAbout}
             accessibilityLabel={t('settings.rows.aboutLumina')}
           />
         </SettingsSection>
@@ -303,7 +301,7 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.logout')}
             right={{ type: 'none' }}
             danger
-            onPress={handleSignOut}
+            onPress={openLogoutDialog}
             accessibilityLabel={t('settings.rows.logout')}
           />
           <SettingsRow
@@ -315,54 +313,43 @@ export default function SettingsScreen(): React.JSX.Element {
             }
             right={{ type: 'none' }}
             danger
-            onPress={deleteAccountMutation.isPending ? undefined : handleDeleteAccount}
+            onPress={deleteAccountMutation.isPending ? undefined : openDeleteDialog}
             accessibilityLabel={t('settings.rows.deleteAccount')}
           />
         </SettingsSection>
       </ScrollView>
 
-      {/* Language picker sheet */}
-      <Sheet visible={languageSheetVisible} onDismiss={closeLanguageSheet}>
-        <Text
-          variant="bodyStrong"
-          color="primary"
-          style={[
-            styles.languageSheetTitle,
-            { paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md },
-          ]}
-        >
-          {t('settings.rows.language.label')}
-        </Text>
-        {LANGUAGE_OPTIONS.map((option) => {
-          const isActive = locale === option.locale;
-          return (
-            <Pressable
-              key={option.locale}
-              onPress={() => handleSelectLocale(option.locale)}
-              style={[
-                styles.languageRow,
-                { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={t(option.labelKey)}
-              accessibilityState={{ selected: isActive }}
-            >
-              <Text variant="callout" color="primary">
-                {t(option.labelKey)}
-              </Text>
-              {isActive ? (
-                <Ionicons
-                  name="checkmark"
-                  size={20}
-                  color={theme.colors.accent}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </Sheet>
+      {/* Language picker — centered modal with flags */}
+      <LanguagePicker
+        visible={languagePickerVisible}
+        locale={locale}
+        onSelect={handleSelectLocale}
+        onClose={closeLanguagePicker}
+      />
+
+      {/* Log out confirmation */}
+      <ConfirmDialog
+        visible={logoutDialogVisible}
+        title={t('settings.logoutConfirm.title')}
+        message={t('settings.logoutConfirm.message')}
+        confirmLabel={t('settings.logoutConfirm.confirm')}
+        cancelLabel={t('settings.logoutConfirm.cancel')}
+        destructive
+        onConfirm={handleConfirmSignOut}
+        onCancel={closeLogoutDialog}
+      />
+
+      {/* Delete account confirmation */}
+      <ConfirmDialog
+        visible={deleteDialogVisible}
+        title={t('settings.deleteConfirm.title')}
+        message={t('settings.deleteConfirm.message')}
+        confirmLabel={t('settings.deleteConfirm.confirm')}
+        cancelLabel={t('settings.deleteConfirm.cancel')}
+        destructive
+        onConfirm={handleConfirmDeleteAccount}
+        onCancel={closeDeleteDialog}
+      />
     </SafeAreaView>
   );
 }
@@ -384,13 +371,5 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 16,
-  },
-  languageSheetTitle: {
-    // padding applied inline via theme spacing
-  },
-  languageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
 });

@@ -136,5 +136,80 @@
     "avatarAccessibilityLabel": "Your profile photo",
     "savedTitle": "Saved",
     "savedMessage": "Your profile has been updated."
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "goBack": "Go back",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Min. 8 characters",
+    "confirmPasswordLabel": "Confirm new password",
+    "confirmPasswordPlaceholder": "Repeat new password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Update password",
+    "comingSoonTitle": "Coming soon",
+    "comingSoonMessage": "In-app password changes are on the way. For now, sign out and use \"Forgot password\" on the sign-in screen to reset it.",
+    "done": "Done"
+  },
+  "notificationsSettings": {
+    "title": "Notifications",
+    "goBack": "Go back",
+    "pushLabel": "Push notifications",
+    "pushDescription": "Allow Lumina to send notifications to this device",
+    "likesLabel": "Likes",
+    "likesDescription": "When someone likes your posts or comments",
+    "commentsLabel": "Comments",
+    "commentsDescription": "When someone comments on your posts",
+    "followsLabel": "New followers",
+    "followsDescription": "When someone starts following you"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "goBack": "Go back",
+    "privateAccountLabel": "Private account",
+    "privateAccountDescription": "Only approved followers can see your posts and stories"
+  },
+  "blockedAccounts": {
+    "title": "Blocked accounts",
+    "goBack": "Go back",
+    "emptyTitle": "No blocked accounts",
+    "emptySubtitle": "Accounts you block will appear here. They won't be able to see your profile or contact you."
+  },
+  "activityStatus": {
+    "title": "Activity status",
+    "goBack": "Go back",
+    "label": "Show activity status",
+    "description": "Let people you follow see when you were last active on Lumina"
+  },
+  "helpCentre": {
+    "title": "Help Centre",
+    "goBack": "Go back",
+    "intro": "Need a hand? Here's how to reach us and answers to common questions.",
+    "contactTitle": "Contact us",
+    "contactDescription": "Email our team and we'll get back to you as soon as we can.",
+    "faqTitle": "Frequently asked questions",
+    "faq1Question": "How do I reset my password?",
+    "faq1Answer": "Go to Settings > Change Password, or use \"Forgot password\" on the sign-in screen.",
+    "faq2Question": "How do I make my account private?",
+    "faq2Answer": "Go to Settings > Privacy and turn on Private account.",
+    "faq3Question": "How do I delete my account?",
+    "faq3Answer": "Go to Settings, scroll to the bottom, and tap Delete account."
+  },
+  "privacyPolicyScreen": {
+    "title": "Privacy Policy",
+    "goBack": "Go back",
+    "lastUpdated": "Last updated: January 2026",
+    "body": "Lumina respects your privacy. We only collect what's needed to run the app — your profile, posts, and the activity you choose to share — and we never sell your data to third parties. You can request a copy of your data or delete your account at any time from Settings.\n\nFor questions about this policy, contact us at the address below."
+  },
+  "about": {
+    "title": "About Lumina",
+    "goBack": "Go back",
+    "appName": "Lumina",
+    "tagline": "Share your light.",
+    "versionLabel": "Version",
+    "contactTitle": "Contact",
+    "contactDescription": "Questions, feedback, or feature requests — we'd love to hear from you.",
+    "privacyPolicyLink": "Privacy Policy",
+    "madeWith": "Made with care, for people who love to share."
   }
 }
