@@ -13,6 +13,13 @@
  * `getStoryReels()` fetches all non-expired stories in one query and groups
  * them by author client-side into the `StoryReel` shape the contract expects
  * (there's no dedicated "story reels" collection to query directly).
+ *
+ * `createStory()` uploads any local-URI media to Cloud Storage
+ * (`stories/{uid}/{timestamp}`) via `uploadMedia`, then writes a new
+ * `stories/{storyId}` doc with `expiresAt` set to 24h from now. Because
+ * `getStoryReels()` re-queries `expiresAt > now` on every call, the freshly
+ * created story is picked up (and grouped into the author's own reel) as
+ * soon as the `storyReels` query is invalidated/refetched.
  */
 import {
   arrayUnion,
@@ -21,15 +28,17 @@ import {
   getDocs,
   orderBy,
   query,
+  setDoc,
   updateDoc,
   where,
 } from '@react-native-firebase/firestore';
-import type { IStoriesApi } from '@/data/api/contracts';
-import type { StoryReel, StoryId } from '@/types/models';
+import type { IStoriesApi, CreateStoryInput } from '@/data/api/contracts';
+import type { Story, StoryReel, StoryId } from '@/types/models';
 import type { UserSummary, Media } from '@/schemas';
-import { storyReelSchema } from '@/schemas';
+import { storyReelSchema, storySchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
-import { getCurrentUid, requireCurrentUid } from './helpers';
+import { fetchUserSummary, getCurrentUid, requireCurrentUid } from './helpers';
+import { uploadMedia } from './upload';
 
 interface StoryDocFields {
   authorId: string;
@@ -97,6 +106,56 @@ export class FirebaseStoriesApi implements IStoriesApi {
     const uid = requireCurrentUid();
     await updateDoc(doc(getFirebaseFirestore(), 'stories', storyId), {
       seenByUids: arrayUnion(uid),
+    });
+  }
+
+  async createStory(input: CreateStoryInput): Promise<Story> {
+    const uid = requireCurrentUid();
+    const author = await fetchUserSummary(uid);
+    if (!author) {
+      throw new Error('Current user profile not found');
+    }
+
+    const now = Date.now();
+    const uri = input.uri.startsWith('http')
+      ? input.uri
+      : await uploadMedia(input.uri, `stories/${uid}/${now}`);
+    const media: Media =
+      input.type === 'video'
+        ? {
+            type: 'video',
+            uri,
+            width: input.width ?? 1080,
+            height: input.height ?? 1920,
+            ...(input.durationMs !== undefined ? { durationMs: input.durationMs } : {}),
+          }
+        : {
+            type: 'image',
+            uri,
+            width: input.width ?? 1080,
+            height: input.height ?? 1920,
+          };
+
+    const createdAt = new Date(now).toISOString();
+    const expiresAt = new Date(now + 24 * 60 * 60 * 1000).toISOString();
+    const newRef = doc(storiesCollection());
+    const storyDoc: StoryDocFields = {
+      authorId: uid,
+      author,
+      media,
+      createdAt,
+      expiresAt,
+      seenByUids: [],
+    };
+    await setDoc(newRef, storyDoc);
+
+    return storySchema.parse({
+      id: newRef.id,
+      author,
+      media,
+      createdAt,
+      expiresAt,
+      seen: false,
     });
   }
 }

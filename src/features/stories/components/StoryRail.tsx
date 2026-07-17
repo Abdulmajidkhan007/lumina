@@ -3,10 +3,16 @@
  *
  * Horizontally scrolling strip of story rings. "Your story" is always first,
  * followed by story reels from the useStoryReels query.
+ *
+ * Tapping "Your story" when the current user has no active reel opens the
+ * gallery picker and creates a new story. When an active reel exists, the
+ * ring opens the story viewer as usual (unchanged), while a small "+" badge
+ * on the ring always opens the picker to add another story.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   FlatList,
   StyleSheet,
   View,
@@ -14,11 +20,13 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { launchImageLibrary } from 'react-native-image-picker';
 import type { ProtectedStackParamList } from '@/navigation';
 
 import { useTheme } from '@/design-system/theme';
 import { SkeletonCircle } from '@/design-system/primitives/Skeleton';
 import { useStoryReels } from '@/data/query/hooks/useStoryReels';
+import { useCreateStory } from '@/data/query/hooks/useCreateStory';
 import { useCurrentUser } from '@/stores/auth.store';
 import type { StoryReel , UserSummary } from '@/types/models';
 import { StoryRing } from './StoryRing';
@@ -29,7 +37,7 @@ import { StoryRing } from './StoryRing';
 
 /** Union item in the rail — either the current user stub or a real StoryReel */
 type RailItem =
-  | { type: 'currentUser'; user: UserSummary; userId: string }
+  | { type: 'currentUser'; user: UserSummary; userId: string; myReel: StoryReel | null }
   | { type: 'reel'; reel: StoryReel };
 
 // ---------------------------------------------------------------------------
@@ -58,6 +66,8 @@ export function StoryRail(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const { data: reels, isLoading } = useStoryReels();
+  const createStory = useCreateStory();
+  const [pickerBusy, setPickerBusy] = useState(false);
 
   const handleRingPress = useCallback(
     (userId: string) => {
@@ -66,8 +76,56 @@ export function StoryRail(): React.JSX.Element {
     [navigation],
   );
 
+  const pickAndCreateStory = useCallback(() => {
+    setPickerBusy(true);
+    launchImageLibrary(
+      { mediaType: 'photo', selectionLimit: 1, quality: 0.9 },
+      (response) => {
+        setPickerBusy(false);
+        if (response.didCancel === true) return;
+        if (response.errorCode !== undefined) {
+          if (response.errorMessage != null) {
+            Alert.alert('Could not open gallery', response.errorMessage);
+          }
+          return;
+        }
+
+        const asset = response.assets?.[0];
+        if (asset?.uri === undefined) return;
+
+        createStory.mutate(
+          {
+            uri: asset.uri,
+            type: 'image',
+            width: asset.width,
+            height: asset.height,
+          },
+          {
+            onError: (error) => {
+              Alert.alert('Story upload failed', error.message);
+            },
+          },
+        );
+      },
+    );
+  }, [createStory]);
+
+  const handleCurrentUserPress = useCallback(
+    (myReel: StoryReel | null) => {
+      if (myReel != null) {
+        handleRingPress(myReel.author.id);
+      } else {
+        pickAndCreateStory();
+      }
+    },
+    [handleRingPress, pickAndCreateStory],
+  );
+
   const items = React.useMemo<RailItem[]>(() => {
     const result: RailItem[] = [];
+    const myReel = currentUser != null
+      ? reels?.find((reel) => reel.author.id === currentUser.id) ?? null
+      : null;
 
     if (currentUser != null) {
       result.push({
@@ -80,11 +138,16 @@ export function StoryRail(): React.JSX.Element {
           isVerified: currentUser.isVerified,
         },
         userId: currentUser.id,
+        myReel,
       });
     }
 
     if (reels != null) {
       for (const reel of reels) {
+        // The current user's own reel is represented by the "currentUser"
+        // stub above (which knows how to route taps to either the viewer or
+        // the composer) — skip it here to avoid rendering it twice.
+        if (currentUser != null && reel.author.id === currentUser.id) continue;
         result.push({ type: 'reel', reel });
       }
     }
@@ -97,6 +160,8 @@ export function StoryRail(): React.JSX.Element {
     return `reel-${item.reel.author.id}`;
   }, []);
 
+  const isUploading = pickerBusy || createStory.isPending;
+
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<RailItem>) => {
       const isFirst = index === 0;
@@ -108,7 +173,9 @@ export function StoryRail(): React.JSX.Element {
             user={item.user}
             hasUnseen={false}
             isCurrentUser
-            onPress={handleRingPress}
+            isUploading={isUploading}
+            onPress={() => handleCurrentUserPress(item.myReel)}
+            onAddPress={pickAndCreateStory}
             style={{
               marginLeft: isFirst ? theme.spacing.lg : 0,
               marginRight: isLast ? theme.spacing.lg : theme.spacing.md,
@@ -129,7 +196,15 @@ export function StoryRail(): React.JSX.Element {
         />
       );
     },
-    [handleRingPress, items.length, theme.spacing.lg, theme.spacing.md],
+    [
+      handleCurrentUserPress,
+      handleRingPress,
+      isUploading,
+      items.length,
+      pickAndCreateStory,
+      theme.spacing.lg,
+      theme.spacing.md,
+    ],
   );
 
   if (isLoading && items.length === 0) {

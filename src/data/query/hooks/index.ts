@@ -23,5 +23,6 @@ export { useLikeReel } from './useLikeReel';
 export { useSaveReel } from './useSaveReel';
 export { useMarkNotificationsRead } from './useMarkNotificationsRead';
 export { useCreatePost } from './useCreatePost';
+export { useCreateStory } from './useCreateStory';
 export { useUpdateProfile } from './useUpdateProfile';
 export { useDeleteAccount } from './useDeleteAccount';

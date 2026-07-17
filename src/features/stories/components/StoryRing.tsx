@@ -8,6 +8,7 @@
 
 import React, { useCallback } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   View,
   StyleSheet,
@@ -20,6 +21,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
+import { hitSlop } from '@/constants/layout';
 import type { UserSummary } from '@/types/models';
 import { storyRing } from '@/constants/layout';
 
@@ -33,6 +35,14 @@ export interface StoryRingProps {
   /** True for the "Your story" cell — shows a + add badge */
   isCurrentUser?: boolean;
   onPress: (userId: string) => void;
+  /**
+   * Renders the + badge as its own tap target that always opens the story
+   * composer, independent of what tapping the ring itself does. Only
+   * meaningful when `isCurrentUser` is true.
+   */
+  onAddPress?: () => void;
+  /** Shows a spinner overlay on the ring while a new story is uploading */
+  isUploading?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -55,6 +65,8 @@ export const StoryRing = React.memo(function StoryRing({
   hasUnseen,
   isCurrentUser = false,
   onPress,
+  onAddPress,
+  isUploading = false,
   style,
 }: StoryRingProps): React.JSX.Element {
   const theme = useTheme();
@@ -62,6 +74,10 @@ export const StoryRing = React.memo(function StoryRing({
   const handlePress = useCallback(() => {
     onPress(user.id);
   }, [onPress, user.id]);
+
+  const handleAddPress = useCallback(() => {
+    onAddPress?.();
+  }, [onAddPress]);
 
   const innerSize = AVATAR_SIZE;
   const showGradientRing = hasUnseen && !isCurrentUser;
@@ -104,6 +120,17 @@ export const StoryRing = React.memo(function StoryRing({
           </Text>
         </View>
       )}
+      {isUploading ? (
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            styles.uploadingOverlay,
+            { borderRadius: innerSize / 2 },
+          ]}
+        >
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        </View>
+      ) : null}
     </View>
   );
 
@@ -114,7 +141,9 @@ export const StoryRing = React.memo(function StoryRing({
       accessibilityRole="button"
       accessibilityLabel={
         isCurrentUser
-          ? 'Your story'
+          ? isUploading
+            ? 'Your story, uploading'
+            : 'Your story'
           : `${user.username}'s story${hasUnseen ? ', unseen' : ''}`
       }
     >
@@ -160,9 +189,12 @@ export const StoryRing = React.memo(function StoryRing({
         </View>
       )}
 
-      {/* Add badge for current user */}
+      {/* Add badge for current user — its own tap target so it always opens
+          the story composer, independent of what tapping the ring does. */}
       {isCurrentUser ? (
-        <View
+        <Pressable
+          onPress={handleAddPress}
+          hitSlop={hitSlop.sm}
           style={[
             styles.addBadge,
             {
@@ -170,9 +202,11 @@ export const StoryRing = React.memo(function StoryRing({
               borderColor: theme.colors.background,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add to your story"
         >
           <Ionicons name="add" size={10} color="#FFFFFF" />
-        </View>
+        </Pressable>
       ) : null}
 
       {/* Username label */}
@@ -208,6 +242,11 @@ const styles = StyleSheet.create({
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  uploadingOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   addBadge: {
     position: 'absolute',
