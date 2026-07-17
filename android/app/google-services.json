@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "780053612664-i7shppnnqicqesar1jjoiq8h0ple112m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lumina",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
           "client_id": "780053612664-2e6rm0silqb00l605kpaacdii8ghhj1v.apps.googleusercontent.com",
           "client_type": 3
         }
