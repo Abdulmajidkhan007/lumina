@@ -75,4 +75,16 @@ export class MockAuthApi implements IAuthApi {
     // No real email to send in mock mode — just simulate network latency.
     await mockDelay();
   }
+
+  async getCurrentUserEmail(): Promise<string | null> {
+    await mockDelay();
+    // Mock users have no stored email — synthesize one from the username so
+    // "forgot password?" flows have something plausible to display.
+    return `${currentUser.username}@example.com`;
+  }
+
+  async changePassword(_currentPassword: string, _newPassword: string): Promise<void> {
+    // No real credential to verify in mock mode — just simulate network latency.
+    await mockDelay();
+  }
 }

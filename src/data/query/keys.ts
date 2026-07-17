@@ -18,6 +18,7 @@ export const queryKeys = {
     parentCommentId
       ? (['comments', postId, 'replies', parentCommentId] as const)
       : (['comments', postId] as const),
+  savedPosts: () => ['savedPosts'] as const,
 
   // Stories
   storyReels: () => ['storyReels'] as const,

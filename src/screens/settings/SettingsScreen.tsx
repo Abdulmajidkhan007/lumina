@@ -57,6 +57,10 @@ export default function SettingsScreen(): React.JSX.Element {
     navigation.navigate('ChangePassword');
   }, [navigation]);
 
+  const goToSavedPosts = useCallback(() => {
+    navigation.navigate('SavedPosts');
+  }, [navigation]);
+
   const goToNotificationsSettings = useCallback(() => {
     navigation.navigate('NotificationsSettings');
   }, [navigation]);
@@ -204,6 +208,12 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.notifications')}
             onPress={goToNotificationsSettings}
             accessibilityLabel={t('settings.rows.notifications')}
+          />
+          <SettingsRow
+            icon="bookmark-outline"
+            label={t('settings.rows.saved')}
+            onPress={goToSavedPosts}
+            accessibilityLabel={t('settings.rows.saved')}
           />
         </SettingsSection>
 

@@ -10,9 +10,12 @@
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
 } from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
@@ -178,6 +181,36 @@ export class FirebaseAuthApi implements IAuthApi {
   /** Delegates to Firebase Auth — errors (e.g. `auth/invalid-email`) propagate as-is. */
   async resetPassword(email: string): Promise<void> {
     await sendPasswordResetEmail(getFirebaseAuth(), email);
+  }
+
+  async getCurrentUserEmail(): Promise<string | null> {
+    return getFirebaseAuth().currentUser?.email ?? null;
+  }
+
+  /**
+   * Re-authenticates with `currentPassword` before applying `newPassword` —
+   * Firebase requires a "recent" sign-in for `updatePassword`, and this also
+   * closes the security gap of allowing a password change from a merely
+   * still-signed-in session without proving the current credential.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current || !current.email) {
+      throw new Error('Not authenticated');
+    }
+
+    const credential = EmailAuthProvider.credential(current.email, currentPassword);
+    try {
+      await reauthenticateWithCredential(current, credential);
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        throw new Error('Current password is incorrect.');
+      }
+      throw error;
+    }
+
+    await updatePassword(current, newPassword);
   }
 
   /**

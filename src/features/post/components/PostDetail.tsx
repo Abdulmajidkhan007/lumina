@@ -12,6 +12,7 @@
 
 import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,16 +22,20 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
 import { Sheet } from '@/design-system/primitives/Sheet';
+import { ConfirmDialog } from '@/components';
 import { PostActions } from '@/features/feed/components/PostActions';
 import { PostMediaPager } from '@/features/feed/components/PostMediaPager';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
+import { useDeletePost } from '@/data/query/hooks/useDeletePost';
+import { useCurrentUser } from '@/stores/auth.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
 import type { Post, Comment } from '@/types/models';
@@ -57,12 +62,18 @@ export function PostDetail({
   onViewAllComments,
 }: PostDetailProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
+  const currentUser = useCurrentUser();
 
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
+  const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+
+  const canDelete = currentUser !== null && currentUser.id === post.author.id;
 
   // ---- Handlers ----
 
@@ -91,12 +102,25 @@ export function PostDetail({
   const handleMenuOpen = useCallback(() => setMenuOpen(true), []);
   const handleMenuClose = useCallback(() => setMenuOpen(false), []);
 
-  // CommentItem callbacks (for preview comments — these are view-only)
-  const handlePreviewCommentLike = useCallback((_comment: Comment) => {
-    // Preview likes are read-only; direct to comments screen for interaction
-    onViewAllComments();
-  }, [onViewAllComments]);
+  const openDeleteDialog = useCallback(() => {
+    setMenuOpen(false);
+    setDeleteDialogVisible(true);
+  }, []);
+  const closeDeleteDialog = useCallback(() => setDeleteDialogVisible(false), []);
 
+  const handleConfirmDelete = useCallback(() => {
+    setDeleteDialogVisible(false);
+    deletePost(post.id, {
+      onSuccess: () => {
+        navigation.goBack();
+      },
+      onError: (error) => {
+        Alert.alert(t('postDetail.deleteErrorTitle'), error.message, [{ text: t('common.ok') }]);
+      },
+    });
+  }, [deletePost, post.id, navigation, t]);
+
+  // CommentItem callbacks (for preview comments — these are view-only)
   const handlePreviewCommentReply = useCallback((_comment: Comment) => {
     onViewAllComments();
   }, [onViewAllComments]);
@@ -267,7 +291,7 @@ export function PostDetail({
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                onLike={handlePreviewCommentLike}
+                postId={post.id}
                 onReply={handlePreviewCommentReply}
                 onAuthorPress={handlePreviewCommentAuthorPress}
               />
@@ -342,8 +366,38 @@ export function PostDetail({
               Copy link
             </Text>
           </Pressable>
+          {canDelete ? (
+            <Pressable
+              style={[styles.sheetRow, { paddingVertical: theme.spacing.lg }]}
+              onPress={openDeleteDialog}
+              disabled={isDeletingPost}
+              accessibilityRole="button"
+              accessibilityLabel={t('postDetail.deletePost')}
+            >
+              <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
+              <Text
+                variant="body"
+                color="danger"
+                style={{ marginLeft: theme.spacing.sm }}
+              >
+                {t('postDetail.deletePost')}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </Sheet>
+
+      {/* Delete post confirmation */}
+      <ConfirmDialog
+        visible={deleteDialogVisible}
+        title={t('postDetail.deleteConfirmTitle')}
+        message={t('postDetail.deleteConfirmMessage')}
+        confirmLabel={t('postDetail.deleteConfirmConfirm')}
+        cancelLabel={t('postDetail.deleteConfirmCancel')}
+        destructive
+        onConfirm={handleConfirmDelete}
+        onCancel={closeDeleteDialog}
+      />
     </>
   );
 }

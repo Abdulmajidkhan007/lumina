@@ -104,6 +104,7 @@
       "helpCentre": "Центр помощи",
       "privacyPolicy": "Политика конфиденциальности",
       "aboutLumina": "О Lumina",
+      "saved": "Сохранённое",
       "logout": "Выйти",
       "deleteAccount": "Удалить аккаунт"
     },
@@ -140,6 +141,8 @@
   "changePassword": {
     "title": "Изменить пароль",
     "goBack": "Назад",
+    "currentPasswordLabel": "Текущий пароль",
+    "currentPasswordPlaceholder": "Введите текущий пароль",
     "newPasswordLabel": "Новый пароль",
     "newPasswordPlaceholder": "Минимум 8 символов",
     "confirmPasswordLabel": "Подтвердите новый пароль",
@@ -149,7 +152,14 @@
     "submit": "Обновить пароль",
     "comingSoonTitle": "Скоро будет доступно",
     "comingSoonMessage": "Изменение пароля внутри приложения появится позже. Пока используйте «Забыли пароль?» на экране входа.",
-    "done": "Готово"
+    "done": "Готово",
+    "successTitle": "Пароль обновлён",
+    "successMessage": "Ваш пароль был успешно изменён.",
+    "genericError": "Не удалось обновить пароль. Попробуйте ещё раз.",
+    "forgotPassword": "Забыли пароль?",
+    "forgotPasswordSent": "Ссылка для восстановления отправлена на вашу почту.",
+    "forgotPasswordError": "Не удалось отправить ссылку для восстановления. Попробуйте ещё раз.",
+    "forgotPasswordNoEmail": "Для этого аккаунта не указан email."
   },
   "notificationsSettings": {
     "title": "Уведомления",
@@ -211,5 +221,20 @@
     "contactDescription": "Вопросы, отзывы или пожелания по функциям — будем рады услышать вас.",
     "privacyPolicyLink": "Политика конфиденциальности",
     "madeWith": "Сделано с заботой для тех, кто любит делиться."
+  },
+  "postDetail": {
+    "deletePost": "Удалить публикацию",
+    "deleteConfirmTitle": "Удалить публикацию",
+    "deleteConfirmMessage": "Это навсегда удалит вашу публикацию. Это действие нельзя отменить.",
+    "deleteConfirmConfirm": "Удалить",
+    "deleteConfirmCancel": "Отмена",
+    "deleteErrorTitle": "Не удалось удалить публикацию"
+  },
+  "savedPosts": {
+    "title": "Сохранённое",
+    "goBack": "Назад",
+    "emptyTitle": "Пока нет сохранённых публикаций",
+    "emptySubtitle": "Публикации, которые вы сохраните, появятся здесь.",
+    "error": "Не удалось загрузить сохранённые публикации."
   }
 }

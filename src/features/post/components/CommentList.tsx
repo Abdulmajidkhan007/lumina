@@ -6,7 +6,7 @@
  * Provides ListEmptyComponent (EmptyState) and ListFooterComponent (Spinner).
  */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import {
   FlatList,
   View,
@@ -88,6 +88,7 @@ function ListEmpty(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 export const CommentList = React.memo(function CommentList({
+  postId,
   comments,
   hasNextPage,
   isFetchingNextPage,
@@ -98,23 +99,7 @@ export const CommentList = React.memo(function CommentList({
 }: CommentListProps): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(
-    () => new Set(comments.filter((c) => c.isLikedByMe).map((c) => c.id)),
-  );
   const listRef = useRef<FlatList<Comment>>(null);
-
-  // Optimistic local like toggle (comment like mutation not in spec hooks, so local)
-  const handleLike = useCallback((comment: Comment) => {
-    setLikedCommentIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(comment.id)) {
-        next.delete(comment.id);
-      } else {
-        next.add(comment.id);
-      }
-      return next;
-    });
-  }, []);
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -125,21 +110,15 @@ export const CommentList = React.memo(function CommentList({
   const keyExtractor = useCallback((item: Comment) => item.id, []);
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Comment>) => {
-      // Merge local like state so we don't lose optimistic updates on re-render
-      const merged: Comment = likedCommentIds.has(item.id)
-        ? { ...item, isLikedByMe: true }
-        : item;
-      return (
-        <CommentItem
-          comment={merged}
-          onLike={handleLike}
-          onReply={onReply}
-          onAuthorPress={onAuthorPress}
-        />
-      );
-    },
-    [likedCommentIds, handleLike, onReply, onAuthorPress],
+    ({ item }: ListRenderItemInfo<Comment>) => (
+      <CommentItem
+        comment={item}
+        postId={postId}
+        onReply={onReply}
+        onAuthorPress={onAuthorPress}
+      />
+    ),
+    [postId, onReply, onAuthorPress],
   );
 
   const listFooter = useMemo(

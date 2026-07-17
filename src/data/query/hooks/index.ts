@@ -12,12 +12,14 @@ export { useMessages } from './useMessages';
 export { useNotifications } from './useNotifications';
 export { useSearchUsers } from './useSearchUsers';
 export { useResetPassword } from './useResetPassword';
+export { useSavedPosts } from './useSavedPosts';
 
 // Mutation hooks
 export { useLikePost } from './useLikePost';
 export { useSavePost } from './useSavePost';
 export { useFollowUser } from './useFollowUser';
 export { useAddComment } from './useAddComment';
+export { useLikeComment } from './useLikeComment';
 export { useSendMessage } from './useSendMessage';
 export { useLikeReel } from './useLikeReel';
 export { useSaveReel } from './useSaveReel';
@@ -26,3 +28,5 @@ export { useCreatePost } from './useCreatePost';
 export { useCreateStory } from './useCreateStory';
 export { useUpdateProfile } from './useUpdateProfile';
 export { useDeleteAccount } from './useDeleteAccount';
+export { useChangePassword } from './useChangePassword';
+export { useDeletePost } from './useDeletePost';

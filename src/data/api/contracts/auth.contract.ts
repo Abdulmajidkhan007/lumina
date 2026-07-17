@@ -29,6 +29,21 @@ export interface IAuthApi {
    */
   resetPassword(email: string): Promise<void>;
   /**
+   * Returns the signed-in user's email address, or null if there isn't one
+   * on file. The `User` domain model has no `email` field (it's
+   * viewer-relative/session data, not a public profile attribute), so flows
+   * that need it — e.g. a "forgot password?" link inside a settings screen —
+   * read it through this rather than threading it through client state.
+   */
+  getCurrentUserEmail(): Promise<string | null>;
+  /**
+   * Changes the signed-in user's password. Implementations must verify
+   * `currentPassword` against the live credential before applying
+   * `newPassword` — never allow an unauthenticated password swap.
+   * Rejects with a user-facing message when `currentPassword` is wrong.
+   */
+  changePassword(currentPassword: string, newPassword: string): Promise<void>;
+  /**
    * Permanently deletes the current user's account (Play Store / App Store
    * in-app account deletion requirement). Removes the backing profile
    * record and the auth credential, then the caller is expected to clear

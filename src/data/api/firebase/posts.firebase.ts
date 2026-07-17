@@ -12,6 +12,12 @@
  *      text, likeCount, createdAt, replyCount, parentId (string | null; stored
  *      as null rather than omitted so top-level comments can be queried with
  *      `where('parentId', '==', null)`).
+ *      - `posts/{postId}/comments/{commentId}/likes/{uid}` — membership
+ *        marker; existence = liked. `likeCount` on the comment doc is kept
+ *        in sync the same way as post likes.
+ *  - `users/{uid}/saves/{postId}` — per-user save index (postId, createdAt).
+ *    Mirrors `posts/{postId}/saves/{uid}` but keyed the other way round so
+ *    getSavedPosts can page through "my saves" ordered by save time.
  *
  * `createPost` uploads any local-URI media to Cloud Storage
  * (`posts/{uid}/{timestamp}_{index}`) via `uploadMedia`, then writes the
@@ -20,6 +26,7 @@
  */
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   increment,
@@ -28,7 +35,7 @@ import {
   where,
 } from '@react-native-firebase/firestore';
 import type { IPostsApi, AddCommentInput, CreatePostInput } from '@/data/api/contracts';
-import type { Post, Comment, PostId, UserId } from '@/types/models';
+import type { Post, Comment, PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { postSchema, commentSchema } from '@/schemas';
 import type { Media } from '@/schemas';
@@ -81,6 +88,14 @@ function commentsCollection(postId: string) {
   return collection(postDocRef(postId), 'comments');
 }
 
+function commentDocRef(postId: string, commentId: string) {
+  return doc(commentsCollection(postId), commentId);
+}
+
+function savesCollection(uid: string) {
+  return collection(doc(getFirebaseFirestore(), 'users', uid), 'saves');
+}
+
 async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promise<unknown> {
   const data = raw.data as Partial<PostDocFields>;
   const [isLikedByMe, isSavedByMe] = await getMembershipFlags(
@@ -102,15 +117,20 @@ async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promis
   };
 }
 
-function buildCommentCandidate(raw: RawDoc): unknown {
+async function buildCommentCandidate(
+  raw: RawDoc,
+  postId: string,
+  viewerUid: string | null,
+): Promise<unknown> {
   const data = raw.data as Partial<CommentDocFields>;
+  const [isLikedByMe] = await getMembershipFlags(commentDocRef(postId, raw.id), ['likes'], viewerUid);
   return {
     id: raw.id,
     postId: data.postId,
     author: data.author,
     text: data.text,
     likeCount: data.likeCount ?? 0,
-    isLikedByMe: false, // IPostsApi exposes no comment-like mutation
+    isLikedByMe,
     createdAt: data.createdAt,
     replyCount: data.replyCount ?? 0,
     ...(data.parentId ? { parentId: data.parentId } : {}),
@@ -231,12 +251,22 @@ export class FirebasePostsApi implements IPostsApi {
   }
 
   private async setSave(id: PostId, saved: boolean): Promise<void> {
+    const uid = requireCurrentUid();
     await setMembershipFlag({
       parentRef: postDocRef(id),
       subcollection: 'saves',
-      uid: requireCurrentUid(),
+      uid,
       shouldExist: saved,
     });
+    // Mirror into `users/{uid}/saves/{postId}` — a per-user index that lets
+    // getSavedPosts page through "my saves" ordered by save time, which the
+    // `posts/{id}/saves/{uid}` marker above can't do efficiently.
+    const markerRef = doc(savesCollection(uid), id);
+    if (saved) {
+      await setDoc(markerRef, { postId: id, createdAt: new Date().toISOString() });
+    } else {
+      await deleteDoc(markerRef);
+    }
   }
 
   async getComments(params: CommentParams): Promise<Paginated<Comment>> {
@@ -247,7 +277,12 @@ export class FirebasePostsApi implements IPostsApi {
       params.cursor,
       params.limit,
     );
-    const items = await buildValidatedList(docs, buildCommentCandidate, commentSchema);
+    const viewerUid = getCurrentUid();
+    const items = await buildValidatedList(
+      docs,
+      (raw) => buildCommentCandidate(raw, params.postId, viewerUid),
+      commentSchema,
+    );
     return { items, nextCursor };
   }
 
@@ -282,6 +317,63 @@ export class FirebasePostsApi implements IPostsApi {
       createdAt: now,
       replyCount: 0,
       ...(input.parentCommentId !== undefined ? { parentId: input.parentCommentId } : {}),
+    });
+  }
+
+  async likeComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await this.setCommentLike(postId, commentId, true);
+  }
+
+  async unlikeComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await this.setCommentLike(postId, commentId, false);
+  }
+
+  private async setCommentLike(postId: PostId, commentId: CommentId, liked: boolean): Promise<void> {
+    await setMembershipFlag({
+      parentRef: commentDocRef(postId, commentId),
+      subcollection: 'likes',
+      uid: requireCurrentUid(),
+      shouldExist: liked,
+      counterField: 'likeCount',
+    });
+  }
+
+  /** Verifies ownership before deleting; decrements the author's `postCount`. */
+  async deletePost(id: PostId): Promise<void> {
+    const uid = requireCurrentUid();
+    const ref = postDocRef(id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      throw new Error(`Post ${id} not found`);
+    }
+    const data = snap.data() as Partial<PostDocFields>;
+    if (data.authorId !== uid) {
+      throw new Error('You can only delete your own posts.');
+    }
+    await deleteDoc(ref);
+    await updateDoc(doc(getFirebaseFirestore(), 'users', uid), { postCount: increment(-1) });
+  }
+
+  async getSavedPosts(params: FeedParams): Promise<Paginated<Post>> {
+    return withReadableErrors('saved posts', async () => {
+      const uid = requireCurrentUid();
+      const { docs, nextCursor } = await queryCreatedAtPage(
+        savesCollection(uid),
+        [],
+        params.cursor,
+        params.limit,
+      );
+      const postSnaps = await Promise.all(docs.map((raw) => getDoc(postDocRef(raw.id))));
+      const rawPosts: RawDoc[] = postSnaps
+        .filter((snap) => snap.exists())
+        .map((snap) => ({ id: snap.id, data: snap.data() ?? {} }));
+      const viewerUid = getCurrentUid();
+      const items = await buildValidatedList(
+        rawPosts,
+        (raw) => buildPostCandidate(raw, viewerUid),
+        postSchema,
+      );
+      return { items, nextCursor };
     });
   }
 

@@ -104,6 +104,7 @@
       "helpCentre": "Help Centre",
       "privacyPolicy": "Privacy Policy",
       "aboutLumina": "About Lumina",
+      "saved": "Saved",
       "logout": "Log out",
       "deleteAccount": "Delete account"
     },
@@ -140,6 +141,8 @@
   "changePassword": {
     "title": "Change Password",
     "goBack": "Go back",
+    "currentPasswordLabel": "Current password",
+    "currentPasswordPlaceholder": "Enter current password",
     "newPasswordLabel": "New password",
     "newPasswordPlaceholder": "Min. 8 characters",
     "confirmPasswordLabel": "Confirm new password",
@@ -149,7 +152,14 @@
     "submit": "Update password",
     "comingSoonTitle": "Coming soon",
     "comingSoonMessage": "In-app password changes are on the way. For now, sign out and use \"Forgot password\" on the sign-in screen to reset it.",
-    "done": "Done"
+    "done": "Done",
+    "successTitle": "Password updated",
+    "successMessage": "Your password has been changed successfully.",
+    "genericError": "Couldn't update your password. Please try again.",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordSent": "Reset link sent to your email.",
+    "forgotPasswordError": "Couldn't send the reset link. Please try again.",
+    "forgotPasswordNoEmail": "No email on file for this account."
   },
   "notificationsSettings": {
     "title": "Notifications",
@@ -211,5 +221,20 @@
     "contactDescription": "Questions, feedback, or feature requests — we'd love to hear from you.",
     "privacyPolicyLink": "Privacy Policy",
     "madeWith": "Made with care, for people who love to share."
+  },
+  "postDetail": {
+    "deletePost": "Delete post",
+    "deleteConfirmTitle": "Delete post",
+    "deleteConfirmMessage": "This permanently deletes your post. This action cannot be undone.",
+    "deleteConfirmConfirm": "Delete",
+    "deleteConfirmCancel": "Cancel",
+    "deleteErrorTitle": "Couldn't delete post"
+  },
+  "savedPosts": {
+    "title": "Saved",
+    "goBack": "Go back",
+    "emptyTitle": "No saved posts yet",
+    "emptySubtitle": "Posts you save will appear here.",
+    "error": "Couldn't load saved posts."
   }
 }

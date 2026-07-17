@@ -1,12 +1,15 @@
 /**
  * Lumina — Change Password screen
  *
- * New password + confirm password form (RHF + Zod). Changing a Firebase
- * password from inside the app requires a re-authentication flow that
- * isn't wired up yet, so a validated submit shows a themed "coming soon"
- * acknowledgement instead of silently doing nothing — real-looking, not
- * broken. Users can still reset their password via "Forgot password" on
- * the sign-in screen.
+ * Current + new + confirm password form (RHF + Zod). Requires the current
+ * password and re-authenticates against it before applying the new one
+ * (see FirebaseAuthApi.changePassword) — closes the security gap where the
+ * old flow accepted a new password with no proof of the old one.
+ *
+ * Success shows a themed confirmation card, then goes back. Failure (e.g.
+ * wrong current password) surfaces inline via an error banner. A "Forgot
+ * password?" link below the form sends a reset email for the signed-in
+ * account directly, without needing the (unreachable from here) auth stack.
  */
 
 import React, { useCallback, useRef, useState } from 'react';
@@ -34,6 +37,8 @@ import { Text } from '@/design-system/primitives/Text';
 import { Input } from '@/design-system/primitives/Input';
 import { Button } from '@/design-system/primitives/Button';
 import { SettingsScreenHeader } from '@/features/settings/components/SettingsScreenHeader';
+import { useChangePassword } from '@/data/query/hooks/useChangePassword';
+import { authApi } from '@/data/api/client';
 import { hitSlop } from '@/constants/layout';
 
 // ---------------------------------------------------------------------------
@@ -42,6 +47,7 @@ import { hitSlop } from '@/constants/layout';
 
 const changePasswordSchema = z
   .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -63,28 +69,43 @@ export default function ChangePasswordScreen(): React.JSX.Element {
   const theme = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
+  const changePasswordMutation = useChangePassword();
 
+  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const [forgotPending, setForgotPending] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
+  const newPasswordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ChangePasswordInput>({
     resolver: zodResolver(changePasswordSchema),
-    defaultValues: { newPassword: '', confirmPassword: '' },
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
-  const onSubmit = useCallback(async () => {
-    // Simulate a real network round-trip so the flow feels intentional —
-    // there's no password-change data hook yet (needs Firebase re-auth).
-    await new Promise<void>((resolve) => setTimeout(resolve, 600));
-    setSubmitted(true);
+  const onSubmit = useCallback(
+    (data: ChangePasswordInput) => {
+      changePasswordMutation.mutate(
+        { currentPassword: data.currentPassword, newPassword: data.newPassword },
+        { onSuccess: () => setSubmitted(true) },
+      );
+    },
+    [changePasswordMutation],
+  );
+
+  const toggleCurrentPasswordVisible = useCallback(() => {
+    setCurrentPasswordVisible((v) => !v);
   }, []);
 
   const toggleNewPasswordVisible = useCallback(() => {
@@ -95,9 +116,52 @@ export default function ChangePasswordScreen(): React.JSX.Element {
     setConfirmPasswordVisible((v) => !v);
   }, []);
 
+  const focusNewPassword = useCallback(() => {
+    newPasswordRef.current?.focus();
+  }, []);
+
   const focusConfirm = useCallback(() => {
     confirmRef.current?.focus();
   }, []);
+
+  const handleForgotPassword = useCallback(() => {
+    setForgotError(null);
+    setForgotPending(true);
+    void (async () => {
+      try {
+        const email = await authApi.getCurrentUserEmail();
+        if (!email) {
+          setForgotError(t('changePassword.forgotPasswordNoEmail'));
+          return;
+        }
+        await authApi.resetPassword(email);
+        setForgotSent(true);
+      } catch (error) {
+        setForgotError(
+          error instanceof Error ? error.message : t('changePassword.forgotPasswordError'),
+        );
+      } finally {
+        setForgotPending(false);
+      }
+    })();
+  }, [t]);
+
+  const currentPasswordIcon = (
+    <Pressable
+      onPress={toggleCurrentPasswordVisible}
+      hitSlop={hitSlop.sm}
+      accessibilityRole="button"
+      accessibilityLabel={
+        currentPasswordVisible ? t('changePassword.hidePassword') : t('changePassword.showPassword')
+      }
+    >
+      <Ionicons
+        name={currentPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+        size={20}
+        color={theme.colors.textTertiary}
+      />
+    </Pressable>
+  );
 
   const newPasswordIcon = (
     <Pressable
@@ -180,14 +244,14 @@ export default function ChangePasswordScreen(): React.JSX.Element {
                 style={[
                   styles.successIcon,
                   {
-                    backgroundColor: theme.colors.background,
+                    backgroundColor: theme.colors.success + '22',
                     borderRadius: theme.radii.full,
                     padding: theme.spacing.lg,
                     marginBottom: theme.spacing.lg,
                   },
                 ]}
               >
-                <Ionicons name="time-outline" size={32} color={theme.colors.accent} />
+                <Ionicons name="checkmark-circle-outline" size={32} color={theme.colors.success} />
               </View>
               <Text
                 variant="headline"
@@ -195,7 +259,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
                 align="center"
                 style={{ marginBottom: theme.spacing.sm }}
               >
-                {t('changePassword.comingSoonTitle')}
+                {t('changePassword.successTitle')}
               </Text>
               <Text
                 variant="callout"
@@ -203,7 +267,7 @@ export default function ChangePasswordScreen(): React.JSX.Element {
                 align="center"
                 style={{ marginBottom: theme.spacing.xl }}
               >
-                {t('changePassword.comingSoonMessage')}
+                {t('changePassword.successMessage')}
               </Text>
               <Button
                 label={t('changePassword.done')}
@@ -216,12 +280,57 @@ export default function ChangePasswordScreen(): React.JSX.Element {
             </View>
           ) : (
             <>
+              {changePasswordMutation.isError ? (
+                <View
+                  style={[
+                    styles.errorBanner,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.danger,
+                      borderRadius: theme.radii.md,
+                      padding: theme.spacing.md,
+                      marginBottom: theme.spacing.lg,
+                    },
+                  ]}
+                  accessibilityRole="alert"
+                >
+                  <Text variant="caption" color="danger" align="center">
+                    {changePasswordMutation.error instanceof Error
+                      ? changePasswordMutation.error.message
+                      : t('changePassword.genericError')}
+                  </Text>
+                </View>
+              ) : null}
+
               <Controller
                 control={control}
-                name="newPassword"
+                name="currentPassword"
                 render={({ field: { onChange, onBlur, value, ref } }) => (
                   <Input
                     ref={ref}
+                    label={t('changePassword.currentPasswordLabel')}
+                    placeholder={t('changePassword.currentPasswordPlaceholder')}
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.currentPassword?.message}
+                    secureTextEntry={!currentPasswordVisible}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="next"
+                    onSubmitEditing={focusNewPassword}
+                    rightElement={currentPasswordIcon}
+                    containerStyle={{ marginBottom: theme.spacing.lg }}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="newPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    ref={newPasswordRef}
                     label={t('changePassword.newPasswordLabel')}
                     placeholder={t('changePassword.newPasswordPlaceholder')}
                     value={value}
@@ -267,10 +376,45 @@ export default function ChangePasswordScreen(): React.JSX.Element {
                 variant="primary"
                 size="md"
                 fullWidth
-                loading={isSubmitting}
+                loading={changePasswordMutation.isPending}
                 onPress={handleSubmit(onSubmit)}
                 accessibilityLabel={t('changePassword.submit')}
               />
+
+              <Pressable
+                onPress={handleForgotPassword}
+                disabled={forgotPending || forgotSent}
+                hitSlop={hitSlop.sm}
+                style={{ marginTop: theme.spacing.xl, alignItems: 'center' }}
+                accessibilityRole="button"
+                accessibilityLabel={t('changePassword.forgotPassword')}
+              >
+                <Text variant="callout" color="accent">
+                  {t('changePassword.forgotPassword')}
+                </Text>
+              </Pressable>
+
+              {forgotSent ? (
+                <Text
+                  variant="caption"
+                  color="secondary"
+                  align="center"
+                  style={{ marginTop: theme.spacing.sm }}
+                >
+                  {t('changePassword.forgotPasswordSent')}
+                </Text>
+              ) : null}
+
+              {forgotError ? (
+                <Text
+                  variant="caption"
+                  color="danger"
+                  align="center"
+                  style={{ marginTop: theme.spacing.sm }}
+                >
+                  {forgotError}
+                </Text>
+              ) : null}
             </>
           )}
         </ScrollView>
@@ -295,5 +439,8 @@ const styles = StyleSheet.create({
   successIcon: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorBanner: {
+    borderWidth: 1,
   },
 });

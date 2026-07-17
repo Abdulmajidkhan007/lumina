@@ -39,5 +39,11 @@ export interface IPostsApi {
   unsavePost(id: PostId): Promise<void>;
   getComments(params: CommentParams): Promise<Paginated<Comment>>;
   addComment(input: AddCommentInput): Promise<Comment>;
+  likeComment(postId: PostId, commentId: CommentId): Promise<void>;
+  unlikeComment(postId: PostId, commentId: CommentId): Promise<void>;
   getUserPosts(userId: UserId, params: FeedParams): Promise<Paginated<Post>>;
+  /** Permanently deletes a post. Callers must own the post — implementations verify authorship. */
+  deletePost(id: PostId): Promise<void>;
+  /** Pages through the current user's saved posts, most recently saved first. */
+  getSavedPosts(params: FeedParams): Promise<Paginated<Post>>;
 }

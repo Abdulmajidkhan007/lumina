@@ -14,9 +14,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Avatar } from '@/design-system/primitives/Avatar';
+import { useLikeComment } from '@/data/query/hooks/useLikeComment';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
-import type { Comment } from '@/types/models';
+import type { Comment, PostId } from '@/types/models';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,7 +25,7 @@ import type { Comment } from '@/types/models';
 
 export interface CommentItemProps {
   comment: Comment;
-  onLike: (comment: Comment) => void;
+  postId: PostId;
   onReply: (comment: Comment) => void;
   onAuthorPress: (userId: string) => void;
 }
@@ -35,18 +36,24 @@ export interface CommentItemProps {
 
 export const CommentItem = React.memo(function CommentItem({
   comment,
-  onLike,
+  postId,
   onReply,
   onAuthorPress,
 }: CommentItemProps): React.JSX.Element {
   const theme = useTheme();
   const [repliesExpanded, setRepliesExpanded] = useState(false);
+  const { mutate: likeComment } = useLikeComment();
 
   const isReply = comment.parentId !== undefined;
 
   const handleLike = useCallback(() => {
-    onLike(comment);
-  }, [onLike, comment]);
+    likeComment({
+      postId,
+      commentId: comment.id,
+      liked: !comment.isLikedByMe,
+      parentCommentId: comment.parentId,
+    });
+  }, [likeComment, postId, comment.id, comment.isLikedByMe, comment.parentId]);
 
   const handleReply = useCallback(() => {
     onReply(comment);

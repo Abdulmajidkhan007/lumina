@@ -104,6 +104,7 @@
       "helpCentre": "Yordam markazi",
       "privacyPolicy": "Maxfiylik siyosati",
       "aboutLumina": "Lumina haqida",
+      "saved": "Saqlanganlar",
       "logout": "Chiqish",
       "deleteAccount": "Hisobni o'chirish"
     },
@@ -140,6 +141,8 @@
   "changePassword": {
     "title": "Parolni o'zgartirish",
     "goBack": "Orqaga",
+    "currentPasswordLabel": "Joriy parol",
+    "currentPasswordPlaceholder": "Joriy parolni kiriting",
     "newPasswordLabel": "Yangi parol",
     "newPasswordPlaceholder": "Kamida 8 ta belgi",
     "confirmPasswordLabel": "Yangi parolni tasdiqlang",
@@ -149,7 +152,14 @@
     "submit": "Parolni yangilash",
     "comingSoonTitle": "Tez orada",
     "comingSoonMessage": "Ilova ichida parolni o'zgartirish tez orada qo'shiladi. Hozircha kirish sahifasidagi \"Parolni unutdingizmi?\" orqali tiklang.",
-    "done": "Tayyor"
+    "done": "Tayyor",
+    "successTitle": "Parol yangilandi",
+    "successMessage": "Parolingiz muvaffaqiyatli o'zgartirildi.",
+    "genericError": "Parolni yangilab bo'lmadi. Qayta urinib ko'ring.",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "forgotPasswordSent": "Tiklash havolasi emailingizga yuborildi.",
+    "forgotPasswordError": "Tiklash havolasini yuborib bo'lmadi. Qayta urinib ko'ring.",
+    "forgotPasswordNoEmail": "Ushbu hisob uchun email kiritilmagan."
   },
   "notificationsSettings": {
     "title": "Bildirishnomalar",
@@ -211,5 +221,20 @@
     "contactDescription": "Savollar, fikr-mulohaza yoki taklif — sizdan eshitishdan mamnun bo'lamiz.",
     "privacyPolicyLink": "Maxfiylik siyosati",
     "madeWith": "Ulashishni sevganlar uchun g'amxo'rlik bilan yaratilgan."
+  },
+  "postDetail": {
+    "deletePost": "Postni o'chirish",
+    "deleteConfirmTitle": "Postni o'chirish",
+    "deleteConfirmMessage": "Bu postingizni butunlay o'chiradi. Bu amalni bekor qilib bo'lmaydi.",
+    "deleteConfirmConfirm": "O'chirish",
+    "deleteConfirmCancel": "Bekor qilish",
+    "deleteErrorTitle": "Postni o'chirib bo'lmadi"
+  },
+  "savedPosts": {
+    "title": "Saqlanganlar",
+    "goBack": "Orqaga",
+    "emptyTitle": "Hali saqlangan postlar yo'q",
+    "emptySubtitle": "Siz saqlagan postlar shu yerda ko'rinadi.",
+    "error": "Saqlangan postlarni yuklab bo'lmadi."
   }
 }

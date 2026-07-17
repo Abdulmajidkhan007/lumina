@@ -1,5 +1,5 @@
 import type { IPostsApi , AddCommentInput, CreatePostInput } from '@/data/api/contracts';
-import type { Post, Comment , Media, PostId, UserId } from '@/types/models';
+import type { Post, Comment , Media, PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { commentIdSchema, postIdSchema } from '@/schemas';
 import { mutablePosts } from './fixtures/posts.fixture';
@@ -52,6 +52,43 @@ export class MockPostsApi implements IPostsApi {
     await mockDelay();
     const post = mutablePosts.find((p) => p.id === id);
     if (post) post.isSavedByMe = false;
+  }
+
+  async likeComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await mockDelay();
+    const comment = mutableComments.find((c) => c.id === commentId && c.postId === postId);
+    if (comment && !comment.isLikedByMe) {
+      comment.isLikedByMe = true;
+      comment.likeCount += 1;
+    }
+  }
+
+  async unlikeComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await mockDelay();
+    const comment = mutableComments.find((c) => c.id === commentId && c.postId === postId);
+    if (comment && comment.isLikedByMe) {
+      comment.isLikedByMe = false;
+      comment.likeCount = Math.max(0, comment.likeCount - 1);
+    }
+  }
+
+  async deletePost(id: PostId): Promise<void> {
+    await mockDelay();
+    const idx = mutablePosts.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      throw new Error(`Post ${id} not found`);
+    }
+    const post = mutablePosts[idx]!;
+    if (post.author.id !== currentUser.id) {
+      throw new Error('You can only delete your own posts.');
+    }
+    mutablePosts.splice(idx, 1);
+  }
+
+  async getSavedPosts(params: FeedParams): Promise<Paginated<Post>> {
+    await mockDelay();
+    const filtered = mutablePosts.filter((p) => p.isSavedByMe);
+    return paginateArray(filtered, params.cursor, params.limit);
   }
 
   async getComments(params: CommentParams): Promise<Paginated<Comment>> {
