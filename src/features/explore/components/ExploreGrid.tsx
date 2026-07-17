@@ -1,7 +1,7 @@
 /**
  * Lumina — ExploreGrid
  *
- * 3-column FlashList of explore post thumbnails. Uses expo-image for
+ * 3-column FlatList of explore post thumbnails. Uses expo-image for
  * fast thumbnail rendering. Tapping a cell navigates to the post detail.
  *
  * Infinite scroll via useExplore.fetchNextPage on onEndReached.
@@ -11,12 +11,13 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
+  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   View,
+  type ListRenderItemInfo,
 } from 'react-native';
-import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from '@/components/Image';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -188,7 +189,7 @@ export function ExploreGrid(): React.JSX.Element {
   }
 
   return (
-    <FlashList<Post>
+    <FlatList<Post>
       data={posts}
       renderItem={renderItem}
       keyExtractor={keyExtractor}

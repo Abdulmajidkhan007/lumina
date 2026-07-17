@@ -1,7 +1,7 @@
 /**
  * Lumina — FeedList
  *
- * Infinite-scroll FlashList of PostCards.
+ * Infinite-scroll FlatList of PostCards.
  * - StoryRail as ListHeaderComponent
  * - onEndReached -> fetchNextPage
  * - ListFooterComponent spinner
@@ -12,12 +12,13 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
+  FlatList,
   RefreshControl,
   View,
   useWindowDimensions,
+  type ListRenderItemInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 
 import { useTheme } from '@/design-system/theme';
 import { SkeletonFeedCard } from '@/design-system/primitives/Skeleton';
@@ -147,32 +148,35 @@ export function FeedList(): React.JSX.Element {
     [theme.colors.background],
   );
 
-  // FlashList's contentContainerStyle does not support flexGrow, so the
-  // empty/loading/error content (which centers itself via flex: 1) needs an
-  // explicit full-height wrapper instead.
+  // The empty/loading/error content centers itself via flex: 1, so it needs
+  // an explicit full-height wrapper to fill the list's viewport.
   const emptyComponentStyle = useMemo(
     () => ({ minHeight: windowHeight - insets.top - insets.bottom }),
     [windowHeight, insets.top, insets.bottom],
   );
 
   const renderEmpty = useCallback(() => {
-    if (isLoading) return <LoadingSkeleton />;
-    if (isError) {
-      return (
+    let content: React.JSX.Element;
+    if (isLoading) {
+      content = <LoadingSkeleton />;
+    } else if (isError) {
+      content = (
         <ErrorState
           message={error?.message ?? 'Could not load your feed.'}
           onRetry={handleRefresh}
         />
       );
+    } else {
+      content = (
+        <EmptyState
+          icon="images-outline"
+          title="Your feed is empty"
+          subtitle="Follow people to see their posts here."
+        />
+      );
     }
-    return (
-      <EmptyState
-        icon="images-outline"
-        title="Your feed is empty"
-        subtitle="Follow people to see their posts here."
-      />
-    );
-  }, [isLoading, isError, error, handleRefresh]);
+    return <View style={emptyComponentStyle}>{content}</View>;
+  }, [isLoading, isError, error, handleRefresh, emptyComponentStyle]);
 
   // Show inline error when data exists but refetch failed
   if (isError && posts.length === 0 && !isLoading) {
@@ -188,14 +192,13 @@ export function FeedList(): React.JSX.Element {
   }
 
   return (
-    <FlashList<Post>
+    <FlatList<Post>
       data={isLoading ? [] : posts}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       ListHeaderComponent={renderHeader}
       ListFooterComponent={renderFooter}
       ListEmptyComponent={renderEmpty}
-      ListEmptyComponentStyle={emptyComponentStyle}
       onEndReached={handleEndReached}
       onEndReachedThreshold={END_REACHED_THRESHOLD}
       refreshControl={
