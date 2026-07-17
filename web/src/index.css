@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0e0b16;
+  --color-bg-elevated: #16121f;
+  --color-bg-elevated-2: #1c1728;
+  --color-border: #2a2438;
+  --color-text: #f5f3fa;
+  --color-text-muted: #a89fc0;
+  --color-text-faint: #6f6688;
+
+  --color-brand-coral: #ff6b6b;
+  --color-brand-magenta: #c44fe8;
+  --color-brand-violet: #6b5bff;
+
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-brand-magenta);
+  color: white;
+}
+
+.text-gradient-brand {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-brand-coral),
+    var(--color-brand-magenta),
+    var(--color-brand-violet)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.bg-gradient-brand {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-coral),
+    var(--color-brand-magenta),
+    var(--color-brand-violet)
+  );
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
