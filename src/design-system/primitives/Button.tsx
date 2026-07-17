@@ -21,6 +21,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 
 import { useTheme } from '../theme';
+import { useReducedMotion } from '../hooks';
 import { Text } from './Text';
 import { Spinner } from './Spinner';
 
@@ -85,24 +86,25 @@ export function Button({
   ...rest
 }: ButtonProps): React.JSX.Element {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
   const isDisabled = disabled || loading;
 
   const handlePressIn = useCallback(
     (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
-      scale.value = withSpring(0.96, SPRING_CONFIG);
+      scale.value = reducedMotion ? 0.96 : withSpring(0.96, SPRING_CONFIG);
       onPressIn?.(e);
     },
-    [scale, onPressIn],
+    [scale, reducedMotion, onPressIn],
   );
 
   const handlePressOut = useCallback(
     (e: Parameters<NonNullable<PressableProps['onPressOut']>>[0]) => {
-      scale.value = withSpring(1, SPRING_CONFIG);
+      scale.value = reducedMotion ? 1 : withSpring(1, SPRING_CONFIG);
       onPressOut?.(e);
     },
-    [scale, onPressOut],
+    [scale, reducedMotion, onPressOut],
   );
 
   const animatedStyle = useAnimatedStyle(() => ({

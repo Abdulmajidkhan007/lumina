@@ -18,6 +18,7 @@ module.exports = tseslint.config(
       'eslint.config.js',
       'index.js',
       'scripts/**',
+      'web/**',
       'jest.config.js',
       'jest.setup.js',
       '__mocks__/**',

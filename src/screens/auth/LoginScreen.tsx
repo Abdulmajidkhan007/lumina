@@ -25,18 +25,30 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { loginSchema } from '@/schemas/auth.schema';
 import type { LoginInput } from '@/types/forms';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { useTheme } from '@/design-system/theme';
+import { useReducedMotion } from '@/design-system/hooks';
 import { Text } from '@/design-system/primitives/Text';
 import { Input } from '@/design-system/primitives/Input';
 import { Button } from '@/design-system/primitives/Button';
 import { hitSlop } from '@/constants/layout';
 
+// ---------------------------------------------------------------------------
+// Staggered entrance timings — wordmark -> fields -> button
+// ---------------------------------------------------------------------------
+
+const ENTER_WORDMARK = FadeInDown.duration(300).delay(0);
+const ENTER_FIELDS = FadeInDown.duration(300).delay(100);
+const ENTER_BUTTON = FadeInDown.duration(300).delay(200);
+const ENTER_FOOTER = FadeInDown.duration(300).delay(260);
+
 export default function LoginScreen(): React.JSX.Element {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const loginMutation = useLogin();
@@ -106,7 +118,10 @@ export default function LoginScreen(): React.JSX.Element {
           showsVerticalScrollIndicator={false}
         >
           {/* Wordmark */}
-          <View style={styles.logoContainer}>
+          <Animated.View
+            entering={reducedMotion ? undefined : ENTER_WORDMARK}
+            style={styles.logoContainer}
+          >
             <LinearGradient
               colors={[...theme.colors.accentGradient]}
               start={{ x: 0, y: 0 }}
@@ -133,10 +148,13 @@ export default function LoginScreen(): React.JSX.Element {
             >
               {t('auth.login.subtitle')}
             </Text>
-          </View>
+          </Animated.View>
 
           {/* Form */}
-          <View style={[styles.form, { gap: theme.spacing.lg }]}>
+          <Animated.View
+            entering={reducedMotion ? undefined : ENTER_FIELDS}
+            style={[styles.form, { gap: theme.spacing.lg }]}
+          >
             <Controller
               control={control}
               name="identifier"
@@ -216,19 +234,24 @@ export default function LoginScreen(): React.JSX.Element {
               </View>
             ) : null}
 
-            <Button
-              label={t('auth.login.submit')}
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={loginMutation.isPending}
-              onPress={handleSubmit(onSubmit)}
-              accessibilityLabel={t('auth.login.submitAccessibilityLabel')}
-            />
-          </View>
+            <Animated.View entering={reducedMotion ? undefined : ENTER_BUTTON}>
+              <Button
+                label={t('auth.login.submit')}
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={loginMutation.isPending}
+                onPress={handleSubmit(onSubmit)}
+                accessibilityLabel={t('auth.login.submitAccessibilityLabel')}
+              />
+            </Animated.View>
+          </Animated.View>
 
           {/* Footer */}
-          <View style={[styles.footer, { marginTop: theme.spacing['3xl'] }]}>
+          <Animated.View
+            entering={reducedMotion ? undefined : ENTER_FOOTER}
+            style={[styles.footer, { marginTop: theme.spacing['3xl'] }]}
+          >
             <Text variant="callout" color="secondary">
               {t('auth.login.noAccount')}{' '}
             </Text>
@@ -241,7 +264,7 @@ export default function LoginScreen(): React.JSX.Element {
                 {t('auth.login.signUp')}
               </Text>
             </Pressable>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

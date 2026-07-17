@@ -33,8 +33,8 @@ import type { RadiiScale } from '../theme/tokens';
 // Shimmer animation constants
 // ---------------------------------------------------------------------------
 
-const SHIMMER_DURATION = 1200;
-const SHIMMER_EASING = Easing.inOut(Easing.ease);
+const SHIMMER_DURATION = 1500;
+const SHIMMER_EASING = Easing.inOut(Easing.quad);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,7 +98,10 @@ function ShimmerOverlay({ highlightColor }: ShimmerOverlayProps): React.JSX.Elem
   return (
     <Animated.View style={[StyleSheet.absoluteFillObject, animatedStyle]} pointerEvents="none">
       <LinearGradient
-        colors={['transparent', highlightColor, 'transparent']}
+        // Wider transparent shoulders + a softer peak read as a gentler,
+        // less "flashy" sweep than a hard-edged 3-stop gradient.
+        colors={['transparent', 'transparent', highlightColor, 'transparent', 'transparent']}
+        locations={[0, 0.35, 0.5, 0.65, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFillObject}

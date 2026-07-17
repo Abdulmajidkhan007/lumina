@@ -41,6 +41,9 @@ export type {
   ColorSchemePreference,
 } from './theme';
 
+// ---- Hooks ------------------------------------------------------------------
+export { useReducedMotion } from './hooks';
+
 // ---- Primitives -----------------------------------------------------------
 export {
   Box,

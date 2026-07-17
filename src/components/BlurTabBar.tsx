@@ -7,7 +7,7 @@
  * Respects safe-area bottom inset.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Platform,
   Pressable,
@@ -21,17 +21,23 @@ import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Animated, {
+  interpolateColor,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
+import { useReducedMotion } from '@/design-system/hooks';
 import { Text } from '@/design-system/primitives/Text';
 import { useCurrentUser } from '@/stores/auth.store';
 import { Avatar } from '@/design-system/primitives/Avatar';
-import { tabBarHeight } from '@/constants/layout';
+import { tabBarHeight, screen } from '@/constants/layout';
+
+const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -91,6 +97,9 @@ const TAB_CONFIG: TabConfig[] = [
 ];
 
 const SPRING_CONFIG = { damping: 18, stiffness: 340, mass: 0.7 } as const;
+const INDICATOR_SPRING = { damping: 20, stiffness: 260, mass: 0.8 } as const;
+const ICON_COLOR_DURATION = 200;
+const INDICATOR_WIDTH = 24;
 
 // ---------------------------------------------------------------------------
 // Single tab item — memoised to prevent unnecessary re-renders
@@ -114,24 +123,42 @@ const TabItem = React.memo(function TabItem({
   const theme = useTheme();
   const { t } = useTranslation();
   const currentUser = useCurrentUser();
+  const reducedMotion = useReducedMotion();
   const label = t(config.labelKey);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const colorProgress = useSharedValue(isActive ? 1 : 0);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
   }));
 
+  const animatedIconProps = useAnimatedProps(() => ({
+    color: interpolateColor(
+      colorProgress.value,
+      [0, 1],
+      [theme.colors.textTertiary, theme.colors.accent],
+    ),
+  }));
+
+  useEffect(() => {
+    colorProgress.value = reducedMotion
+      ? isActive
+        ? 1
+        : 0
+      : withTiming(isActive ? 1 : 0, { duration: ICON_COLOR_DURATION });
+  }, [isActive, colorProgress, reducedMotion]);
+
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.82, SPRING_CONFIG);
-    opacity.value = withSpring(0.7, SPRING_CONFIG);
-  }, [scale, opacity]);
+    scale.value = reducedMotion ? 0.82 : withSpring(0.82, SPRING_CONFIG);
+    opacity.value = reducedMotion ? 0.7 : withSpring(0.7, SPRING_CONFIG);
+  }, [scale, opacity, reducedMotion]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, SPRING_CONFIG);
-    opacity.value = withSpring(1, SPRING_CONFIG);
-  }, [scale, opacity]);
+    scale.value = reducedMotion ? 1 : withSpring(1, SPRING_CONFIG);
+    opacity.value = reducedMotion ? 1 : withSpring(1, SPRING_CONFIG);
+  }, [scale, opacity, reducedMotion]);
 
   const handlePress = useCallback(
     (e: GestureResponderEvent) => {
@@ -190,7 +217,7 @@ const TabItem = React.memo(function TabItem({
             ) : null}
           </View>
         ) : (
-          <Ionicons name={iconName} size={26} color={iconColor} />
+          <AnimatedIonicons name={iconName} size={26} animatedProps={animatedIconProps} />
         )}
         {config.name !== 'Create' ? (
           <Text
@@ -218,7 +245,33 @@ export function BlurTabBar({
   navigation,
 }: BottomTabBarProps): React.JSX.Element {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+
+  const tabWidth = screen.width / TAB_CONFIG.length;
+
+  // Index within TAB_CONFIG (visual order) of the currently-focused route —
+  // -1 while the focused route isn't one of our known tabs (shouldn't happen).
+  const activeConfigIndex = TAB_CONFIG.findIndex((config) => {
+    const route = state.routes.find((r) => r.name === config.name);
+    return route !== undefined && state.routes.indexOf(route) === state.index;
+  });
+
+  const indicatorX = useSharedValue(
+    activeConfigIndex >= 0 ? activeConfigIndex * tabWidth : 0,
+  );
+
+  useEffect(() => {
+    if (activeConfigIndex < 0) return;
+    const target = activeConfigIndex * tabWidth;
+    indicatorX.value = reducedMotion ? target : withSpring(target, INDICATOR_SPRING);
+  }, [activeConfigIndex, tabWidth, indicatorX, reducedMotion]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: indicatorX.value + (tabWidth - INDICATOR_WIDTH) / 2 },
+    ],
+  }));
 
   const onPress = useCallback(
     (name: string, e: GestureResponderEvent) => {
@@ -295,6 +348,15 @@ export function BlurTabBar({
       />
 
       <View style={styles.tabRow}>
+        {/* Active tab indicator — slides beneath the focused icon */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.indicator,
+            { width: INDICATOR_WIDTH, backgroundColor: theme.colors.accent },
+            indicatorStyle,
+          ]}
+        />
         {TAB_CONFIG.map((config) => {
           const route = state.routes.find((r) => r.name === config.name);
           const routeIndex = route ? state.routes.indexOf(route) : -1;
@@ -335,6 +397,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  indicator: {
+    position: 'absolute',
+    top: 0,
+    height: 3,
+    borderRadius: 9999,
   },
   tabItem: {
     flex: 1,

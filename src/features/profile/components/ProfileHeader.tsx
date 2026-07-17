@@ -9,11 +9,18 @@
  * Used by both profile.tsx (own) and user/[id].tsx (other).
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { useTheme } from '@/design-system/theme';
+import { useReducedMotion } from '@/design-system/hooks';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Button } from '@/design-system/primitives/Button';
@@ -47,7 +54,19 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   onFollowingPress,
 }: ProfileHeaderProps): React.JSX.Element {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const { mutate: followUser, isPending } = useFollowUser();
+
+  const avatarScale = useSharedValue(0.9);
+  const avatarAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: avatarScale.value }],
+  }));
+
+  useEffect(() => {
+    avatarScale.value = reducedMotion
+      ? 1
+      : withSpring(1, { damping: 14, stiffness: 200 });
+  }, [avatarScale, reducedMotion]);
 
   const handleFollow = useCallback(() => {
     followUser({ userId: user.id, follow: !user.isFollowedByMe });
@@ -68,7 +87,8 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   }, [user.id, onShareProfile]);
 
   return (
-    <View
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeIn.duration(300)}
       style={[
         styles.container,
         {
@@ -81,12 +101,14 @@ export const ProfileHeader = React.memo(function ProfileHeader({
     >
       {/* Top row: avatar + stats */}
       <View style={styles.topRow}>
-        <Avatar
-          uri={user.avatarUrl ?? undefined}
-          displayName={user.displayName}
-          size="2xl"
-          accessibilityLabel={`${user.displayName}'s avatar`}
-        />
+        <Animated.View style={avatarAnimatedStyle}>
+          <Avatar
+            uri={user.avatarUrl ?? undefined}
+            displayName={user.displayName}
+            size="2xl"
+            accessibilityLabel={`${user.displayName}'s avatar`}
+          />
+        </Animated.View>
 
         <View style={styles.statsContainer}>
           <ProfileStats
@@ -184,7 +206,7 @@ export const ProfileHeader = React.memo(function ProfileHeader({
           </>
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 });
 

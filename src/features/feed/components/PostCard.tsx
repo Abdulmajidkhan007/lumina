@@ -20,8 +20,15 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { useTheme } from '@/design-system/theme';
+import { useReducedMotion } from '@/design-system/hooks';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Sheet } from '@/design-system/primitives/Sheet';
@@ -41,6 +48,13 @@ import { PostActions } from './PostActions';
 export interface PostCardProps {
   post: Post;
 }
+
+// ---------------------------------------------------------------------------
+// Animation constants — damped springs, opacity+transform only
+// ---------------------------------------------------------------------------
+
+const MEDIA_PRESS_SPRING = { damping: 20, stiffness: 400, mass: 0.6 } as const;
+const CARD_ENTERING = FadeInDown.duration(300).springify().damping(18);
 
 // ---------------------------------------------------------------------------
 // Caption with "more" truncation
@@ -144,11 +158,17 @@ export const PostCard = React.memo(function PostCard({
   post,
 }: PostCardProps): React.JSX.Element {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
 
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const mediaScale = useSharedValue(1);
+  const mediaAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: mediaScale.value }],
+  }));
 
   // ---------------------------------------------------------------------------
   // Callbacks
@@ -179,6 +199,14 @@ export const PostCard = React.memo(function PostCard({
     savePost({ postId: post.id, saved: !post.isSavedByMe });
   }, [savePost, post.id, post.isSavedByMe]);
 
+  const handleMediaPressIn = useCallback(() => {
+    mediaScale.value = reducedMotion ? 0.98 : withSpring(0.98, MEDIA_PRESS_SPRING);
+  }, [mediaScale, reducedMotion]);
+
+  const handleMediaPressOut = useCallback(() => {
+    mediaScale.value = reducedMotion ? 1 : withSpring(1, MEDIA_PRESS_SPRING);
+  }, [mediaScale, reducedMotion]);
+
   const handleShare = useCallback(() => {
     // TODO: share sheet integration
   }, []);
@@ -208,8 +236,13 @@ export const PostCard = React.memo(function PostCard({
   // ---------------------------------------------------------------------------
 
   return (
-    <View
-      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+    <Animated.View
+      entering={reducedMotion ? undefined : CARD_ENTERING}
+      style={[
+        styles.card,
+        { backgroundColor: theme.colors.surface },
+        theme.colorScheme === 'light' ? theme.shadows.sm : null,
+      ]}
       accessibilityLabel={`Post by ${post.author.username}`}
     >
       {/* ---- Header ---- */}
@@ -267,11 +300,21 @@ export const PostCard = React.memo(function PostCard({
       </View>
 
       {/* ---- Media ---- */}
-      <PostMediaPager
-        media={post.media}
-        onDoubleTapLike={handleDoubleTapLike}
-        isLiked={post.isLikedByMe}
-      />
+      {/* Pressable only provides visual press-scale feedback (no onPress) —
+          PostMediaPager owns the double-tap-to-like gesture internally. */}
+      <Pressable
+        onPressIn={handleMediaPressIn}
+        onPressOut={handleMediaPressOut}
+        accessible={false}
+      >
+        <Animated.View style={mediaAnimatedStyle}>
+          <PostMediaPager
+            media={post.media}
+            onDoubleTapLike={handleDoubleTapLike}
+            isLiked={post.isLikedByMe}
+          />
+        </Animated.View>
+      </Pressable>
 
       {/* ---- Actions ---- */}
       <View
@@ -358,7 +401,7 @@ export const PostCard = React.memo(function PostCard({
           onPress={handleUnfollow}
         />
       </Sheet>
-    </View>
+    </Animated.View>
   );
 });
 
