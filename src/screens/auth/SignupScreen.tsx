@@ -29,6 +29,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { signupSchema } from '@/schemas/auth.schema';
 import type { SignupInput } from '@/types/forms';
 import { useSignup } from '@/features/auth/hooks/useSignup';
+import { useGoogleLogin } from '@/features/auth/hooks/useGoogleLogin';
+import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton';
 import { useTheme } from '@/design-system/theme';
 import { useReducedMotion } from '@/design-system/hooks';
 import { Text } from '@/design-system/primitives/Text';
@@ -51,6 +53,7 @@ export default function SignupScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const signupMutation = useSignup();
+  const googleLoginMutation = useGoogleLogin();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
 
@@ -311,6 +314,22 @@ export default function SignupScreen(): React.JSX.Element {
                 accessibilityLabel={t('auth.signup.submitAccessibilityLabel')}
               />
             </Animated.View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.lg }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
+              <Text variant="caption" color="tertiary" style={{ marginHorizontal: theme.spacing.md }}>
+                {t('auth.or')}
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
+            </View>
+
+            <View style={{ marginTop: theme.spacing.lg }}>
+              <GoogleSignInButton
+                label={t('auth.continueWithGoogle')}
+                loading={googleLoginMutation.isPending}
+                onPress={() => googleLoginMutation.mutate()}
+              />
+            </View>
           </Animated.View>
 
           {/* Footer */}

@@ -112,5 +112,12 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
-  }
+  
+    // ---------------- activity logs (admin) ----------------
+    match /activityLogs/{logId} {
+      allow create: if true;
+      allow read: if signedIn() && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+      allow update, delete: if false;
+    }
+}
 }

@@ -50,4 +50,23 @@ export interface IAuthApi {
    * any local session state.
    */
   deleteAccount(): Promise<void>;
+  /**
+   * Signs in (or, on first use, silently creates an account for) the user
+   * via their Google identity. Implementations should throw
+   * `Error('cancelled')` when the user backs out of the native picker so
+   * callers can distinguish "no-op" from a real failure and skip showing an
+   * error banner for it.
+   */
+  loginWithGoogle(): Promise<AuthSession>;
+  /**
+   * Whether the signed-in user's email address has been verified.
+   * Google-authenticated users are treated as verified (Google already
+   * verified the address). Returns `false` when there is no signed-in user.
+   */
+  isEmailVerified(): boolean;
+  /**
+   * Re-sends the verification email to the signed-in user's address.
+   * No-op (resolves) if there is no signed-in user or it's already verified.
+   */
+  resendVerificationEmail(): Promise<void>;
 }

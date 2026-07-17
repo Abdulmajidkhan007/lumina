@@ -7,10 +7,11 @@
  */
 
 import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, View } from 'react-native';
 
 import { useTheme } from '@/design-system';
 import { useAuthStatus, useAuthStore } from '@/stores';
+import { VerifyEmailBanner } from '@/features/auth';
 import { AuthStack } from './AuthStack';
 import { BrandedSplash } from './BrandedSplash';
 import { ProtectedStack } from './ProtectedStack';
@@ -28,7 +29,12 @@ export function RootNavigator(): React.JSX.Element {
   if (status === 'idle' || status === 'loading') {
     content = <BrandedSplash />;
   } else if (status === 'authenticated') {
-    content = <ProtectedStack />;
+    content = (
+      <View style={{ flex: 1 }}>
+        <VerifyEmailBanner />
+        <ProtectedStack />
+      </View>
+    );
   } else {
     content = <AuthStack />;
   }

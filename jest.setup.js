@@ -222,3 +222,13 @@ jest.mock('@react-native-firebase/storage', () => ({
   putFile: async () => undefined,
   getDownloadURL: async () => '',
 }));
+
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: () => undefined,
+    hasPlayServices: async () => true,
+    signIn: async () => ({ type: 'success', data: { idToken: 'test' } }),
+    signOut: async () => undefined,
+  },
+  statusCodes: { SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED' },
+}));

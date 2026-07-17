@@ -17,7 +17,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-.*|@shopify/flash-list|@tanstack|zustand|@sentry/react-native|@react-native-firebase)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-.*|@shopify/flash-list|@tanstack|zustand|@sentry/react-native|@react-native-firebase|@react-native-google-signin)/)',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
 };

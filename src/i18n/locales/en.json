@@ -68,6 +68,15 @@
       "successMessageSuffix": ". Follow the instructions to reset your password.",
       "backToLogin": "Back to sign in",
       "backToLoginAccessibilityLabel": "Return to sign in screen"
+    },
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "verifyEmail": {
+      "message": "Verify your email to secure your account.",
+      "resend": "Resend",
+      "sending": "Sending…",
+      "dismiss": "Dismiss",
+      "sent": "Verification email sent!"
     }
   },
   "settings": {

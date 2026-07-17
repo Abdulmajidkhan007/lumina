@@ -12,6 +12,7 @@ export { useMessages } from './useMessages';
 export { useNotifications } from './useNotifications';
 export { useSearchUsers } from './useSearchUsers';
 export { useResetPassword } from './useResetPassword';
+export { useResendVerificationEmail } from './useResendVerificationEmail';
 export { useSavedPosts } from './useSavedPosts';
 
 // Mutation hooks

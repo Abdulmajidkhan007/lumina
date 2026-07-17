@@ -38,6 +38,21 @@ export class MockAuthApi implements IAuthApi {
     await mockDelay();
   }
 
+  /** Mirrors `login` — mock mode has no real Google identity to exchange. */
+  async loginWithGoogle(): Promise<AuthSession> {
+    await mockDelay();
+    return { token: MOCK_TOKEN, user: currentUser };
+  }
+
+  /** Mock users are always considered verified — nothing to demo here. */
+  isEmailVerified(): boolean {
+    return true;
+  }
+
+  async resendVerificationEmail(): Promise<void> {
+    await mockDelay();
+  }
+
   async deleteAccount(): Promise<void> {
     // No real backend session to tear down in mock mode — mirrors `logout`
     // and lets the caller (useDeleteAccount) clear the local auth session.

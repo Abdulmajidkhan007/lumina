@@ -68,6 +68,15 @@
       "successMessageSuffix": " manziliga yubordik. Parolni tiklash uchun ko'rsatmalarga amal qiling.",
       "backToLogin": "Kirish sahifasiga qaytish",
       "backToLoginAccessibilityLabel": "Kirish sahifasiga qaytish"
+    },
+    "or": "yoki",
+    "continueWithGoogle": "Google bilan davom etish",
+    "verifyEmail": {
+      "message": "Hisobingizni himoyalash uchun emailni tasdiqlang.",
+      "resend": "Qayta yuborish",
+      "sending": "Yuborilmoqda…",
+      "dismiss": "Yopish",
+      "sent": "Xat yuborildi!"
     }
   },
   "settings": {

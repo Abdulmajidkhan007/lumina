@@ -68,6 +68,15 @@
       "successMessageSuffix": ". Следуйте инструкциям, чтобы сбросить пароль.",
       "backToLogin": "Вернуться ко входу",
       "backToLoginAccessibilityLabel": "Вернуться на экран входа"
+    },
+    "or": "или",
+    "continueWithGoogle": "Продолжить с Google",
+    "verifyEmail": {
+      "message": "Подтвердите свой email для защиты аккаунта.",
+      "resend": "Отправить снова",
+      "sending": "Отправка…",
+      "dismiss": "Скрыть",
+      "sent": "Письмо отправлено!"
     }
   },
   "settings": {

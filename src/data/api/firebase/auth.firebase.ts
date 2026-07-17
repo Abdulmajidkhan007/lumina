@@ -11,23 +11,42 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   EmailAuthProvider,
+  GoogleAuthProvider,
   reauthenticateWithCredential,
+  sendEmailVerification,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updatePassword,
 } from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
+import {
+  GoogleSignin,
+  isCancelledResponse,
+  isSuccessResponse,
+} from '@react-native-google-signin/google-signin';
 import type { IAuthApi, AuthSession } from '@/data/api/contracts';
 import type { User } from '@/types/models';
 import type { LoginInput, SignupInput, EditProfileInput } from '@/types/forms';
 import { userSchema } from '@/schemas';
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase';
+import { Config } from '@/constants/config';
+import { logActivity } from '@/data/services/activityLog';
 import type { UserDocFields } from './helpers';
 import { uploadMedia } from './upload';
 
 const EMAIL_LIKE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// GoogleSignin.configure() only needs to run once per process — guarded so
+// repeated `loginWithGoogle()` calls (or hot reload in dev) don't re-issue it.
+let googleSignInConfigured = false;
+function ensureGoogleSignInConfigured(): void {
+  if (googleSignInConfigured) return;
+  GoogleSignin.configure({ webClientId: Config.GOOGLE_WEB_CLIENT_ID });
+  googleSignInConfigured = true;
+}
 
 function usersCollectionDoc(uid: string) {
   return doc(getFirebaseFirestore(), 'users', uid);
@@ -102,6 +121,7 @@ export class FirebaseAuthApi implements IAuthApi {
       this.fetchOrCreateProfile(credential.user),
       credential.user.getIdToken(),
     ]);
+    void logActivity('login');
     return { token, user };
   }
 
@@ -124,6 +144,13 @@ export class FirebaseAuthApi implements IAuthApi {
     };
     await setDoc(usersCollectionDoc(credential.user.uid), profile);
 
+    // Fire-and-forget — verification email delivery must never block signup.
+    try {
+      await sendEmailVerification(credential.user);
+    } catch (error) {
+      console.warn('[auth] failed to send verification email:', error);
+    }
+
     const user = userSchema.parse({
       id: credential.user.uid,
       ...profile,
@@ -131,10 +158,45 @@ export class FirebaseAuthApi implements IAuthApi {
       isMe: true,
     });
     const token = await credential.user.getIdToken();
+    void logActivity('signup');
+    return { token, user };
+  }
+
+  /**
+   * Signs in via Google (Firebase credential exchange). Throws
+   * `Error('cancelled')` when the user dismisses the native account picker,
+   * so callers (see `useGoogleLogin`) can skip showing an error banner for
+   * an intentional no-op.
+   */
+  async loginWithGoogle(): Promise<AuthSession> {
+    ensureGoogleSignInConfigured();
+    await GoogleSignin.hasPlayServices();
+    const response = await GoogleSignin.signIn();
+
+    if (isCancelledResponse(response)) {
+      throw new Error('cancelled');
+    }
+    if (!isSuccessResponse(response)) {
+      throw new Error('Google sign-in did not return a signed-in user.');
+    }
+
+    const idToken = response.data?.idToken;
+    if (!idToken) {
+      throw new Error('Google sign-in did not return an ID token.');
+    }
+
+    const googleCredential = GoogleAuthProvider.credential(idToken);
+    const credential = await signInWithCredential(getFirebaseAuth(), googleCredential);
+    const [user, token] = await Promise.all([
+      this.fetchOrCreateProfile(credential.user),
+      credential.user.getIdToken(),
+    ]);
+    void logActivity('google_login');
     return { token, user };
   }
 
   async logout(): Promise<void> {
+    void logActivity('logout');
     await signOut(getFirebaseAuth());
   }
 
@@ -181,10 +243,29 @@ export class FirebaseAuthApi implements IAuthApi {
   /** Delegates to Firebase Auth — errors (e.g. `auth/invalid-email`) propagate as-is. */
   async resetPassword(email: string): Promise<void> {
     await sendPasswordResetEmail(getFirebaseAuth(), email);
+    void logActivity('password_reset', { email });
   }
 
   async getCurrentUserEmail(): Promise<string | null> {
     return getFirebaseAuth().currentUser?.email ?? null;
+  }
+
+  /**
+   * Google-authenticated users are treated as verified since Google already
+   * verified the address on its end; there's no separate Firebase-side flag
+   * for that, so we key off the presence of a `google.com` provider entry.
+   */
+  isEmailVerified(): boolean {
+    const current = getFirebaseAuth().currentUser;
+    if (!current) return false;
+    const isGoogleUser = current.providerData.some((p) => p.providerId === 'google.com');
+    return isGoogleUser || current.emailVerified;
+  }
+
+  async resendVerificationEmail(): Promise<void> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current || current.emailVerified) return;
+    await sendEmailVerification(current);
   }
 
   /**
@@ -211,6 +292,7 @@ export class FirebaseAuthApi implements IAuthApi {
     }
 
     await updatePassword(current, newPassword);
+    void logActivity('password_change');
   }
 
   /**
@@ -227,6 +309,7 @@ export class FirebaseAuthApi implements IAuthApi {
     }
 
     await deleteDoc(usersCollectionDoc(current.uid));
+    void logActivity('account_delete');
 
     try {
       await deleteUser(current);

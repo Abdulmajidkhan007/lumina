@@ -31,6 +31,15 @@ export const Config = {
    * settings. Fill this in before shipping to get crash/error reporting.
    */
   SENTRY_DSN: '',
+
+  /**
+   * Google Sign-In web client ID (OAuth `client_type: 3` entry from
+   * `google-services.json`). Required by `GoogleSignin.configure()` on both
+   * platforms — Android needs it to request an ID token, iOS needs it for
+   * the server/backend audience check.
+   */
+  GOOGLE_WEB_CLIENT_ID:
+    '780053612664-2e6rm0silqb00l605kpaacdii8ghhj1v.apps.googleusercontent.com',
 } as const;
 
 export type ConfigShape = typeof Config;

@@ -30,6 +30,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { loginSchema } from '@/schemas/auth.schema';
 import type { LoginInput } from '@/types/forms';
 import { useLogin } from '@/features/auth/hooks/useLogin';
+import { useGoogleLogin } from '@/features/auth/hooks/useGoogleLogin';
+import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton';
 import { useTheme } from '@/design-system/theme';
 import { useReducedMotion } from '@/design-system/hooks';
 import { Text } from '@/design-system/primitives/Text';
@@ -52,6 +54,7 @@ export default function LoginScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const loginMutation = useLogin();
+  const googleLoginMutation = useGoogleLogin();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const passwordRef = useRef<TextInput>(null);
 
@@ -213,7 +216,9 @@ export default function LoginScreen(): React.JSX.Element {
             </Pressable>
 
             {/* Mutation error */}
-            {loginMutation.isError ? (
+            {loginMutation.isError ||
+            (googleLoginMutation.isError &&
+              !(googleLoginMutation.error instanceof Error && googleLoginMutation.error.message === 'cancelled')) ? (
               <View
                 style={[
                   styles.errorBanner,
@@ -229,7 +234,9 @@ export default function LoginScreen(): React.JSX.Element {
                 <Text variant="caption" color="danger" align="center">
                   {loginMutation.error instanceof Error
                     ? loginMutation.error.message
-                    : t('auth.login.genericError')}
+                    : googleLoginMutation.error instanceof Error
+                      ? googleLoginMutation.error.message
+                      : t('auth.login.genericError')}
                 </Text>
               </View>
             ) : null}
@@ -245,6 +252,22 @@ export default function LoginScreen(): React.JSX.Element {
                 accessibilityLabel={t('auth.login.submitAccessibilityLabel')}
               />
             </Animated.View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.lg }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
+              <Text variant="caption" color="tertiary" style={{ marginHorizontal: theme.spacing.md }}>
+                {t('auth.or')}
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
+            </View>
+
+            <View style={{ marginTop: theme.spacing.lg }}>
+              <GoogleSignInButton
+                label={t('auth.continueWithGoogle')}
+                loading={googleLoginMutation.isPending}
+                onPress={() => googleLoginMutation.mutate()}
+              />
+            </View>
           </Animated.View>
 
           {/* Footer */}
