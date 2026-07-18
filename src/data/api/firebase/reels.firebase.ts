@@ -12,7 +12,6 @@
  * Mirrors posts.firebase.ts's pagination + like/save patterns. Reels are not
  * created through IReelsApi (no `createReel` method on the contract).
  */
-import { collection, doc, getDoc, where } from '@react-native-firebase/firestore';
 import type { IReelsApi } from '@/data/api/contracts';
 import type { Reel, ReelId } from '@/types/models';
 import type { Paginated, ReelsParams } from '@/types/api';
@@ -26,6 +25,7 @@ import {
   queryCreatedAtPage,
   requireCurrentUid,
   setMembershipFlag,
+  where,
   type RawDoc,
 } from './helpers';
 
@@ -42,11 +42,11 @@ interface ReelDocFields {
 }
 
 function reelsCollection() {
-  return collection(getFirebaseFirestore(), 'reels');
+  return getFirebaseFirestore().collection('reels');
 }
 
 function reelDocRef(id: string) {
-  return doc(getFirebaseFirestore(), 'reels', id);
+  return getFirebaseFirestore().collection('reels').doc(id);
 }
 
 async function buildReelCandidate(raw: RawDoc, viewerUid: string | null): Promise<unknown> {
@@ -127,8 +127,3 @@ export class FirebaseReelsApi implements IReelsApi {
     });
   }
 }
-
-// getDoc is unused directly (single-reel getter not part of IReelsApi) but
-// kept imported for parity/readability with posts.firebase.ts — removed to
-// keep lint clean since IReelsApi has no getReel(id) method.
-void getDoc;

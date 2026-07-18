@@ -27,17 +27,7 @@
  * intentionally does not fan out a notification to the author — wiring that
  * up is a schema change for a separate change.
  */
-import {
-  arrayUnion,
-  collection,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  setDoc,
-  updateDoc,
-  where,
-} from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { IStoriesApi, CreateStoryInput } from '@/data/api/contracts';
 import type { Story, StoryReel, StoryId } from '@/types/models';
 import type { UserSummary, Media } from '@/schemas';
@@ -56,15 +46,16 @@ interface StoryDocFields {
 }
 
 function storiesCollection() {
-  return collection(getFirebaseFirestore(), 'stories');
+  return getFirebaseFirestore().collection('stories');
 }
 
 export class FirebaseStoriesApi implements IStoriesApi {
   async getStoryReels(): Promise<StoryReel[]> {
     const nowIso = new Date().toISOString();
-    const snapshot = await getDocs(
-      query(storiesCollection(), where('expiresAt', '>', nowIso), orderBy('expiresAt', 'asc')),
-    );
+    const snapshot = await storiesCollection()
+      .where('expiresAt', '>', nowIso)
+      .orderBy('expiresAt', 'asc')
+      .get();
     const viewerUid = getCurrentUid();
 
     type Accumulator = { author: UserSummary; stories: unknown[] };
@@ -110,8 +101,8 @@ export class FirebaseStoriesApi implements IStoriesApi {
 
   async markSeen(storyId: StoryId): Promise<void> {
     const uid = requireCurrentUid();
-    await updateDoc(doc(getFirebaseFirestore(), 'stories', storyId), {
-      seenByUids: arrayUnion(uid),
+    await storiesCollection().doc(storyId).update({
+      seenByUids: firestore.FieldValue.arrayUnion(uid),
     });
   }
 
@@ -144,7 +135,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
 
     const createdAt = new Date(now).toISOString();
     const expiresAt = new Date(now + 24 * 60 * 60 * 1000).toISOString();
-    const newRef = doc(storiesCollection());
+    const newRef = storiesCollection().doc();
     const storyDoc: StoryDocFields = {
       authorId: uid,
       author,
@@ -153,7 +144,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       expiresAt,
       seenByUids: [],
     };
-    await setDoc(newRef, storyDoc);
+    await newRef.set(storyDoc);
 
     return storySchema.parse({
       id: newRef.id,
@@ -167,7 +158,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
 
   async reactToStory(storyId: StoryId, emoji: string): Promise<void> {
     const uid = requireCurrentUid();
-    await setDoc(doc(getFirebaseFirestore(), 'stories', storyId, 'reactions', uid), {
+    await storiesCollection().doc(storyId).collection('reactions').doc(uid).set({
       emoji,
       createdAt: new Date().toISOString(),
     });

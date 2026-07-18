@@ -18,16 +18,19 @@
  */
 
 import React, { useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
-import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { hitSlop, headerHeight } from '@/constants/layout';
+
+// Bundled brand mark (gradient rounded square + luminous spark).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const LUMINA_MARK = require('../../../../assets/images/lumina-mark.png');
 
 // ---------------------------------------------------------------------------
 // Component
@@ -57,25 +60,12 @@ export function FeedHeader(): React.JSX.Element {
         },
       ]}
     >
-      {/* Wordmark — fixed-size gradient pill, cannot collapse to 0x0 */}
-      <View style={styles.wordmarkWrap}>
-        <LinearGradient
-          colors={[...theme.colors.accentGradient]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.wordmarkPill,
-            {
-              borderRadius: theme.radii.full,
-              paddingHorizontal: theme.spacing.md,
-              paddingVertical: theme.spacing.xxs,
-            },
-          ]}
-        >
-          <Text variant="bodyStrong" color="inverse" numberOfLines={1}>
-            Lumina
-          </Text>
-        </LinearGradient>
+      {/* Brand: logo mark + wordmark. Fixed sizes so the row never collapses. */}
+      <View style={styles.brand}>
+        <Image source={LUMINA_MARK} style={styles.mark} resizeMode="contain" />
+        <Text variant="title" numberOfLines={1} style={styles.wordmark}>
+          Lumina
+        </Text>
       </View>
 
       {/* Right icons — fixed intrinsic size, never shrink off-screen */}
@@ -123,14 +113,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  wordmarkWrap: {
-    // Allowed to shrink first if space is ever tight, but the pill itself
-    // has real content (padding + text) so it never measures to zero.
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     flexShrink: 1,
-    alignItems: 'flex-start',
   },
-  wordmarkPill: {
-    alignSelf: 'flex-start',
+  mark: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+  },
+  wordmark: {
+    letterSpacing: 0.3,
   },
   icons: {
     flexDirection: 'row',

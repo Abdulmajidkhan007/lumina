@@ -176,8 +176,13 @@ jest.mock('react-native-video', () => {
 });
 
 // ---------------------------------------------------------------------------
-// @react-native-firebase/* — empty factories, only needed if a test's import
-// graph happens to reach them (none of the current suites do).
+// @react-native-firebase/* — mocked as the NAMESPACED (chainable) API, since
+// that's what src/lib/firebase.ts and src/data/api/firebase/** now call
+// (`firestore()`, `auth()`, `storage()` as callable default exports, bound
+// to the default app). `getApps()` stays empty so `isFirebaseConfigured()`
+// is false and the api client falls back to the mock provider — none of
+// these fakes are exercised for real request logic, they only need to
+// exist so the *.firebase.ts modules can be imported without throwing.
 // ---------------------------------------------------------------------------
 jest.mock('@react-native-firebase/app', () => ({
   __esModule: true,
@@ -187,41 +192,80 @@ jest.mock('@react-native-firebase/app', () => ({
   getApps: () => [],
   getApp: () => ({}),
 }));
-jest.mock('@react-native-firebase/auth', () => ({
-  __esModule: true,
-  default: () => ({}),
-  getAuth: () => ({ currentUser: null }),
-  sendPasswordResetEmail: async () => undefined,
-}));
-jest.mock('@react-native-firebase/firestore', () => ({
-  __esModule: true,
-  default: () => ({}),
-  getFirestore: () => ({}),
-  collection: () => ({}),
-  doc: () => ({}),
-  getDoc: async () => ({ exists: () => false }),
-  getDocs: async () => ({ docs: [], empty: true, size: 0 }),
-  query: () => ({}),
-  where: () => ({}),
-  orderBy: () => ({}),
-  startAfter: () => ({}),
-  limit: () => ({}),
-  documentId: () => ({}),
-  increment: () => ({}),
-  runTransaction: async () => undefined,
-  writeBatch: () => ({ update: () => undefined, commit: async () => undefined }),
-  setDoc: async () => undefined,
-  updateDoc: async () => undefined,
-}));
+
+jest.mock('@react-native-firebase/auth', () => {
+  const fakeUser = {
+    uid: 'mock-uid',
+    email: null,
+    emailVerified: false,
+    providerData: [],
+    getIdToken: async () => 'mock-token',
+    sendEmailVerification: async () => undefined,
+    reauthenticateWithCredential: async () => ({ user: fakeUser }),
+    updatePassword: async () => undefined,
+    delete: async () => undefined,
+  };
+  const authModule = {
+    currentUser: null,
+    signInWithEmailAndPassword: async () => ({ user: fakeUser }),
+    createUserWithEmailAndPassword: async () => ({ user: fakeUser }),
+    signInWithCredential: async () => ({ user: fakeUser }),
+    signOut: async () => undefined,
+    sendPasswordResetEmail: async () => undefined,
+  };
+  const authDefault = () => authModule;
+  authDefault.GoogleAuthProvider = { credential: () => ({}) };
+  authDefault.EmailAuthProvider = { credential: () => ({}) };
+  return { __esModule: true, default: authDefault };
+});
+
+jest.mock('@react-native-firebase/firestore', () => {
+  const fakeDocSnapshot = { exists: () => false, id: 'mock-id', data: () => ({}) };
+  const fakeQuerySnapshot = { docs: [], empty: true, size: 0 };
+  const chainable = {
+    collection: () => chainable,
+    doc: () => chainable,
+    where: () => chainable,
+    orderBy: () => chainable,
+    startAfter: () => chainable,
+    limit: () => chainable,
+    get: async () => fakeQuerySnapshot,
+    set: async () => undefined,
+    update: async () => undefined,
+    delete: async () => undefined,
+  };
+  const fakeTx = {
+    get: async () => fakeDocSnapshot,
+    set: () => undefined,
+    update: () => undefined,
+    delete: () => undefined,
+  };
+  const firestoreModule = {
+    ...chainable,
+    runTransaction: async (fn) => fn(fakeTx),
+    batch: () => ({ update: () => undefined, delete: () => undefined, commit: async () => undefined }),
+  };
+  const firestoreDefault = () => firestoreModule;
+  firestoreDefault.FieldValue = {
+    increment: (n) => ({ __op: 'increment', n }),
+    arrayUnion: (...items) => ({ __op: 'arrayUnion', items }),
+  };
+  firestoreDefault.FieldPath = {
+    documentId: () => ({ __op: 'documentId' }),
+  };
+  return { __esModule: true, default: firestoreDefault };
+});
+
 jest.mock('@react-native-firebase/messaging', () => ({ __esModule: true, default: () => ({}) }));
-jest.mock('@react-native-firebase/storage', () => ({
-  __esModule: true,
-  default: () => ({}),
-  getStorage: () => ({}),
-  ref: () => ({}),
-  putFile: async () => undefined,
-  getDownloadURL: async () => '',
-}));
+
+jest.mock('@react-native-firebase/storage', () => {
+  const fakeRef = {
+    putFile: async () => undefined,
+    getDownloadURL: async () => '',
+  };
+  const storageDefault = () => ({ ref: () => fakeRef });
+  return { __esModule: true, default: storageDefault };
+});
 
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {

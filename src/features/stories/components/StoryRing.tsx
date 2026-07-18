@@ -41,7 +41,7 @@ export interface StoryRingProps {
    * meaningful when `isCurrentUser` is true.
    */
   onAddPress?: () => void;
-  /** Shows a spinner overlay on the ring while a new story is uploading */
+  /** Shows a spinner overlay on the ring while the gallery picker is open */
   isUploading?: boolean;
   style?: StyleProp<ViewStyle>;
 }

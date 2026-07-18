@@ -5,9 +5,10 @@
  * followed by story reels from the useStoryReels query.
  *
  * Tapping "Your story" when the current user has no active reel opens the
- * gallery picker and creates a new story. When an active reel exists, the
- * ring opens the story viewer as usual (unchanged), while a small "+" badge
- * on the ring always opens the picker to add another story.
+ * gallery picker, then hands the picked image off to the full-screen
+ * StoryComposer for preview/confirmation before it uploads. When an active
+ * reel exists, the ring opens the story viewer as usual (unchanged), while a
+ * small "+" badge on the ring always opens the picker to add another story.
  */
 
 import React, { useCallback, useState } from 'react';
@@ -26,7 +27,6 @@ import type { ProtectedStackParamList } from '@/navigation';
 import { useTheme } from '@/design-system/theme';
 import { SkeletonCircle } from '@/design-system/primitives/Skeleton';
 import { useStoryReels } from '@/data/query/hooks/useStoryReels';
-import { useCreateStory } from '@/data/query/hooks/useCreateStory';
 import { useCurrentUser } from '@/stores/auth.store';
 import type { StoryReel , UserSummary } from '@/types/models';
 import { StoryRing } from './StoryRing';
@@ -66,7 +66,6 @@ export function StoryRail(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const { data: reels, isLoading } = useStoryReels();
-  const createStory = useCreateStory();
   const [pickerBusy, setPickerBusy] = useState(false);
 
   const handleRingPress = useCallback(
@@ -76,7 +75,11 @@ export function StoryRail(): React.JSX.Element {
     [navigation],
   );
 
-  const pickAndCreateStory = useCallback(() => {
+  // Opens the gallery picker, then hands the picked image off to the
+  // full-screen composer for preview/confirmation. No upload happens here —
+  // `useCreateStory` is only called from StoryComposerScreen once the user
+  // explicitly taps "Share to story".
+  const pickAndOpenComposer = useCallback(() => {
     setPickerBusy(true);
     launchImageLibrary(
       { mediaType: 'photo', selectionLimit: 1, quality: 0.9 },
@@ -93,32 +96,20 @@ export function StoryRail(): React.JSX.Element {
         const asset = response.assets?.[0];
         if (asset?.uri === undefined) return;
 
-        createStory.mutate(
-          {
-            uri: asset.uri,
-            type: 'image',
-            width: asset.width,
-            height: asset.height,
-          },
-          {
-            onError: (error) => {
-              Alert.alert('Story upload failed', error.message);
-            },
-          },
-        );
+        navigation.navigate('StoryComposer', { uri: asset.uri });
       },
     );
-  }, [createStory]);
+  }, [navigation]);
 
   const handleCurrentUserPress = useCallback(
     (myReel: StoryReel | null) => {
       if (myReel != null) {
         handleRingPress(myReel.author.id);
       } else {
-        pickAndCreateStory();
+        pickAndOpenComposer();
       }
     },
-    [handleRingPress, pickAndCreateStory],
+    [handleRingPress, pickAndOpenComposer],
   );
 
   const items = React.useMemo<RailItem[]>(() => {
@@ -160,8 +151,6 @@ export function StoryRail(): React.JSX.Element {
     return `reel-${item.reel.author.id}`;
   }, []);
 
-  const isUploading = pickerBusy || createStory.isPending;
-
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<RailItem>) => {
       const isFirst = index === 0;
@@ -173,9 +162,9 @@ export function StoryRail(): React.JSX.Element {
             user={item.user}
             hasUnseen={false}
             isCurrentUser
-            isUploading={isUploading}
+            isUploading={pickerBusy}
             onPress={() => handleCurrentUserPress(item.myReel)}
-            onAddPress={pickAndCreateStory}
+            onAddPress={pickAndOpenComposer}
             style={{
               marginLeft: isFirst ? theme.spacing.lg : 0,
               marginRight: isLast ? theme.spacing.lg : theme.spacing.md,
@@ -199,9 +188,9 @@ export function StoryRail(): React.JSX.Element {
     [
       handleCurrentUserPress,
       handleRingPress,
-      isUploading,
+      pickerBusy,
       items.length,
-      pickAndCreateStory,
+      pickAndOpenComposer,
       theme.spacing.lg,
       theme.spacing.md,
     ],

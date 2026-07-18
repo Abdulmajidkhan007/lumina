@@ -282,5 +282,13 @@
     "sharedAPost": "Post ulashdi",
     "shareToTitle": "Ulashish",
     "send": "Yuborish"
+  },
+  "story": {
+    "newStoryTitle": "Yangi tarix",
+    "close": "Yopish",
+    "previewLabel": "Tarix ko'rinishi",
+    "shareToStory": "Tarixga ulashish",
+    "uploading": "Yuklanmoqda…",
+    "shareError": "Tarixni ulashib bo'lmadi. Qaytadan urinib ko'ring."
   }
 }

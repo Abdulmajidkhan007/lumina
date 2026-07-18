@@ -15,6 +15,7 @@ import { TabsNavigator } from './TabsNavigator';
 import PostDetailScreen from '@/screens/post/PostDetailScreen';
 import CommentsScreen from '@/screens/comments/CommentsScreen';
 import StoryScreen from '@/screens/story/StoryScreen';
+import StoryComposerScreen from '@/screens/story/StoryComposerScreen';
 import UserProfileScreen from '@/screens/user/UserProfileScreen';
 import FollowersScreen from '@/screens/user/FollowersScreen';
 import FollowingScreen from '@/screens/user/FollowingScreen';
@@ -58,6 +59,12 @@ export function ProtectedStack(): React.JSX.Element {
         name="Story"
         component={StoryScreen}
         options={{ presentation: 'transparentModal', animation: 'fade' }}
+      />
+
+      <Stack.Screen
+        name="StoryComposer"
+        component={StoryComposerScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
       />
 
       <Stack.Screen

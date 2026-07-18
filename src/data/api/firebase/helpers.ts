@@ -5,29 +5,18 @@
  * detail of the `*.firebase.ts` files in this directory. Keeping it in one
  * place avoids repeating the same cursor-pagination / defensive-parsing /
  * counter-transaction plumbing in every file.
+ *
+ * Uses the NAMESPACED (chainable) Firestore API — `firestore()`,
+ * `collectionRef.doc()`, `queryRef.where()/.orderBy()/.get()`, etc — rather
+ * than the modular `query()/where()/getDocs()` functions. The modular API
+ * has been observed to throw "Cannot read property 'call' of undefined" in
+ * RELEASE Hermes builds; the namespaced API does not go through the same
+ * interop shim and is release-stable. See `src/lib/firebase.ts` for the
+ * accessor that hands out the namespaced `Firestore.Module` instance.
  */
 import type { z } from 'zod';
-import {
-  doc,
-  documentId,
-  getDoc,
-  getDocs,
-  increment,
-  limit,
-  orderBy,
-  query,
-  runTransaction,
-  startAfter,
-  where,
-} from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-
-/** Union of everything our helpers pass to query() — matches what where/orderBy/startAfter/limit return. */
-export type FirestoreQueryConstraint =
-  | ReturnType<typeof where>
-  | ReturnType<typeof orderBy>
-  | ReturnType<typeof startAfter>
-  | ReturnType<typeof limit>;
 import { userSummarySchema } from '@/schemas';
 import type { UserSummary } from '@/types/models';
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase';
@@ -53,9 +42,38 @@ export function requireCurrentUid(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Query constraints — a small `where()` builder that mirrors the modular
+// API's ergonomics (an array of constraints callers can conditionally spread
+// in) while compiling down to a chain of namespaced `.where()` calls.
+// ---------------------------------------------------------------------------
+
+export type FirestoreQueryConstraint = (
+  q: FirebaseFirestoreTypes.Query,
+) => FirebaseFirestoreTypes.Query;
+
+export function where(
+  field: string,
+  op: FirebaseFirestoreTypes.WhereFilterOp,
+  value: unknown,
+): FirestoreQueryConstraint {
+  return (q) => q.where(field, op, value);
+}
+
+function applyConstraints(
+  base: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query,
+  constraints: FirestoreQueryConstraint[],
+): FirebaseFirestoreTypes.Query {
+  let current: FirebaseFirestoreTypes.Query = base;
+  for (const constraint of constraints) {
+    current = constraint(current);
+  }
+  return current;
+}
+
+// ---------------------------------------------------------------------------
 // Cursor pagination — mirrors the mock's Paginated<T> shape exactly, but the
 // cursor here encodes {orderValue, id} of the last document so we can resume
-// a Firestore query with `startAfter(orderValue, id)`. The trailing docId
+// a Firestore query with `.startAfter(orderValue, id)`. The trailing docId
 // orderBy is a tiebreaker so pages stay stable even when many documents
 // share the same `orderField` value (e.g. identical timestamps).
 // ---------------------------------------------------------------------------
@@ -79,36 +97,6 @@ export function decodeCursor(cursor: string): { orderValue: string; id: string }
 }
 
 /**
- * Applies a list of query constraints to `base` one at a time via the
- * modular `query()` API, instead of spreading the whole array into a single
- * variadic call.
- *
- * `query()`'s real implementation (see `_apply` on each constraint object)
- * folds constraints onto the query one by one internally anyway, so calling
- * it once per constraint is behaviourally identical to a single N-ary call —
- * but it means every call site here only ever passes exactly two, properly
- * typed arguments (`query(q, constraint)`), which is the overload
- * `query<T>(query: Query<T>, ...queryConstraints: QueryConstraint[])` resolves
- * unambiguously without any `as`/`never[]` cast. Spreading a large,
- * dynamically-sized, precast array into one call is what previously forced
- * the `as unknown as never[]` escape hatch; chaining avoids that entirely and
- * has proven more resilient under Hermes release-bundle minification, where
- * the earlier cast+spread form intermittently produced
- * "Cannot read property 'call' of undefined" while building the feed/profile
- * queries.
- */
-function applyConstraints(
-  base: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query,
-  constraints: FirestoreQueryConstraint[],
-): FirebaseFirestoreTypes.Query {
-  let current: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query = base;
-  for (const constraint of constraints) {
-    current = query(current, constraint);
-  }
-  return current;
-}
-
-/**
  * Runs a cursor-paginated query ordered by `orderField` (then by document ID
  * as a tiebreaker) and returns the raw docs for this page plus the next
  * cursor. Callers turn `docs` into domain models (see `buildValidatedList`).
@@ -122,14 +110,15 @@ export async function queryCursorPage(
   limitCount: number = DEFAULT_PAGE_LIMIT,
 ): Promise<{ docs: RawDoc[]; nextCursor: string | null }> {
   const decoded = cursor ? decodeCursor(cursor) : null;
-  const constraints: FirestoreQueryConstraint[] = [
-    ...extraConstraints,
-    orderBy(orderField, orderDirection),
-    orderBy(documentId(), orderDirection),
-    ...(decoded ? [startAfter(decoded.orderValue, decoded.id)] : []),
-    limit(limitCount),
-  ];
-  const snapshot = await getDocs(applyConstraints(base, constraints));
+
+  let q = applyConstraints(base, extraConstraints);
+  q = q.orderBy(orderField, orderDirection).orderBy(firestore.FieldPath.documentId(), orderDirection);
+  if (decoded) {
+    q = q.startAfter(decoded.orderValue, decoded.id);
+  }
+  q = q.limit(limitCount);
+
+  const snapshot = await q.get();
   const docs: RawDoc[] = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
     id: docSnap.id,
     data: docSnap.data(),
@@ -190,10 +179,10 @@ export async function setMembershipFlag(params: {
   counterField?: string;
 }): Promise<void> {
   const { parentRef, subcollection, uid, shouldExist, counterField } = params;
-  const firestore = getFirebaseFirestore();
-  const memberRef = doc(parentRef, subcollection, uid);
+  const db = getFirebaseFirestore();
+  const memberRef = parentRef.collection(subcollection).doc(uid);
 
-  await runTransaction(firestore, async (tx) => {
+  await db.runTransaction(async (tx) => {
     const parentSnap = await tx.get(parentRef);
     if (!parentSnap.exists()) {
       // Mirrors the mock's guard of silently no-op'ing when the target
@@ -206,12 +195,12 @@ export async function setMembershipFlag(params: {
     if (shouldExist && !exists) {
       tx.set(memberRef, { uid, createdAt: new Date().toISOString() });
       if (counterField) {
-        tx.update(parentRef, { [counterField]: increment(1) });
+        tx.update(parentRef, { [counterField]: firestore.FieldValue.increment(1) });
       }
     } else if (!shouldExist && exists) {
       tx.delete(memberRef);
       if (counterField) {
-        tx.update(parentRef, { [counterField]: increment(-1) });
+        tx.update(parentRef, { [counterField]: firestore.FieldValue.increment(-1) });
       }
     }
     // Otherwise the flag already matches the desired state — no-op, same as mock.
@@ -225,7 +214,9 @@ export async function getMembershipFlags(
   uid: string | null,
 ): Promise<boolean[]> {
   if (!uid) return subcollections.map(() => false);
-  const snaps = await Promise.all(subcollections.map((sub) => getDoc(doc(parentRef, sub, uid))));
+  const snaps = await Promise.all(
+    subcollections.map((sub) => parentRef.collection(sub).doc(uid).get()),
+  );
   return snaps.map((snap) => snap.exists());
 }
 
@@ -250,7 +241,7 @@ export interface UserDocFields {
 
 /** Fetches a `users/{id}` doc and maps it to a lightweight UserSummary embed. */
 export async function fetchUserSummary(id: string): Promise<UserSummary | null> {
-  const snap = await getDoc(doc(getFirebaseFirestore(), 'users', id));
+  const snap = await getFirebaseFirestore().collection('users').doc(id).get();
   if (!snap.exists()) return null;
   const data = snap.data() as Partial<UserDocFields>;
   const candidate = {

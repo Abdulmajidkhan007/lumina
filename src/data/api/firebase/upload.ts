@@ -3,7 +3,6 @@
  * returns its public download URL. Used by create-post / messaging flows
  * once they are wired to the Firebase provider.
  */
-import { getDownloadURL, putFile, ref } from '@react-native-firebase/storage';
 import { getFirebaseStorage } from '@/lib/firebase';
 
 /**
@@ -11,7 +10,7 @@ import { getFirebaseStorage } from '@/lib/firebase';
  * and resolves with the download URL to store in Firestore documents.
  */
 export async function uploadMedia(localUri: string, remotePath: string): Promise<string> {
-  const storageRef = ref(getFirebaseStorage(), remotePath);
-  await putFile(storageRef, localUri);
-  return getDownloadURL(storageRef);
+  const storageRef = getFirebaseStorage().ref(remotePath);
+  await storageRef.putFile(localUri);
+  return storageRef.getDownloadURL();
 }

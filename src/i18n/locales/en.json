@@ -282,5 +282,13 @@
     "sharedAPost": "Shared a post",
     "shareToTitle": "Share to",
     "send": "Send"
+  },
+  "story": {
+    "newStoryTitle": "New story",
+    "close": "Close",
+    "previewLabel": "Story preview",
+    "shareToStory": "Share to story",
+    "uploading": "Uploading…",
+    "shareError": "Couldn't share your story. Please try again."
   }
 }

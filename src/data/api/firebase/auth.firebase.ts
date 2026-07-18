@@ -7,21 +7,8 @@
  *    isPrivate, followerCount, followingCount, postCount, createdAt (ISO string).
  *    `isFollowedByMe` / `isMe` are viewer-relative and computed here, never stored.
  */
-import {
-  createUserWithEmailAndPassword,
-  deleteUser,
-  EmailAuthProvider,
-  GoogleAuthProvider,
-  reauthenticateWithCredential,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInWithCredential,
-  signInWithEmailAndPassword,
-  signOut,
-  updatePassword,
-} from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from '@react-native-firebase/firestore';
 import {
   GoogleSignin,
   isCancelledResponse,
@@ -49,7 +36,7 @@ function ensureGoogleSignInConfigured(): void {
 }
 
 function usersCollectionDoc(uid: string) {
-  return doc(getFirebaseFirestore(), 'users', uid);
+  return getFirebaseFirestore().collection('users').doc(uid);
 }
 
 function fallbackUsernameFrom(email: string | null, uid: string): string {
@@ -64,7 +51,7 @@ export class FirebaseAuthApi implements IAuthApi {
   /** Reads `users/{uid}`, creating a minimal fallback profile if it's missing. */
   private async fetchOrCreateProfile(fbUser: FirebaseAuthTypes.User): Promise<User> {
     const profileRef = usersCollectionDoc(fbUser.uid);
-    let snap = await getDoc(profileRef);
+    let snap = await profileRef.get();
 
     if (!snap.exists()) {
       const now = new Date().toISOString();
@@ -82,8 +69,8 @@ export class FirebaseAuthApi implements IAuthApi {
         postCount: 0,
         createdAt: now,
       };
-      await setDoc(profileRef, profile);
-      snap = await getDoc(profileRef);
+      await profileRef.set(profile);
+      snap = await profileRef.get();
     }
 
     const data = snap.data() as Partial<UserDocFields> | undefined;
@@ -115,8 +102,10 @@ export class FirebaseAuthApi implements IAuthApi {
         'Firebase auth currently supports email/password sign-in only (phone identifiers are not yet wired up).',
       );
     }
-    const auth = getFirebaseAuth();
-    const credential = await signInWithEmailAndPassword(auth, input.identifier, input.password);
+    const credential = await getFirebaseAuth().signInWithEmailAndPassword(
+      input.identifier,
+      input.password,
+    );
     const [user, token] = await Promise.all([
       this.fetchOrCreateProfile(credential.user),
       credential.user.getIdToken(),
@@ -126,8 +115,10 @@ export class FirebaseAuthApi implements IAuthApi {
   }
 
   async signup(input: SignupInput): Promise<AuthSession> {
-    const auth = getFirebaseAuth();
-    const credential = await createUserWithEmailAndPassword(auth, input.email, input.password);
+    const credential = await getFirebaseAuth().createUserWithEmailAndPassword(
+      input.email,
+      input.password,
+    );
     const now = new Date().toISOString();
     const profile: UserDocFields = {
       username: input.username,
@@ -142,11 +133,11 @@ export class FirebaseAuthApi implements IAuthApi {
       postCount: 0,
       createdAt: now,
     };
-    await setDoc(usersCollectionDoc(credential.user.uid), profile);
+    await usersCollectionDoc(credential.user.uid).set(profile);
 
     // Fire-and-forget — verification email delivery must never block signup.
     try {
-      await sendEmailVerification(credential.user);
+      await credential.user.sendEmailVerification();
     } catch (error) {
       console.warn('[auth] failed to send verification email:', error);
     }
@@ -185,8 +176,8 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Google sign-in did not return an ID token.');
     }
 
-    const googleCredential = GoogleAuthProvider.credential(idToken);
-    const credential = await signInWithCredential(getFirebaseAuth(), googleCredential);
+    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    const credential = await getFirebaseAuth().signInWithCredential(googleCredential);
     const [user, token] = await Promise.all([
       this.fetchOrCreateProfile(credential.user),
       credential.user.getIdToken(),
@@ -197,7 +188,7 @@ export class FirebaseAuthApi implements IAuthApi {
 
   async logout(): Promise<void> {
     void logActivity('logout');
-    await signOut(getFirebaseAuth());
+    await getFirebaseAuth().signOut();
   }
 
   async getSession(): Promise<AuthSession | null> {
@@ -229,7 +220,7 @@ export class FirebaseAuthApi implements IAuthApi {
       ? await uploadMedia(avatarLocalUri as string, `avatars/${current.uid}/${Date.now()}`)
       : undefined;
 
-    await updateDoc(usersCollectionDoc(current.uid), {
+    await usersCollectionDoc(current.uid).update({
       displayName: input.displayName,
       username: input.username,
       usernameLower: input.username.toLowerCase(),
@@ -242,7 +233,7 @@ export class FirebaseAuthApi implements IAuthApi {
 
   /** Delegates to Firebase Auth — errors (e.g. `auth/invalid-email`) propagate as-is. */
   async resetPassword(email: string): Promise<void> {
-    await sendPasswordResetEmail(getFirebaseAuth(), email);
+    await getFirebaseAuth().sendPasswordResetEmail(email);
     void logActivity('password_reset', { email });
   }
 
@@ -265,7 +256,7 @@ export class FirebaseAuthApi implements IAuthApi {
   async resendVerificationEmail(): Promise<void> {
     const current = getFirebaseAuth().currentUser;
     if (!current || current.emailVerified) return;
-    await sendEmailVerification(current);
+    await current.sendEmailVerification();
   }
 
   /**
@@ -280,9 +271,9 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Not authenticated');
     }
 
-    const credential = EmailAuthProvider.credential(current.email, currentPassword);
+    const credential = auth.EmailAuthProvider.credential(current.email, currentPassword);
     try {
-      await reauthenticateWithCredential(current, credential);
+      await current.reauthenticateWithCredential(credential);
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
@@ -291,7 +282,7 @@ export class FirebaseAuthApi implements IAuthApi {
       throw error;
     }
 
-    await updatePassword(current, newPassword);
+    await current.updatePassword(newPassword);
     void logActivity('password_change');
   }
 
@@ -308,11 +299,11 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Not authenticated');
     }
 
-    await deleteDoc(usersCollectionDoc(current.uid));
+    await usersCollectionDoc(current.uid).delete();
     void logActivity('account_delete');
 
     try {
-      await deleteUser(current);
+      await current.delete();
     } catch (error) {
       const code = (error as { code?: string } | null)?.code;
       if (code === 'auth/requires-recent-login') {

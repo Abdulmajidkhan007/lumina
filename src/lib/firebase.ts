@@ -10,14 +10,24 @@
  * uses to decide whether it's safe to reach for the Firebase implementations
  * (see `src/data/api/client.ts`). Nothing in this file throws on its own;
  * callers are expected to check `isFirebaseConfigured()` first.
+ *
+ * NOTE: These accessors deliberately use the NAMESPACED (chainable) RNFirebase
+ * API — `firestore()`, `auth()`, `storage()` — bound to the default app,
+ * rather than the modular `getFirestore(app)`/`getAuth(app)`/`getStorage(app)`
+ * functions. The modular API has been observed to throw
+ * "Cannot read property 'call' of undefined" in RELEASE Hermes builds (new
+ * architecture, Proguard off) when its internal interop shims get
+ * minified/reordered by the release bundler — the namespaced default-app
+ * calls do not go through that shim and are release-stable. See
+ * `src/data/api/firebase/**` for the corresponding namespaced query usage.
  */
 import { getApp, getApps } from '@react-native-firebase/app';
 import type { ReactNativeFirebase } from '@react-native-firebase/app';
-import { getAuth } from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import { getFirestore } from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getStorage } from '@react-native-firebase/storage';
+import storage from '@react-native-firebase/storage';
 import type { FirebaseStorageTypes } from '@react-native-firebase/storage';
 
 /**
@@ -33,17 +43,17 @@ export function getFirebaseApp(): ReactNativeFirebase.FirebaseApp {
   return getApp();
 }
 
-/** Typed Auth instance bound to the default app. */
+/** Typed Auth instance bound to the default app (namespaced API). */
 export function getFirebaseAuth(): FirebaseAuthTypes.Module {
-  return getAuth(getFirebaseApp());
+  return auth();
 }
 
-/** Typed Firestore instance bound to the default app. */
+/** Typed Firestore instance bound to the default app (namespaced API). */
 export function getFirebaseFirestore(): FirebaseFirestoreTypes.Module {
-  return getFirestore(getFirebaseApp());
+  return firestore();
 }
 
-/** Typed Storage instance bound to the default app. */
+/** Typed Storage instance bound to the default app (namespaced API). */
 export function getFirebaseStorage(): FirebaseStorageTypes.Module {
-  return getStorage(getFirebaseApp());
+  return storage();
 }

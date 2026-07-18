@@ -43,6 +43,7 @@ export type ProtectedStackParamList = {
   PostDetail: { id: string };
   Comments: { postId: string };
   Story: { userId: string };
+  StoryComposer: { uri: string };
   UserProfile: { id: string };
   Followers: { id: string };
   Following: { id: string };

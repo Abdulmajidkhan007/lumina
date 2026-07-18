@@ -15,16 +15,7 @@
  *
  * Explore reuses the posts collection (createdAt-ordered) via FirebasePostsApi.
  */
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  increment,
-  runTransaction,
-  setDoc,
-  where,
-} from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { IUsersApi, FollowRequestStatus } from '@/data/api/contracts';
 import type { User, UserSummary, Post, UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
@@ -38,20 +29,21 @@ import {
   queryCreatedAtPage,
   queryCursorPage,
   requireCurrentUid,
+  where,
   type RawDoc,
   type UserDocFields,
 } from './helpers';
 
 function usersCollection() {
-  return collection(getFirebaseFirestore(), 'users');
+  return getFirebaseFirestore().collection('users');
 }
 
 function followsCollection() {
-  return collection(getFirebaseFirestore(), 'follows');
+  return getFirebaseFirestore().collection('follows');
 }
 
 function followRequestsCollection() {
-  return collection(getFirebaseFirestore(), 'followRequests');
+  return getFirebaseFirestore().collection('followRequests');
 }
 
 function followDocId(followerId: string, followeeId: string): string {
@@ -64,7 +56,7 @@ function followRequestDocId(targetId: string, requesterId: string): string {
 
 async function isFollowedBy(viewerUid: string | null, targetId: string): Promise<boolean> {
   if (!viewerUid || viewerUid === targetId) return false;
-  const snap = await getDoc(doc(followsCollection(), followDocId(viewerUid, targetId)));
+  const snap = await followsCollection().doc(followDocId(viewerUid, targetId)).get();
   return snap.exists();
 }
 
@@ -84,7 +76,7 @@ export class FirebaseUsersApi implements IUsersApi {
   private readonly postsApi = new FirebasePostsApi();
 
   async getUser(id: UserId): Promise<User> {
-    const snap = await getDoc(doc(usersCollection(), id));
+    const snap = await usersCollection().doc(id).get();
     if (!snap.exists()) {
       throw new Error(`User ${id} not found`);
     }
@@ -162,7 +154,7 @@ export class FirebaseUsersApi implements IUsersApi {
 
   /** Follows immediately when `id` is public; files a request when it's private. */
   async followUser(id: UserId): Promise<void> {
-    const targetSnap = await getDoc(doc(usersCollection(), id));
+    const targetSnap = await usersCollection().doc(id).get();
     const isPrivate = (targetSnap.data() as Partial<UserDocFields> | undefined)?.isPrivate ?? false;
     if (isPrivate) {
       await this.requestFollow(id);
@@ -179,31 +171,31 @@ export class FirebaseUsersApi implements IUsersApi {
     const uid = requireCurrentUid();
     if (uid === id) return; // never follow yourself
     if (await isFollowedBy(uid, id)) return; // already following — nothing to request
-    const reqRef = doc(followRequestsCollection(), followRequestDocId(id, uid));
-    const existing = await getDoc(reqRef);
+    const reqRef = followRequestsCollection().doc(followRequestDocId(id, uid));
+    const existing = await reqRef.get();
     if (existing.exists()) return; // idempotent — request already pending
     const requestDoc: FollowRequestDocFields = {
       targetId: id,
       requesterId: uid,
       createdAt: new Date().toISOString(),
     };
-    await setDoc(reqRef, requestDoc);
+    await reqRef.set(requestDoc);
   }
 
   async cancelFollowRequest(id: UserId): Promise<void> {
     const uid = requireCurrentUid();
-    await deleteDoc(doc(followRequestsCollection(), followRequestDocId(id, uid)));
+    await followRequestsCollection().doc(followRequestDocId(id, uid)).delete();
   }
 
   async acceptFollowRequest(requesterId: UserId): Promise<void> {
     const uid = requireCurrentUid(); // the target approving the request
-    const firestore = getFirebaseFirestore();
-    const requestRef = doc(followRequestsCollection(), followRequestDocId(uid, requesterId));
-    const followRef = doc(followsCollection(), followDocId(requesterId, uid));
-    const followerUserRef = doc(usersCollection(), requesterId);
-    const followeeUserRef = doc(usersCollection(), uid);
+    const db = getFirebaseFirestore();
+    const requestRef = followRequestsCollection().doc(followRequestDocId(uid, requesterId));
+    const followRef = followsCollection().doc(followDocId(requesterId, uid));
+    const followerUserRef = usersCollection().doc(requesterId);
+    const followeeUserRef = usersCollection().doc(uid);
 
-    await runTransaction(firestore, async (tx) => {
+    await db.runTransaction(async (tx) => {
       const [requestSnap, followSnap, followeeSnap] = await Promise.all([
         tx.get(requestRef),
         tx.get(followRef),
@@ -218,8 +210,8 @@ export class FirebaseUsersApi implements IUsersApi {
           createdAt: new Date().toISOString(),
         };
         tx.set(followRef, followDoc);
-        tx.update(followeeUserRef, { followerCount: increment(1) });
-        tx.update(followerUserRef, { followingCount: increment(1) });
+        tx.update(followeeUserRef, { followerCount: firestore.FieldValue.increment(1) });
+        tx.update(followerUserRef, { followingCount: firestore.FieldValue.increment(1) });
       }
       tx.delete(requestRef);
     });
@@ -227,7 +219,7 @@ export class FirebaseUsersApi implements IUsersApi {
 
   async rejectFollowRequest(requesterId: UserId): Promise<void> {
     const uid = requireCurrentUid();
-    await deleteDoc(doc(followRequestsCollection(), followRequestDocId(uid, requesterId)));
+    await followRequestsCollection().doc(followRequestDocId(uid, requesterId)).delete();
   }
 
   async getIncomingFollowRequests(params?: CursorParams): Promise<Paginated<UserSummary>> {
@@ -254,19 +246,19 @@ export class FirebaseUsersApi implements IUsersApi {
     const uid = getCurrentUid();
     if (!uid || uid === id) return 'none';
     if (await isFollowedBy(uid, id)) return 'following';
-    const reqSnap = await getDoc(doc(followRequestsCollection(), followRequestDocId(id, uid)));
+    const reqSnap = await followRequestsCollection().doc(followRequestDocId(id, uid)).get();
     return reqSnap.exists() ? 'requested' : 'none';
   }
 
   private async setFollow(id: UserId, shouldFollow: boolean): Promise<void> {
     const uid = requireCurrentUid();
     if (uid === id) return; // never follow yourself — mirrors mock behavior
-    const firestore = getFirebaseFirestore();
-    const followRef = doc(followsCollection(), followDocId(uid, id));
-    const followerUserRef = doc(usersCollection(), uid);
-    const followeeUserRef = doc(usersCollection(), id);
+    const db = getFirebaseFirestore();
+    const followRef = followsCollection().doc(followDocId(uid, id));
+    const followerUserRef = usersCollection().doc(uid);
+    const followeeUserRef = usersCollection().doc(id);
 
-    await runTransaction(firestore, async (tx) => {
+    await db.runTransaction(async (tx) => {
       const [followSnap, followeeSnap] = await Promise.all([
         tx.get(followRef),
         tx.get(followeeUserRef),
@@ -281,12 +273,12 @@ export class FirebaseUsersApi implements IUsersApi {
           createdAt: new Date().toISOString(),
         };
         tx.set(followRef, followDoc);
-        tx.update(followeeUserRef, { followerCount: increment(1) });
-        tx.update(followerUserRef, { followingCount: increment(1) });
+        tx.update(followeeUserRef, { followerCount: firestore.FieldValue.increment(1) });
+        tx.update(followerUserRef, { followingCount: firestore.FieldValue.increment(1) });
       } else if (!shouldFollow && exists) {
         tx.delete(followRef);
-        tx.update(followeeUserRef, { followerCount: increment(-1) });
-        tx.update(followerUserRef, { followingCount: increment(-1) });
+        tx.update(followeeUserRef, { followerCount: firestore.FieldValue.increment(-1) });
+        tx.update(followerUserRef, { followingCount: firestore.FieldValue.increment(-1) });
       }
     });
   }

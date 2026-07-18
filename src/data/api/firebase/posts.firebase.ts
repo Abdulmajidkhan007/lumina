@@ -26,16 +26,7 @@
  * post doc with the resulting download URLs and increments the author's
  * `postCount`.
  */
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  increment,
-  setDoc,
-  updateDoc,
-  where,
-} from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { IPostsApi, AddCommentInput, CreatePostInput } from '@/data/api/contracts';
 import type { Post, Comment, PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
@@ -52,6 +43,7 @@ import {
   requireCurrentUid,
   getCurrentUid,
   setMembershipFlag,
+  where,
   withReadableErrors,
   type RawDoc,
 } from './helpers';
@@ -82,23 +74,23 @@ interface CommentDocFields {
 }
 
 function postsCollection() {
-  return collection(getFirebaseFirestore(), 'posts');
+  return getFirebaseFirestore().collection('posts');
 }
 
 function postDocRef(id: string) {
-  return doc(getFirebaseFirestore(), 'posts', id);
+  return getFirebaseFirestore().collection('posts').doc(id);
 }
 
 function commentsCollection(postId: string) {
-  return collection(postDocRef(postId), 'comments');
+  return postDocRef(postId).collection('comments');
 }
 
 function commentDocRef(postId: string, commentId: string) {
-  return doc(commentsCollection(postId), commentId);
+  return commentsCollection(postId).doc(commentId);
 }
 
 function savesCollection(uid: string) {
-  return collection(doc(getFirebaseFirestore(), 'users', uid), 'saves');
+  return getFirebaseFirestore().collection('users').doc(uid).collection('saves');
 }
 
 async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promise<unknown> {
@@ -210,7 +202,7 @@ export class FirebasePostsApi implements IPostsApi {
     );
 
     const createdAt = new Date(now).toISOString();
-    const newRef = doc(postsCollection());
+    const newRef = postsCollection().doc();
     const postDoc: PostDocFields = {
       authorId: uid,
       author,
@@ -222,8 +214,10 @@ export class FirebasePostsApi implements IPostsApi {
       createdAt,
       ...(input.location ? { location: input.location } : {}),
     };
-    await setDoc(newRef, postDoc);
-    await updateDoc(doc(getFirebaseFirestore(), 'users', uid), { postCount: increment(1) });
+    await newRef.set(postDoc);
+    await getFirebaseFirestore().collection('users').doc(uid).update({
+      postCount: firestore.FieldValue.increment(1),
+    });
 
     return postSchema.parse({
       id: newRef.id,
@@ -240,7 +234,7 @@ export class FirebasePostsApi implements IPostsApi {
   }
 
   async getPost(id: PostId): Promise<Post> {
-    const snap = await getDoc(postDocRef(id));
+    const snap = await postDocRef(id).get();
     if (!snap.exists()) {
       throw new Error(`Post ${id} not found`);
     }
@@ -285,11 +279,11 @@ export class FirebasePostsApi implements IPostsApi {
     // Mirror into `users/{uid}/saves/{postId}` — a per-user index that lets
     // getSavedPosts page through "my saves" ordered by save time, which the
     // `posts/{id}/saves/{uid}` marker above can't do efficiently.
-    const markerRef = doc(savesCollection(uid), id);
+    const markerRef = savesCollection(uid).doc(id);
     if (saved) {
-      await setDoc(markerRef, { postId: id, createdAt: new Date().toISOString() });
+      await markerRef.set({ postId: id, createdAt: new Date().toISOString() });
     } else {
-      await deleteDoc(markerRef);
+      await markerRef.delete();
     }
   }
 
@@ -317,7 +311,7 @@ export class FirebasePostsApi implements IPostsApi {
       throw new Error('Current user profile not found');
     }
     const now = new Date().toISOString();
-    const newRef = doc(commentsCollection(input.postId));
+    const newRef = commentsCollection(input.postId).doc();
     const commentDoc: CommentDocFields = {
       postId: input.postId,
       authorId: uid,
@@ -328,8 +322,8 @@ export class FirebasePostsApi implements IPostsApi {
       replyCount: 0,
       parentId: input.parentCommentId ?? null,
     };
-    await setDoc(newRef, commentDoc);
-    await updateDoc(postDocRef(input.postId), { commentCount: increment(1) });
+    await newRef.set(commentDoc);
+    await postDocRef(input.postId).update({ commentCount: firestore.FieldValue.increment(1) });
 
     return commentSchema.parse({
       id: newRef.id,
@@ -366,7 +360,7 @@ export class FirebasePostsApi implements IPostsApi {
   async deletePost(id: PostId): Promise<void> {
     const uid = requireCurrentUid();
     const ref = postDocRef(id);
-    const snap = await getDoc(ref);
+    const snap = await ref.get();
     if (!snap.exists()) {
       throw new Error(`Post ${id} not found`);
     }
@@ -374,8 +368,10 @@ export class FirebasePostsApi implements IPostsApi {
     if (data.authorId !== uid) {
       throw new Error('You can only delete your own posts.');
     }
-    await deleteDoc(ref);
-    await updateDoc(doc(getFirebaseFirestore(), 'users', uid), { postCount: increment(-1) });
+    await ref.delete();
+    await getFirebaseFirestore().collection('users').doc(uid).update({
+      postCount: firestore.FieldValue.increment(-1),
+    });
   }
 
   async getSavedPosts(params: FeedParams): Promise<Paginated<Post>> {
@@ -387,7 +383,7 @@ export class FirebasePostsApi implements IPostsApi {
         params.cursor,
         params.limit,
       );
-      const postSnaps = await Promise.all(docs.map((raw) => getDoc(postDocRef(raw.id))));
+      const postSnaps = await Promise.all(docs.map((raw) => postDocRef(raw.id).get()));
       const rawPosts: RawDoc[] = postSnaps
         .filter((snap) => snap.exists())
         .map((snap) => ({ id: snap.id, data: snap.data() ?? {} }));

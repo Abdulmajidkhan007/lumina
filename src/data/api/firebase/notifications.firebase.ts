@@ -6,7 +6,6 @@
  *    actor (UserSummary embed), postPreview? ({ postId, thumbnailUri }),
  *    commentText? (comment), mentionContext? (mention), createdAt, read.
  */
-import { collection, getDocs, limit, query, where, writeBatch } from '@react-native-firebase/firestore';
 import type { INotificationsApi } from '@/data/api/contracts';
 import type { Notification } from '@/types/models';
 import type { Paginated, CursorParams } from '@/types/api';
@@ -17,7 +16,7 @@ import { buildValidatedList, queryCreatedAtPage, requireCurrentUid, type RawDoc 
 const MARK_READ_BATCH_LIMIT = 450; // stays under Firestore's 500-op batch cap
 
 function notificationsCollection(uid: string) {
-  return collection(getFirebaseFirestore(), 'users', uid, 'notifications');
+  return getFirebaseFirestore().collection('users').doc(uid).collection('notifications');
 }
 
 export class FirebaseNotificationsApi implements INotificationsApi {
@@ -39,14 +38,15 @@ export class FirebaseNotificationsApi implements INotificationsApi {
 
   async markAllRead(): Promise<void> {
     const uid = requireCurrentUid();
-    const firestore = getFirebaseFirestore();
+    const db = getFirebaseFirestore();
     // Loop in batches until no unread docs remain (bounded per iteration).
     for (;;) {
-      const snapshot = await getDocs(
-        query(notificationsCollection(uid), where('read', '==', false), limit(MARK_READ_BATCH_LIMIT)),
-      );
+      const snapshot = await notificationsCollection(uid)
+        .where('read', '==', false)
+        .limit(MARK_READ_BATCH_LIMIT)
+        .get();
       if (snapshot.empty) return;
-      const batch = writeBatch(firestore);
+      const batch = db.batch();
       for (const docSnap of snapshot.docs) {
         batch.update(docSnap.ref, { read: true });
       }

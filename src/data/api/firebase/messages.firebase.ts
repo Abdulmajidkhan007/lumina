@@ -9,18 +9,7 @@
  *      text?, media?, createdAt, status ('sent' | 'read').
  */
 import { z } from 'zod';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  increment,
-  orderBy,
-  query,
-  runTransaction,
-  setDoc,
-  where,
-} from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import type {
   IMessagesApi,
@@ -74,27 +63,24 @@ const sharedPostDocSchema = z.object({
 });
 
 function conversationsCollection() {
-  return collection(getFirebaseFirestore(), 'conversations');
+  return getFirebaseFirestore().collection('conversations');
 }
 
 function conversationDocRef(id: string) {
-  return doc(getFirebaseFirestore(), 'conversations', id);
+  return getFirebaseFirestore().collection('conversations').doc(id);
 }
 
 function messagesCollection(conversationId: string) {
-  return collection(conversationDocRef(conversationId), 'messages');
+  return conversationDocRef(conversationId).collection('messages');
 }
 
 export class FirebaseMessagesApi implements IMessagesApi {
   async getConversations(): Promise<Conversation[]> {
     const uid = requireCurrentUid();
-    const snapshot = await getDocs(
-      query(
-        conversationsCollection(),
-        where('participantIds', 'array-contains', uid),
-        orderBy('updatedAt', 'desc'),
-      ),
-    );
+    const snapshot = await conversationsCollection()
+      .where('participantIds', 'array-contains', uid)
+      .orderBy('updatedAt', 'desc')
+      .get();
     const docs: RawDoc[] = snapshot.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({ id: d.id, data: d.data() }));
     return buildValidatedList(
       docs,
@@ -166,7 +152,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
       : undefined;
 
     const conversationRef = conversationDocRef(input.conversationId);
-    const newMessageRef = doc(messagesCollection(input.conversationId));
+    const newMessageRef = messagesCollection(input.conversationId).doc();
     const messageDoc: MessageDocFields = {
       senderId: uid,
       sender,
@@ -183,17 +169,17 @@ export class FirebaseMessagesApi implements IMessagesApi {
       status: 'sent',
     };
 
-    await runTransaction(getFirebaseFirestore(), async (tx) => {
+    await getFirebaseFirestore().runTransaction(async (tx) => {
       const convSnap = await tx.get(conversationRef);
       if (!convSnap.exists()) {
         throw new Error(`Conversation ${input.conversationId} not found`);
       }
       const conv = convSnap.data() as Partial<ConversationDocFields>;
       tx.set(newMessageRef, messageDoc);
-      const unreadUpdates: Record<string, ReturnType<typeof increment>> = {};
+      const unreadUpdates: Record<string, FirebaseFirestoreTypes.FieldValue> = {};
       for (const participantId of conv.participantIds ?? []) {
         if (participantId !== uid) {
-          unreadUpdates[`unreadCounts.${participantId}`] = increment(1);
+          unreadUpdates[`unreadCounts.${participantId}`] = firestore.FieldValue.increment(1);
         }
       }
       tx.update(conversationRef, {
@@ -222,7 +208,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
     const conversationId = sortedIds.join('_') as ConversationId;
     const conversationRef = conversationDocRef(conversationId);
 
-    const existingSnap = await getDoc(conversationRef);
+    const existingSnap = await conversationRef.get();
     if (existingSnap.exists()) {
       const data = existingSnap.data() as Partial<ConversationDocFields>;
       return conversationSchema.parse({
@@ -246,7 +232,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
       unreadCounts: {},
       updatedAt: now,
     };
-    await setDoc(conversationRef, docFields);
+    await conversationRef.set(docFields);
 
     return conversationSchema.parse({
       id: conversationId,
@@ -258,7 +244,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
 
   /** Fetches the minimal denormalized preview needed to render a shared-post card. */
   private async fetchSharedPostSnapshot(postId: PostId): Promise<SharedPostSnapshot> {
-    const snap = await getDoc(doc(getFirebaseFirestore(), 'posts', postId));
+    const snap = await getFirebaseFirestore().collection('posts').doc(postId).get();
     if (!snap.exists()) {
       throw new Error(`Post ${postId} not found`);
     }
@@ -294,7 +280,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
 
     await Promise.all(
       conversationIds.map((conversationId) =>
-        runTransaction(getFirebaseFirestore(), async (tx) => {
+        getFirebaseFirestore().runTransaction(async (tx) => {
           const conversationRef = conversationDocRef(conversationId);
           const convSnap = await tx.get(conversationRef);
           if (!convSnap.exists()) {
@@ -303,7 +289,7 @@ export class FirebaseMessagesApi implements IMessagesApi {
             return;
           }
           const conv = convSnap.data() as Partial<ConversationDocFields>;
-          const newMessageRef = doc(messagesCollection(conversationId));
+          const newMessageRef = messagesCollection(conversationId).doc();
           const messageDoc: MessageDocFields = {
             senderId: uid,
             sender,
@@ -319,10 +305,10 @@ export class FirebaseMessagesApi implements IMessagesApi {
             status: 'sent',
           };
           tx.set(newMessageRef, messageDoc);
-          const unreadUpdates: Record<string, ReturnType<typeof increment>> = {};
+          const unreadUpdates: Record<string, FirebaseFirestoreTypes.FieldValue> = {};
           for (const participantId of conv.participantIds ?? []) {
             if (participantId !== uid) {
-              unreadUpdates[`unreadCounts.${participantId}`] = increment(1);
+              unreadUpdates[`unreadCounts.${participantId}`] = firestore.FieldValue.increment(1);
             }
           }
           tx.update(conversationRef, {
