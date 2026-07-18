@@ -20,6 +20,12 @@
  * `getStoryReels()` re-queries `expiresAt > now` on every call, the freshly
  * created story is picked up (and grouped into the author's own reel) as
  * soon as the `storyReels` query is invalidated/refetched.
+ *
+ * `reactToStory()` writes `stories/{storyId}/reactions/{uid}` — one reaction
+ * per viewer per story (a repeat tap just overwrites the emoji + timestamp).
+ * The `Notification` schema has no reaction-like variant yet, so this
+ * intentionally does not fan out a notification to the author — wiring that
+ * up is a schema change for a separate change.
  */
 import {
   arrayUnion,
@@ -156,6 +162,14 @@ export class FirebaseStoriesApi implements IStoriesApi {
       createdAt,
       expiresAt,
       seen: false,
+    });
+  }
+
+  async reactToStory(storyId: StoryId, emoji: string): Promise<void> {
+    const uid = requireCurrentUid();
+    await setDoc(doc(getFirebaseFirestore(), 'stories', storyId, 'reactions', uid), {
+      emoji,
+      createdAt: new Date().toISOString(),
     });
   }
 }

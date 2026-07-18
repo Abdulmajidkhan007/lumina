@@ -16,12 +16,15 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 
 import { Spinner } from '@/design-system/primitives/Spinner';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { useTheme } from '@/design-system/theme';
-import type { Message , ConversationId } from '@/types/models';
+import type { Message , ConversationId, PostId } from '@/types/models';
 import { useMessages } from '@/data/query/hooks/useMessages';
 
 import { MessageBubble } from './MessageBubble';
@@ -50,6 +53,7 @@ export function MessageThread({
   currentUserId,
 }: MessageThreadProps): React.JSX.Element {
   const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
 
   const {
     data,
@@ -60,6 +64,13 @@ export function MessageThread({
     hasNextPage,
     isFetchingNextPage,
   } = useMessages(conversationId);
+
+  const handlePressSharedPost = useCallback(
+    (postId: PostId) => {
+      navigation.navigate('PostDetail', { id: postId });
+    },
+    [navigation],
+  );
 
   // Flatten all pages into a single array.
   // The API returns messages in newest-first order per page.
@@ -85,10 +96,11 @@ export function MessageThread({
           message={item}
           isOwn={isOwn}
           isGrouped={isGrouped}
+          onPressSharedPost={handlePressSharedPost}
         />
       );
     },
-    [currentUserId, messages],
+    [currentUserId, messages, handlePressSharedPost],
   );
 
   const handleEndReached = useCallback(() => {

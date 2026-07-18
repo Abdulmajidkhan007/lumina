@@ -20,6 +20,7 @@ import FollowersScreen from '@/screens/user/FollowersScreen';
 import FollowingScreen from '@/screens/user/FollowingScreen';
 import NotificationsScreen from '@/screens/notifications/NotificationsScreen';
 import MessagesScreen from '@/screens/messages/MessagesScreen';
+import NewConversationScreen from '@/screens/messages/NewConversationScreen';
 import MessageThreadScreen from '@/screens/messages/MessageThreadScreen';
 import SettingsScreen from '@/screens/settings/SettingsScreen';
 import EditProfileScreen from '@/screens/settings/EditProfileScreen';
@@ -86,6 +87,12 @@ export function ProtectedStack(): React.JSX.Element {
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="NewConversation"
+        component={NewConversationScreen}
         options={{ animation: 'slide_from_right' }}
       />
 

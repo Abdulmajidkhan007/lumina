@@ -31,20 +31,82 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
+  withSpring,
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
+import { useReducedMotion } from '@/design-system/hooks';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { hitSlop } from '@/constants/layout';
 import { formatRelativeTime } from '@/utils/format';
 import { storiesApi } from '@/data/api/client';
+import { useStoryReaction } from '@/data/query/hooks/useStoryReaction';
+import { useCurrentUser } from '@/stores/auth.store';
 import type { StoryReel } from '@/types/models';
 import { StoryProgressBar } from './StoryProgressBar';
+
+// ---------------------------------------------------------------------------
+// Reaction bar — quick emoji reactions shown on other people's stories
+// ---------------------------------------------------------------------------
+
+const REACTION_EMOJIS = ['❤️', '😂', '😮', '😍', '🔥'] as const;
+
+interface ReactionButtonProps {
+  emoji: string;
+  accessibilityLabel: string;
+  onPressIn: () => void;
+  onPressOut: () => void;
+  onReact: (emoji: string) => void;
+}
+
+/** One emoji in the reaction bar — owns its own pop-scale animation. */
+function ReactionButton({
+  emoji,
+  accessibilityLabel,
+  onPressIn,
+  onPressOut,
+  onReact,
+}: ReactionButtonProps): React.JSX.Element {
+  const reducedMotion = useReducedMotion();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = useCallback(() => {
+    scale.value = reducedMotion
+      ? 1
+      : withSequence(
+          withTiming(1.5, { duration: 120 }),
+          withSpring(1, { damping: 8, stiffness: 200 }),
+        );
+    onReact(emoji);
+  }, [reducedMotion, scale, emoji, onReact]);
+
+  return (
+    <Pressable
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      onPress={handlePress}
+      hitSlop={hitSlop.sm}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Animated.View style={animatedStyle}>
+        <Text variant="title">{emoji}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,8 +133,11 @@ export function StoryViewer({
   onDismiss,
 }: StoryViewerProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
+  const currentUser = useCurrentUser();
+  const { mutate: sendReaction } = useStoryReaction();
 
   const [storyIndex, setStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -246,6 +311,35 @@ export function StoryViewer({
   }, [goNext, progress]);
 
   // ---------------------------------------------------------------------------
+  // Reaction bar — only on other people's stories, never your own
+  // ---------------------------------------------------------------------------
+
+  const isOwnReel = currentUser != null && reel.author.id === currentUser.id;
+
+  const handleReactionPressIn = useCallback(() => setIsPaused(true), []);
+  const handleReactionPressOut = useCallback(() => setIsPaused(false), []);
+
+  const handleReact = useCallback(
+    (emoji: string) => {
+      if (story == null) return;
+      ReactNativeHapticFeedback.trigger('impactLight', {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      });
+      sendReaction({ storyId: story.id, emoji });
+    },
+    [story, sendReaction],
+  );
+
+  const reactionAccessibilityLabels: Record<string, string> = {
+    '❤️': t('stories.reactions.heart'),
+    '😂': t('stories.reactions.laugh'),
+    '😮': t('stories.reactions.wow'),
+    '😍': t('stories.reactions.love'),
+    '🔥': t('stories.reactions.fire'),
+  };
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -371,6 +465,31 @@ export function StoryViewer({
             accessibilityLabel="Next story"
           />
         </View>
+
+        {/* Reaction bar — only on other people's stories */}
+        {!isOwnReel ? (
+          <View
+            style={[
+              styles.reactionBar,
+              {
+                paddingBottom: insets.bottom + theme.spacing.md,
+                paddingHorizontal: theme.spacing.lg,
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            {REACTION_EMOJIS.map((emoji) => (
+              <ReactionButton
+                key={emoji}
+                emoji={emoji}
+                accessibilityLabel={reactionAccessibilityLabels[emoji] ?? emoji}
+                onPressIn={handleReactionPressIn}
+                onPressOut={handleReactionPressOut}
+                onReact={handleReact}
+              />
+            ))}
+          </View>
+        ) : null}
       </Animated.View>
     </GestureDetector>
   );
@@ -430,5 +549,14 @@ const styles = StyleSheet.create({
   },
   tapRight: {
     flex: 1,
+  },
+  reactionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });

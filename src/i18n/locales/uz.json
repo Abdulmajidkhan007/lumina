@@ -237,7 +237,9 @@
     "deleteConfirmMessage": "Bu postingizni butunlay o'chiradi. Bu amalni bekor qilib bo'lmaydi.",
     "deleteConfirmConfirm": "O'chirish",
     "deleteConfirmCancel": "Bekor qilish",
-    "deleteErrorTitle": "Postni o'chirib bo'lmadi"
+    "deleteErrorTitle": "Postni o'chirib bo'lmadi",
+    "shareToConversations": "Ulashish...",
+    "shareErrorTitle": "Postni ulashib bo'lmadi"
   },
   "savedPosts": {
     "title": "Saqlanganlar",
@@ -251,5 +253,34 @@
     "hashtagEmptyTitle": "Hali postlar yo'q",
     "hashtagEmptySubtitle": "#{{tag}} bilan birinchi bo'lib ulashing.",
     "hashtagError": "Bu hashtag uchun postlarni yuklab bo'lmadi."
+  },
+  "messaging": {
+    "newConversationTitle": "Yangi xabar",
+    "searchPlaceholder": "Qidirish",
+    "followingSectionTitle": "Kuzatilganlar",
+    "emptyFollowingTitle": "Hozircha xabar yozadigan hech kim yo'q",
+    "emptyFollowingSubtitle": "Suhbat boshlash uchun odamlarni kuzating.",
+    "emptySearchTitle": "Natija topilmadi",
+    "emptySearchSubtitle": "\"{{query}}\" bo'yicha foydalanuvchi topilmadi.",
+    "loadPeopleError": "Xabar yozish uchun odamlarni yuklab bo'lmadi.",
+    "startConversationErrorTitle": "Suhbatni boshlab bo'lmadi",
+    "shareSheetTitle": "Ulashish",
+    "shareSendButton": "Yuborish",
+    "shareSendButtonWithCount": "Yuborish ({{count}})",
+    "shareEmptyTitle": "Hozircha suhbatlar yo'q",
+    "shareEmptySubtitle": "Post ulashishdan oldin suhbat boshlang.",
+    "shareErrorTitle": "Postni ulashib bo'lmadi",
+    "sharedPostLabel": "{{username}} posti",
+    "viewSharedPost": "Ulashilgan postni ko'rish"
+  },
+  "messages": {
+    "newConversationTitle": "Yangi xabar",
+    "searchPeople": "Odam qidirish",
+    "searchPeoplePrompt": "Xabar yozish uchun odam qidiring",
+    "noPeopleFound": "Hech kim topilmadi",
+    "searchError": "Qidirib bo‘lmadi. Qayta urining.",
+    "sharedAPost": "Post ulashdi",
+    "shareToTitle": "Ulashish",
+    "send": "Yuborish"
   }
 }

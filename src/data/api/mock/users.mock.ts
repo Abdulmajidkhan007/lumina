@@ -1,10 +1,23 @@
-import type { IUsersApi } from '@/data/api/contracts';
+import type { IUsersApi, FollowRequestStatus } from '@/data/api/contracts';
 import type { User, UserSummary, Post , UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
-import { mutableUsers, toUserSummary } from './fixtures/users.fixture';
+import { currentUser, mutableUsers, toUserSummary } from './fixtures/users.fixture';
 import { mutablePosts } from './fixtures/posts.fixture';
 import { mockDelay } from './latency';
 import { paginateArray } from './pagination';
+
+/** In-memory pending follow requests, keyed by `${targetId}_${requesterId}`. */
+interface FollowRequestRecord {
+  targetId: string;
+  requesterId: string;
+  createdAt: string;
+}
+
+const mutableFollowRequests = new Map<string, FollowRequestRecord>();
+
+function requestKey(targetId: string, requesterId: string): string {
+  return `${targetId}_${requesterId}`;
+}
 
 export class MockUsersApi implements IUsersApi {
   async getUser(id: UserId): Promise<User> {
@@ -49,10 +62,16 @@ export class MockUsersApi implements IUsersApi {
     return paginateArray(matched, params?.cursor, params?.limit);
   }
 
+  /** Follows immediately when `id` is public; files a request when it's private. */
   async followUser(id: UserId): Promise<void> {
     await mockDelay();
     const user = mutableUsers.find((u) => u.id === id);
-    if (user && !user.isFollowedByMe) {
+    if (!user) return;
+    if (user.isPrivate) {
+      this.addFollowRequest(id);
+      return;
+    }
+    if (!user.isFollowedByMe) {
       user.isFollowedByMe = true;
       user.followerCount += 1;
     }
@@ -65,6 +84,65 @@ export class MockUsersApi implements IUsersApi {
       user.isFollowedByMe = false;
       user.followerCount = Math.max(0, user.followerCount - 1);
     }
+  }
+
+  async requestFollow(id: UserId): Promise<void> {
+    await mockDelay();
+    this.addFollowRequest(id);
+  }
+
+  /** Pure helper shared by `followUser`/`requestFollow` — no artificial delay of its own. */
+  private addFollowRequest(id: UserId): void {
+    const target = mutableUsers.find((u) => u.id === id);
+    if (!target || target.id === currentUser.id || target.isFollowedByMe) return;
+    const key = requestKey(id, currentUser.id);
+    if (!mutableFollowRequests.has(key)) {
+      mutableFollowRequests.set(key, {
+        targetId: id,
+        requesterId: currentUser.id,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  async cancelFollowRequest(id: UserId): Promise<void> {
+    await mockDelay();
+    mutableFollowRequests.delete(requestKey(id, currentUser.id));
+  }
+
+  async acceptFollowRequest(requesterId: UserId): Promise<void> {
+    await mockDelay();
+    const key = requestKey(currentUser.id, requesterId);
+    if (!mutableFollowRequests.has(key)) return;
+    mutableFollowRequests.delete(key);
+    const me = mutableUsers.find((u) => u.id === currentUser.id);
+    const requester = mutableUsers.find((u) => u.id === requesterId);
+    if (me) me.followerCount += 1;
+    if (requester) requester.followingCount += 1;
+  }
+
+  async rejectFollowRequest(requesterId: UserId): Promise<void> {
+    await mockDelay();
+    mutableFollowRequests.delete(requestKey(currentUser.id, requesterId));
+  }
+
+  async getIncomingFollowRequests(params?: CursorParams): Promise<Paginated<UserSummary>> {
+    await mockDelay();
+    const requesters = [...mutableFollowRequests.values()]
+      .filter((r) => r.targetId === currentUser.id)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((r) => mutableUsers.find((u) => u.id === r.requesterId))
+      .filter((u): u is User => u !== undefined)
+      .map(toUserSummary);
+    return paginateArray(requesters, params?.cursor, params?.limit);
+  }
+
+  async getFollowRequestStatus(id: UserId): Promise<FollowRequestStatus> {
+    await mockDelay();
+    if (id === currentUser.id) return 'none';
+    const user = mutableUsers.find((u) => u.id === id);
+    if (user?.isFollowedByMe) return 'following';
+    return mutableFollowRequests.has(requestKey(id, currentUser.id)) ? 'requested' : 'none';
   }
 
   async getFollowers(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>> {

@@ -20,4 +20,6 @@ export interface IStoriesApi {
   getStoryReels(): Promise<StoryReel[]>;
   markSeen(storyId: StoryId): Promise<void>;
   createStory(input: CreateStoryInput): Promise<Story>;
+  /** Records a quick emoji reaction from the current user to a story. */
+  reactToStory(storyId: StoryId, emoji: string): Promise<void>;
 }

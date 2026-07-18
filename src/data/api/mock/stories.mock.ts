@@ -5,6 +5,9 @@ import { mutableStoryReels } from './fixtures/stories.fixture';
 import { currentUser, toUserSummary } from './fixtures/users.fixture';
 import { mockDelay } from './latency';
 
+/** In-memory reaction store: storyId -> uid -> { emoji, createdAt }. */
+const mutableStoryReactions = new Map<string, Map<string, { emoji: string; createdAt: string }>>();
+
 export class MockStoriesApi implements IStoriesApi {
   async getStoryReels(): Promise<StoryReel[]> {
     await mockDelay();
@@ -65,5 +68,12 @@ export class MockStoriesApi implements IStoriesApi {
     }
 
     return newStory;
+  }
+
+  async reactToStory(storyId: StoryId, emoji: string): Promise<void> {
+    await mockDelay();
+    const reactionsForStory = mutableStoryReactions.get(storyId) ?? new Map();
+    reactionsForStory.set(currentUser.id, { emoji, createdAt: new Date().toISOString() });
+    mutableStoryReactions.set(storyId, reactionsForStory);
   }
 }

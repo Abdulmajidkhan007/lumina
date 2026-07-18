@@ -18,6 +18,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/design-system/theme';
 import { useReducedMotion } from '@/design-system/hooks';
@@ -25,6 +26,10 @@ import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Button } from '@/design-system/primitives/Button';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
+import {
+  useCancelFollowRequest,
+  useFollowRequestStatus,
+} from '@/data/query/hooks/useFollowRequests';
 import type { User } from '@/types/models';
 import { ProfileStats } from './ProfileStats';
 
@@ -54,8 +59,18 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   onFollowingPress,
 }: ProfileHeaderProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
-  const { mutate: followUser, isPending } = useFollowUser();
+  const { mutate: followUser, isPending: isFollowPending } = useFollowUser();
+  const { mutate: cancelFollowRequest, isPending: isCancelPending } = useCancelFollowRequest();
+  const { data: followStatus } = useFollowRequestStatus(user.isMe ? null : user.id);
+
+  // useFollowRequestStatus is the source of truth for the button — it
+  // distinguishes an established follow from a pending request, which
+  // `user.isFollowedByMe` alone cannot. Fall back to that flag only while
+  // the status query hasn't resolved yet (first paint / cache miss).
+  const followState: 'following' | 'requested' | 'none' =
+    followStatus ?? (user.isFollowedByMe ? 'following' : 'none');
 
   const avatarScale = useSharedValue(0.9);
   const avatarAnimatedStyle = useAnimatedStyle(() => ({
@@ -69,8 +84,16 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   }, [avatarScale, reducedMotion]);
 
   const handleFollow = useCallback(() => {
-    followUser({ userId: user.id, follow: !user.isFollowedByMe });
-  }, [followUser, user.id, user.isFollowedByMe]);
+    if (followState === 'requested') {
+      cancelFollowRequest(user.id);
+      return;
+    }
+    followUser({
+      userId: user.id,
+      follow: followState !== 'following',
+      targetIsPrivate: user.isPrivate,
+    });
+  }, [followState, followUser, cancelFollowRequest, user.id, user.isPrivate]);
 
   const handleShareProfile = useCallback(() => {
     const share = async (): Promise<void> => {
@@ -183,16 +206,24 @@ export const ProfileHeader = React.memo(function ProfileHeader({
         ) : (
           <>
             <Button
-              label={user.isFollowedByMe ? 'Following' : 'Follow'}
-              variant={user.isFollowedByMe ? 'secondary' : 'primary'}
+              label={
+                followState === 'following'
+                  ? t('social.followButton.following')
+                  : followState === 'requested'
+                  ? t('social.followButton.requested')
+                  : t('social.followButton.follow')
+              }
+              variant={followState === 'none' ? 'primary' : 'secondary'}
               size="sm"
               style={styles.actionButton}
-              loading={isPending}
+              loading={isFollowPending || isCancelPending}
               onPress={handleFollow}
               accessibilityLabel={
-                user.isFollowedByMe
-                  ? `Unfollow ${user.username}`
-                  : `Follow ${user.username}`
+                followState === 'following'
+                  ? t('social.followButton.unfollowA11y', { username: user.username })
+                  : followState === 'requested'
+                  ? t('social.followButton.cancelRequestA11y', { username: user.username })
+                  : t('social.followButton.followA11y', { username: user.username })
               }
             />
             <Button

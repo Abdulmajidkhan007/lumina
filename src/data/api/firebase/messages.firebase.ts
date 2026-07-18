@@ -8,21 +8,29 @@
  *    - `conversations/{id}/messages/{messageId}` — senderId, sender embed,
  *      text?, media?, createdAt, status ('sent' | 'read').
  */
+import { z } from 'zod';
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   increment,
   orderBy,
   query,
   runTransaction,
+  setDoc,
   where,
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import type { IMessagesApi, SendMessageInput } from '@/data/api/contracts';
-import type { Conversation, Message, ConversationId } from '@/types/models';
+import type {
+  IMessagesApi,
+  SendMessageInput,
+  SharedPostSnapshot,
+  MessageWithSharedPost,
+} from '@/data/api/contracts';
+import type { Conversation, Message, ConversationId, UserId, PostId } from '@/types/models';
 import type { Paginated, ConversationMessagesParams } from '@/types/api';
-import { conversationSchema, messageSchema } from '@/schemas';
+import { conversationSchema, messageSchema, postIdSchema } from '@/schemas';
 import type { Media, MessagePreview, UserSummary } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import {
@@ -48,7 +56,22 @@ interface MessageDocFields {
   media?: Media;
   createdAt: string;
   status: 'sent' | 'read';
+  /** Denormalized shared-post preview — present only on "shared a post" messages. */
+  sharedPost?: SharedPostSnapshot;
 }
+
+/**
+ * Validates the raw `sharedPost` field on a message doc. Kept local (not in
+ * `@/schemas`) since `sharedPost` deliberately rides outside the validated
+ * `Message` model — this is purely a defensive-parsing guard against
+ * malformed/partial doc data, mirroring the pattern `buildValidatedList` uses
+ * for everything else in this file.
+ */
+const sharedPostDocSchema = z.object({
+  postId: postIdSchema,
+  thumbnailUri: z.string(),
+  authorUsername: z.string(),
+});
 
 function conversationsCollection() {
   return collection(getFirebaseFirestore(), 'conversations');
@@ -89,29 +112,38 @@ export class FirebaseMessagesApi implements IMessagesApi {
     );
   }
 
-  async getMessages(params: ConversationMessagesParams): Promise<Paginated<Message>> {
+  async getMessages(
+    params: ConversationMessagesParams,
+  ): Promise<Paginated<MessageWithSharedPost>> {
     const { docs, nextCursor } = await queryCreatedAtPage(
       messagesCollection(params.conversationId),
       [],
       params.cursor,
       params.limit,
     );
-    const items = await buildValidatedList(
-      docs,
-      (raw: RawDoc) => {
-        const data = raw.data as Partial<MessageDocFields>;
-        return {
-          id: raw.id,
-          conversationId: params.conversationId,
-          sender: data.sender,
-          ...(data.text !== undefined ? { text: data.text } : {}),
-          ...(data.media !== undefined ? { media: data.media } : {}),
-          createdAt: data.createdAt,
-          status: data.status ?? 'sent',
-        };
-      },
-      messageSchema,
-    );
+    // Not routed through `buildValidatedList` (unlike every other read in
+    // this file) because `sharedPost` must survive alongside the validated
+    // `Message` — that helper only ever returns the schema's own output type,
+    // which strips unrecognized keys.
+    const items: MessageWithSharedPost[] = [];
+    for (const raw of docs) {
+      const data = raw.data as Partial<MessageDocFields>;
+      const candidate = {
+        id: raw.id,
+        conversationId: params.conversationId,
+        sender: data.sender,
+        ...(data.text !== undefined ? { text: data.text } : {}),
+        ...(data.media !== undefined ? { media: data.media } : {}),
+        createdAt: data.createdAt,
+        status: data.status ?? 'sent',
+      };
+      const parsed = messageSchema.safeParse(candidate);
+      if (!parsed.success) continue;
+      const sharedPost = sharedPostDocSchema.safeParse(data.sharedPost);
+      items.push(
+        sharedPost.success ? { ...parsed.data, sharedPost: sharedPost.data } : parsed.data,
+      );
+    }
     return { items, nextCursor };
   }
 
@@ -180,5 +212,126 @@ export class FirebaseMessagesApi implements IMessagesApi {
       createdAt: now,
       status: 'sent',
     });
+  }
+
+  async getOrCreateConversation(otherUserId: UserId): Promise<Conversation> {
+    const uid = requireCurrentUid();
+    // Deterministic id — sorted uids joined by '_' — so repeated calls (or
+    // concurrent calls from both participants) never create duplicates.
+    const sortedIds = [uid, otherUserId].sort();
+    const conversationId = sortedIds.join('_') as ConversationId;
+    const conversationRef = conversationDocRef(conversationId);
+
+    const existingSnap = await getDoc(conversationRef);
+    if (existingSnap.exists()) {
+      const data = existingSnap.data() as Partial<ConversationDocFields>;
+      return conversationSchema.parse({
+        id: conversationId,
+        participants: data.participants,
+        ...(data.lastMessage ? { lastMessage: data.lastMessage } : {}),
+        unreadCount: data.unreadCounts?.[uid] ?? 0,
+        updatedAt: data.updatedAt,
+      });
+    }
+
+    const [me, other] = await Promise.all([fetchUserSummary(uid), fetchUserSummary(otherUserId)]);
+    if (!me || !other) {
+      throw new Error('Could not resolve participant profiles for this conversation.');
+    }
+
+    const now = new Date().toISOString();
+    const docFields: ConversationDocFields = {
+      participantIds: sortedIds,
+      participants: [me, other],
+      unreadCounts: {},
+      updatedAt: now,
+    };
+    await setDoc(conversationRef, docFields);
+
+    return conversationSchema.parse({
+      id: conversationId,
+      participants: [me, other],
+      unreadCount: 0,
+      updatedAt: now,
+    });
+  }
+
+  /** Fetches the minimal denormalized preview needed to render a shared-post card. */
+  private async fetchSharedPostSnapshot(postId: PostId): Promise<SharedPostSnapshot> {
+    const snap = await getDoc(doc(getFirebaseFirestore(), 'posts', postId));
+    if (!snap.exists()) {
+      throw new Error(`Post ${postId} not found`);
+    }
+    const data = snap.data() as { media?: Media[]; author?: UserSummary };
+    const firstMedia = data.media?.[0];
+    const thumbnailUri = firstMedia
+      ? firstMedia.type === 'video'
+        ? firstMedia.thumbnailUri ?? firstMedia.uri
+        : firstMedia.uri
+      : undefined;
+    if (!thumbnailUri || !data.author) {
+      throw new Error(`Post ${postId} is missing the data needed to share it.`);
+    }
+    return {
+      postId: postIdSchema.parse(postId),
+      thumbnailUri,
+      authorUsername: data.author.username,
+    };
+  }
+
+  async sharePostToConversations(
+    postId: PostId,
+    conversationIds: ConversationId[],
+  ): Promise<void> {
+    const uid = requireCurrentUid();
+    const sender = await fetchUserSummary(uid);
+    if (!sender) {
+      throw new Error('Current user profile not found');
+    }
+    const sharedPost = await this.fetchSharedPostSnapshot(postId);
+    const now = new Date().toISOString();
+    const previewText = 'Shared a post';
+
+    await Promise.all(
+      conversationIds.map((conversationId) =>
+        runTransaction(getFirebaseFirestore(), async (tx) => {
+          const conversationRef = conversationDocRef(conversationId);
+          const convSnap = await tx.get(conversationRef);
+          if (!convSnap.exists()) {
+            // Conversation may have been deleted concurrently — skip it
+            // rather than failing the whole batch of shares.
+            return;
+          }
+          const conv = convSnap.data() as Partial<ConversationDocFields>;
+          const newMessageRef = doc(messagesCollection(conversationId));
+          const messageDoc: MessageDocFields = {
+            senderId: uid,
+            sender,
+            text: previewText,
+            createdAt: now,
+            status: 'sent',
+            sharedPost,
+          };
+          const preview: MessagePreview = {
+            text: previewText,
+            senderId: uid,
+            createdAt: now,
+            status: 'sent',
+          };
+          tx.set(newMessageRef, messageDoc);
+          const unreadUpdates: Record<string, ReturnType<typeof increment>> = {};
+          for (const participantId of conv.participantIds ?? []) {
+            if (participantId !== uid) {
+              unreadUpdates[`unreadCounts.${participantId}`] = increment(1);
+            }
+          }
+          tx.update(conversationRef, {
+            lastMessage: preview,
+            updatedAt: now,
+            ...unreadUpdates,
+          });
+        }),
+      ),
+    );
   }
 }

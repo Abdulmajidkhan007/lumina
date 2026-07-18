@@ -237,7 +237,9 @@
     "deleteConfirmMessage": "Это навсегда удалит вашу публикацию. Это действие нельзя отменить.",
     "deleteConfirmConfirm": "Удалить",
     "deleteConfirmCancel": "Отмена",
-    "deleteErrorTitle": "Не удалось удалить публикацию"
+    "deleteErrorTitle": "Не удалось удалить публикацию",
+    "shareToConversations": "Отправить в сообщении...",
+    "shareErrorTitle": "Не удалось отправить публикацию"
   },
   "savedPosts": {
     "title": "Сохранённое",
@@ -251,5 +253,34 @@
     "hashtagEmptyTitle": "Пока нет публикаций",
     "hashtagEmptySubtitle": "Станьте первым, кто опубликует с #{{tag}}.",
     "hashtagError": "Не удалось загрузить публикации по этому хэштегу."
+  },
+  "messaging": {
+    "newConversationTitle": "Новое сообщение",
+    "searchPlaceholder": "Поиск",
+    "followingSectionTitle": "Подписки",
+    "emptyFollowingTitle": "Пока нет кому написать",
+    "emptyFollowingSubtitle": "Подпишитесь на людей, чтобы начать с ними переписку.",
+    "emptySearchTitle": "Ничего не найдено",
+    "emptySearchSubtitle": "Пользователи по запросу «{{query}}» не найдены.",
+    "loadPeopleError": "Не удалось загрузить список людей.",
+    "startConversationErrorTitle": "Не удалось начать разговор",
+    "shareSheetTitle": "Отправить в сообщении",
+    "shareSendButton": "Отправить",
+    "shareSendButtonWithCount": "Отправить ({{count}})",
+    "shareEmptyTitle": "Пока нет диалогов",
+    "shareEmptySubtitle": "Начните переписку, прежде чем делиться публикацией.",
+    "shareErrorTitle": "Не удалось отправить публикацию",
+    "sharedPostLabel": "Публикация {{username}}",
+    "viewSharedPost": "Посмотреть публикацию"
+  },
+  "messages": {
+    "newConversationTitle": "Новое сообщение",
+    "searchPeople": "Поиск людей",
+    "searchPeoplePrompt": "Найдите кого-то для сообщения",
+    "noPeopleFound": "Никого не найдено",
+    "searchError": "Ошибка поиска. Повторите.",
+    "sharedAPost": "Поделился публикацией",
+    "shareToTitle": "Поделиться",
+    "send": "Отправить"
   }
 }

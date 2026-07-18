@@ -237,7 +237,9 @@
     "deleteConfirmMessage": "This permanently deletes your post. This action cannot be undone.",
     "deleteConfirmConfirm": "Delete",
     "deleteConfirmCancel": "Cancel",
-    "deleteErrorTitle": "Couldn't delete post"
+    "deleteErrorTitle": "Couldn't delete post",
+    "shareToConversations": "Share to...",
+    "shareErrorTitle": "Couldn't share post"
   },
   "savedPosts": {
     "title": "Saved",
@@ -251,5 +253,34 @@
     "hashtagEmptyTitle": "No posts yet",
     "hashtagEmptySubtitle": "Be the first to post with #{{tag}}.",
     "hashtagError": "Couldn't load posts for this hashtag."
+  },
+  "messaging": {
+    "newConversationTitle": "New message",
+    "searchPlaceholder": "Search",
+    "followingSectionTitle": "Following",
+    "emptyFollowingTitle": "No one to message yet",
+    "emptyFollowingSubtitle": "Follow people to start a conversation with them.",
+    "emptySearchTitle": "No results",
+    "emptySearchSubtitle": "No users found for \"{{query}}\".",
+    "loadPeopleError": "Couldn't load people to message.",
+    "startConversationErrorTitle": "Couldn't start conversation",
+    "shareSheetTitle": "Share to",
+    "shareSendButton": "Send",
+    "shareSendButtonWithCount": "Send ({{count}})",
+    "shareEmptyTitle": "No conversations yet",
+    "shareEmptySubtitle": "Start a conversation before sharing a post.",
+    "shareErrorTitle": "Couldn't share post",
+    "sharedPostLabel": "{{username}}'s post",
+    "viewSharedPost": "View shared post"
+  },
+  "messages": {
+    "newConversationTitle": "New message",
+    "searchPeople": "Search people",
+    "searchPeoplePrompt": "Search for someone to message",
+    "noPeopleFound": "No people found",
+    "searchError": "Couldn't search. Try again.",
+    "sharedAPost": "Shared a post",
+    "shareToTitle": "Share to",
+    "send": "Send"
   }
 }

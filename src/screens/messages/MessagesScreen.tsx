@@ -42,8 +42,8 @@ export default function MessagesScreen(): React.JSX.Element {
   );
 
   const handleNewMessage = useCallback(() => {
-    // Placeholder — new-message flow wired in a future task
-  }, []);
+    navigation.navigate('NewConversation');
+  }, [navigation]);
 
   const handleRetry = useCallback(() => {
     void refetch();

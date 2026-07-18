@@ -47,7 +47,9 @@ export type ProtectedStackParamList = {
   Followers: { id: string };
   Following: { id: string };
   Notifications: undefined;
+  FollowRequests: undefined;
   Messages: undefined;
+  NewConversation: undefined;
   MessageThread: { threadId: string };
   Settings: undefined;
   EditProfile: undefined;
