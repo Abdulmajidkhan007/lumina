@@ -9,12 +9,18 @@
 
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProtectedStackParamList } from '@/navigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Avatar } from '@/design-system/primitives/Avatar';
+import { RichCaption } from '@/components/RichCaption';
 import { useLikeComment } from '@/data/query/hooks/useLikeComment';
+import { usersApi } from '@/data/api/client';
+import { useUiStore } from '@/stores/ui.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
 import type { Comment, PostId } from '@/types/models';
@@ -41,6 +47,8 @@ export const CommentItem = React.memo(function CommentItem({
   onAuthorPress,
 }: CommentItemProps): React.JSX.Element {
   const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
+  const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const { mutate: likeComment } = useLikeComment();
 
@@ -66,6 +74,26 @@ export const CommentItem = React.memo(function CommentItem({
   const toggleReplies = useCallback(() => {
     setRepliesExpanded((prev) => !prev);
   }, []);
+
+  const handleHashtagPress = useCallback(
+    (tag: string) => {
+      setPendingSearchQuery(`#${tag}`);
+      navigation.navigate('Tabs', { screen: 'Search' });
+    },
+    [navigation, setPendingSearchQuery],
+  );
+
+  const handleMentionPress = useCallback(
+    (username: string) => {
+      void (async () => {
+        const user = await usersApi.getUserByUsername(username);
+        if (user) {
+          navigation.navigate('UserProfile', { id: user.id });
+        }
+      })();
+    },
+    [navigation],
+  );
 
   return (
     <View
@@ -104,13 +132,14 @@ export const CommentItem = React.memo(function CommentItem({
               {comment.author.username}
             </Text>
           </Pressable>
-          <Text
+          <RichCaption
+            text={comment.text}
             variant="callout"
             color="primary"
             style={{ marginLeft: theme.spacing.xs, flex: 1 }}
-          >
-            {comment.text}
-          </Text>
+            onHashtagPress={handleHashtagPress}
+            onMentionPress={handleMentionPress}
+          />
         </View>
 
         {/* Meta row: timestamp + reply */}

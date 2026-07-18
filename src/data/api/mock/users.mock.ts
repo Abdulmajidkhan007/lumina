@@ -14,6 +14,15 @@ export class MockUsersApi implements IUsersApi {
     return user;
   }
 
+  /** Resolves a `@mention` handle (case-insensitive) to its profile, or null when no match exists. */
+  async getUserByUsername(username: string): Promise<User | null> {
+    await mockDelay();
+    const term = username.trim().toLowerCase();
+    if (term.length === 0) return null;
+    const user = mutableUsers.find((u) => u.username.toLowerCase() === term);
+    return user ?? null;
+  }
+
   async getExplore(params: ExploreParams): Promise<Paginated<Post>> {
     await mockDelay();
     const filtered =

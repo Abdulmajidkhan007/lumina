@@ -30,12 +30,15 @@ import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
 import { Sheet } from '@/design-system/primitives/Sheet';
 import { ConfirmDialog } from '@/components';
+import { RichCaption } from '@/components/RichCaption';
 import { PostActions } from '@/features/feed/components/PostActions';
 import { PostMediaPager } from '@/features/feed/components/PostMediaPager';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
 import { useDeletePost } from '@/data/query/hooks/useDeletePost';
+import { usersApi } from '@/data/api/client';
 import { useCurrentUser } from '@/stores/auth.store';
+import { useUiStore } from '@/stores/ui.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
 import type { Post, Comment } from '@/types/models';
@@ -69,6 +72,7 @@ export function PostDetail({
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
   const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost();
+  const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -98,6 +102,26 @@ export function PostDetail({
   const handleAuthorPress = useCallback(() => {
     navigation.navigate('UserProfile', { id: post.author.id });
   }, [navigation, post.author.id]);
+
+  const handleHashtagPress = useCallback(
+    (tag: string) => {
+      setPendingSearchQuery(`#${tag}`);
+      navigation.navigate('Tabs', { screen: 'Search' });
+    },
+    [navigation, setPendingSearchQuery],
+  );
+
+  const handleMentionPress = useCallback(
+    (username: string) => {
+      void (async () => {
+        const user = await usersApi.getUserByUsername(username);
+        if (user) {
+          navigation.navigate('UserProfile', { id: user.id });
+        }
+      })();
+    },
+    [navigation],
+  );
 
   const handleMenuOpen = useCallback(() => setMenuOpen(true), []);
   const handleMenuClose = useCallback(() => setMenuOpen(false), []);
@@ -258,7 +282,13 @@ export function PostDetail({
                 {post.author.username}
               </Text>
               {'  '}
-              {post.caption}
+              <RichCaption
+                text={post.caption}
+                variant="callout"
+                color="primary"
+                onHashtagPress={handleHashtagPress}
+                onMentionPress={handleMentionPress}
+              />
             </Text>
           </View>
         ) : null}

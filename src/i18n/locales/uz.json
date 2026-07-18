@@ -245,5 +245,11 @@
     "emptyTitle": "Hali saqlangan postlar yo'q",
     "emptySubtitle": "Siz saqlagan postlar shu yerda ko'rinadi.",
     "error": "Saqlangan postlarni yuklab bo'lmadi."
+  },
+  "search": {
+    "hashtagHeader": "#{{tag}} bilan belgilangan postlar",
+    "hashtagEmptyTitle": "Hali postlar yo'q",
+    "hashtagEmptySubtitle": "#{{tag}} bilan birinchi bo'lib ulashing.",
+    "hashtagError": "Bu hashtag uchun postlarni yuklab bo'lmadi."
   }
 }

@@ -245,5 +245,11 @@
     "emptyTitle": "No saved posts yet",
     "emptySubtitle": "Posts you save will appear here.",
     "error": "Couldn't load saved posts."
+  },
+  "search": {
+    "hashtagHeader": "Posts tagged #{{tag}}",
+    "hashtagEmptyTitle": "No posts yet",
+    "hashtagEmptySubtitle": "Be the first to post with #{{tag}}.",
+    "hashtagError": "Couldn't load posts for this hashtag."
   }
 }

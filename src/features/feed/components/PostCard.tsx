@@ -33,8 +33,11 @@ import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Sheet } from '@/design-system/primitives/Sheet';
 import { Divider } from '@/design-system/primitives/Divider';
+import { RichCaption } from '@/components/RichCaption';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
+import { usersApi } from '@/data/api/client';
+import { useUiStore } from '@/stores/ui.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
 import type { Post } from '@/types/models';
@@ -66,12 +69,16 @@ interface CaptionProps {
   username: string;
   caption: string | null;
   onUserPress: () => void;
+  onHashtagPress: (tag: string) => void;
+  onMentionPress: (username: string) => void;
 }
 
 const Caption = React.memo(function Caption({
   username,
   caption,
   onUserPress,
+  onHashtagPress,
+  onMentionPress,
 }: CaptionProps): React.JSX.Element | null {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
@@ -99,7 +106,12 @@ const Caption = React.memo(function Caption({
           {username}
         </Text>
         {'  '}
-        {caption}
+        <RichCaption
+          text={caption}
+          variant="callout"
+          onHashtagPress={onHashtagPress}
+          onMentionPress={onMentionPress}
+        />
       </Text>
       {!expanded ? (
         <Pressable onPress={handleExpand} hitSlop={hitSlop.sm}>
@@ -162,6 +174,7 @@ export const PostCard = React.memo(function PostCard({
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
+  const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -206,6 +219,26 @@ export const PostCard = React.memo(function PostCard({
   const handleMediaPressOut = useCallback(() => {
     mediaScale.value = reducedMotion ? 1 : withSpring(1, MEDIA_PRESS_SPRING);
   }, [mediaScale, reducedMotion]);
+
+  const handleHashtagPress = useCallback(
+    (tag: string) => {
+      setPendingSearchQuery(`#${tag}`);
+      navigation.navigate('Tabs', { screen: 'Search' });
+    },
+    [navigation, setPendingSearchQuery],
+  );
+
+  const handleMentionPress = useCallback(
+    (username: string) => {
+      void (async () => {
+        const user = await usersApi.getUserByUsername(username);
+        if (user) {
+          navigation.navigate('UserProfile', { id: user.id });
+        }
+      })();
+    },
+    [navigation],
+  );
 
   const handleShare = useCallback(() => {
     // TODO: share sheet integration
@@ -343,6 +376,8 @@ export const PostCard = React.memo(function PostCard({
         username={post.author.username}
         caption={post.caption}
         onUserPress={goToProfile}
+        onHashtagPress={handleHashtagPress}
+        onMentionPress={handleMentionPress}
       />
 
       {/* ---- Comments link ---- */}

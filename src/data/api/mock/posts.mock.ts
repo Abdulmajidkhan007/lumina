@@ -2,6 +2,7 @@ import type { IPostsApi , AddCommentInput, CreatePostInput } from '@/data/api/co
 import type { Post, Comment , Media, PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { commentIdSchema, postIdSchema } from '@/schemas';
+import { extractHashtags } from '@/utils/richText';
 import { mutablePosts } from './fixtures/posts.fixture';
 import { mutableComments } from './fixtures/comments.fixture';
 import { currentUser, toUserSummary } from './fixtures/users.fixture';
@@ -14,6 +15,15 @@ export class MockPostsApi implements IPostsApi {
     const filtered = params.userId
       ? mutablePosts.filter((p) => p.author.id === params.userId)
       : mutablePosts;
+    return paginateArray(filtered, params.cursor, params.limit);
+  }
+
+  async getPostsByHashtag(tag: string, params: FeedParams): Promise<Paginated<Post>> {
+    await mockDelay();
+    const term = tag.toLowerCase();
+    const filtered = mutablePosts.filter((p) =>
+      extractHashtags(p.caption ?? '').includes(term),
+    );
     return paginateArray(filtered, params.cursor, params.limit);
   }
 

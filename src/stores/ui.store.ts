@@ -13,6 +13,12 @@ type UiState = {
   tabBarVisible: boolean;
   /** Whether any modal is currently open */
   activeModalId: string | null;
+  /**
+   * A search query queued by another screen (e.g. tapping a #hashtag or
+   * @mention in a caption) for the Search screen to pick up on next focus,
+   * then clear. Null when nothing is queued.
+   */
+  pendingSearchQuery: string | null;
 };
 
 type UiActions = {
@@ -22,6 +28,8 @@ type UiActions = {
   openModal(id: string): void;
   closeModal(): void;
   resetStoryViewer(): void;
+  setPendingSearchQuery(query: string): void;
+  clearPendingSearchQuery(): void;
 };
 
 // ---------------------------------------------------------------------------
@@ -33,6 +41,7 @@ export const useUiStore = create<UiState & UiActions>()((set) => ({
   activeStoryReelIndex: 0,
   tabBarVisible: true,
   activeModalId: null,
+  pendingSearchQuery: null,
 
   setActiveStoryIndex(index) {
     set({ activeStoryIndex: index });
@@ -57,6 +66,14 @@ export const useUiStore = create<UiState & UiActions>()((set) => ({
   resetStoryViewer() {
     set({ activeStoryIndex: 0, activeStoryReelIndex: 0 });
   },
+
+  setPendingSearchQuery(query) {
+    set({ pendingSearchQuery: query });
+  },
+
+  clearPendingSearchQuery() {
+    set({ pendingSearchQuery: null });
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -71,3 +88,6 @@ export const useTabBarVisible = () =>
 
 export const useActiveModalId = () =>
   useUiStore((s) => s.activeModalId);
+
+export const usePendingSearchQuery = () =>
+  useUiStore((s) => s.pendingSearchQuery);

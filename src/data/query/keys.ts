@@ -31,8 +31,13 @@ export const queryKeys = {
   explore: (query?: string) =>
     query ? (['explore', query] as const) : (['explore'] as const),
 
+  // Hashtags
+  hashtag: (tag: string) => ['hashtag', tag.toLowerCase()] as const,
+
   // Users
   user: (id: UserId) => ['user', id] as const,
+  userByUsername: (username: string) =>
+    ['user', 'byUsername', username.toLowerCase()] as const,
   followers: (id: UserId) => ['user', id, 'followers'] as const,
   following: (id: UserId) => ['user', id, 'following'] as const,
   searchUsers: (term: string) => ['searchUsers', term] as const,

@@ -20,7 +20,7 @@ import {
 import type { IUsersApi } from '@/data/api/contracts';
 import type { User, UserSummary, Post, UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
-import { userSchema, userSummarySchema } from '@/schemas';
+import { userIdSchema, userSchema, userSummarySchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import { FirebasePostsApi } from './posts.firebase';
 import {
@@ -84,6 +84,23 @@ export class FirebaseUsersApi implements IUsersApi {
       createdAt: data.createdAt,
     };
     return userSchema.parse(candidate);
+  }
+
+  /** Resolves a `@mention` handle (case-insensitive) to its profile, or null when no match exists. */
+  async getUserByUsername(username: string): Promise<User | null> {
+    const term = username.trim().toLowerCase();
+    if (term.length === 0) return null;
+    const { docs } = await queryCursorPage(
+      usersCollection(),
+      [where('usernameLower', '==', term)],
+      'usernameLower',
+      'asc',
+      undefined,
+      1,
+    );
+    const match = docs[0];
+    if (!match) return null;
+    return this.getUser(userIdSchema.parse(match.id));
   }
 
   async getExplore(params: ExploreParams): Promise<Paginated<Post>> {

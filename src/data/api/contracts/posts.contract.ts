@@ -31,6 +31,8 @@ export type CreatePostInput = {
 
 export interface IPostsApi {
   getFeed(params: FeedParams): Promise<Paginated<Post>>;
+  /** Pages posts tagged with `tag` (case-insensitive, without the leading `#`), newest first. */
+  getPostsByHashtag(tag: string, params: FeedParams): Promise<Paginated<Post>>;
   getPost(id: PostId): Promise<Post>;
   createPost(input: CreatePostInput): Promise<Post>;
   likePost(id: PostId): Promise<void>;

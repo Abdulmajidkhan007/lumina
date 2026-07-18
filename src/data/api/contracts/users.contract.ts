@@ -7,6 +7,8 @@ import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
 
 export interface IUsersApi {
   getUser(id: UserId): Promise<User>;
+  /** Resolves a `@mention` handle to its profile; null when no user has that username. */
+  getUserByUsername(username: string): Promise<User | null>;
   getExplore(params: ExploreParams): Promise<Paginated<Post>>;
   searchUsers(query: string, params?: CursorParams): Promise<Paginated<UserSummary>>;
   followUser(id: UserId): Promise<void>;

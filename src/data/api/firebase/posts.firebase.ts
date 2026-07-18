@@ -3,7 +3,9 @@
  *
  * Firestore schema:
  *  - `posts/{postId}` — authorId, author (denormalized UserSummary embed),
- *    media, caption, likeCount, commentCount, createdAt (ISO string), location?.
+ *    media, caption, hashtags (lowercased, extracted from caption via
+ *    `extractHashtags` — powers `getPostsByHashtag`'s `array-contains` query),
+ *    likeCount, commentCount, createdAt (ISO string), location?.
  *    - `posts/{postId}/likes/{uid}` — membership marker; existence = liked.
  *      `likeCount` on the parent doc is kept in sync via FieldValue.increment.
  *    - `posts/{postId}/saves/{uid}` — membership marker; existence = saved.
@@ -40,6 +42,7 @@ import type { Paginated, FeedParams, CommentParams } from '@/types/api';
 import { postSchema, commentSchema } from '@/schemas';
 import type { Media } from '@/schemas';
 import type { UserSummary } from '@/types/models';
+import { extractHashtags } from '@/utils/richText';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import {
   buildValidatedList,
@@ -59,6 +62,8 @@ interface PostDocFields {
   author: UserSummary;
   media: Media[];
   caption: string | null;
+  /** Lowercased hashtags extracted from `caption` (see `extractHashtags`); indexed for `getPostsByHashtag`. */
+  hashtags: string[];
   likeCount: number;
   commentCount: number;
   createdAt: string;
@@ -157,6 +162,24 @@ export class FirebasePostsApi implements IPostsApi {
     });
   }
 
+  async getPostsByHashtag(tag: string, params: FeedParams): Promise<Paginated<Post>> {
+    return withReadableErrors('hashtag posts', async () => {
+      const { docs, nextCursor } = await queryCreatedAtPage(
+        postsCollection(),
+        [where('hashtags', 'array-contains', tag.toLowerCase())],
+        params.cursor,
+        params.limit,
+      );
+      const viewerUid = getCurrentUid();
+      const items = await buildValidatedList(
+        docs,
+        (raw) => buildPostCandidate(raw, viewerUid),
+        postSchema,
+      );
+      return { items, nextCursor };
+    });
+  }
+
   async createPost(input: CreatePostInput): Promise<Post> {
     const uid = requireCurrentUid();
     const author = await fetchUserSummary(uid);
@@ -193,6 +216,7 @@ export class FirebasePostsApi implements IPostsApi {
       author,
       media,
       caption: input.caption.length > 0 ? input.caption : null,
+      hashtags: extractHashtags(input.caption),
       likeCount: 0,
       commentCount: 0,
       createdAt,
