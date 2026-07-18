@@ -1,13 +1,19 @@
 name: Web Deploy
 
-# Deploys web/ to Firebase Hosting on push (when web files change) or manually.
+# Deploys web/ to Firebase Hosting AND publishes Firestore rules/indexes +
+# Storage rules on push (web/rules/index changes) or manually.
 # Requires repository secret FIREBASE_SERVICE_ACCOUNT — JSON key of a service
 # account from Firebase Console -> Project settings -> Service accounts.
 on:
   workflow_dispatch:
   push:
     branches: ['claude/instagram-inspired-rn-app-dddJu', 'main']
-    paths: ['web/**', 'firebase.json']
+    paths:
+      - 'web/**'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - 'storage.rules'
 
 concurrency:
   group: web-deploy
@@ -49,3 +55,15 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: lumina-007app
           channelId: live
+
+      # Publishes Firestore rules + composite indexes and Storage rules so the
+      # user never has to touch the Firebase console for these.
+      - name: Deploy Firestore & Storage rules + indexes
+        if: env.skip != 'true'
+        run: |
+          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy \
+            --only firestore:rules,firestore:indexes,storage \
+            --project lumina-007app --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
