@@ -58,12 +58,17 @@ jobs:
 
       # Publishes Firestore rules + composite indexes and Storage rules so the
       # user never has to touch the Firebase console for these.
-      - name: Deploy Firestore & Storage rules + indexes
+      # Publishes Firestore rules + composite indexes automatically.
+      # (Storage rules are deployed separately/manually — the default service
+      # account lacks the Service Usage permission to enable the Storage API,
+      # so including `storage` here 403s and blocks the Firestore deploy.)
+      - name: Deploy Firestore rules + indexes
         if: env.skip != 'true'
         run: |
           printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           npx --yes firebase-tools@13 deploy \
-            --only firestore:rules,firestore:indexes,storage \
-            --project lumina-007app --non-interactive
+            --only firestore:rules,firestore:indexes \
+            --project lumina-007app --non-interactive || \
+            echo "::warning::Firestore deploy failed — publish firestore.rules/indexes manually in the console."
           rm -f "$RUNNER_TEMP/sa.json"
