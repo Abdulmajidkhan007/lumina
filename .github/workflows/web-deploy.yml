@@ -1,0 +1,51 @@
+name: Web Deploy
+
+# Deploys web/ to Firebase Hosting on push (when web files change) or manually.
+# Requires repository secret FIREBASE_SERVICE_ACCOUNT — JSON key of a service
+# account from Firebase Console -> Project settings -> Service accounts.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/instagram-inspired-rn-app-dddJu', 'main']
+    paths: ['web/**', 'firebase.json']
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check deploy secret
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT secret missing — skipping deploy. Add it in Settings -> Secrets to enable."
+            echo "skip=true" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: env.skip != 'true'
+        with:
+          node-version: 20
+
+      - name: Build web
+        if: env.skip != 'true'
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Firebase Hosting
+        if: env.skip != 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: lumina-007app
+          channelId: live
