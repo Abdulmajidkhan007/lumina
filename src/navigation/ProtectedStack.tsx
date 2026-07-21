@@ -28,6 +28,7 @@ import EditProfileScreen from '@/screens/settings/EditProfileScreen';
 import CreatePostScreen from '@/screens/create/CreatePostScreen';
 import ChangePasswordScreen from '@/screens/settings/ChangePasswordScreen';
 import SavedPostsScreen from '@/screens/profile/SavedPostsScreen';
+import ArchiveScreen from '@/screens/profile/ArchiveScreen';
 import NotificationsSettingsScreen from '@/screens/settings/NotificationsSettingsScreen';
 import PrivacyScreen from '@/screens/settings/PrivacyScreen';
 import BlockedAccountsScreen from '@/screens/settings/BlockedAccountsScreen';
@@ -136,6 +137,12 @@ export function ProtectedStack(): React.JSX.Element {
       <Stack.Screen
         name="SavedPosts"
         component={SavedPostsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="Archive"
+        component={ArchiveScreen}
         options={{ animation: 'slide_from_right' }}
       />
 

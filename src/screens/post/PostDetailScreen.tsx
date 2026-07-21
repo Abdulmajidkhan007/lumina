@@ -54,9 +54,12 @@ export default function PostDetailScreen(): React.JSX.Element {
 
   const handleViewAllComments = useCallback(() => {
     if (hasId) {
-      navigation.navigate('Comments', { postId: postId });
+      navigation.navigate('Comments', {
+        postId: postId,
+        ...(post ? { postAuthorId: post.author.id } : {}),
+      });
     }
-  }, [navigation, hasId, postId]);
+  }, [navigation, hasId, postId, post]);
 
   // ---- Missing / bad param guard ----
   if (!hasId) {

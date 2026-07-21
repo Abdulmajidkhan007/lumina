@@ -61,6 +61,10 @@ export default function SettingsScreen(): React.JSX.Element {
     navigation.navigate('SavedPosts');
   }, [navigation]);
 
+  const goToArchive = useCallback(() => {
+    navigation.navigate('Archive');
+  }, [navigation]);
+
   const goToNotificationsSettings = useCallback(() => {
     navigation.navigate('NotificationsSettings');
   }, [navigation]);
@@ -214,6 +218,12 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.saved')}
             onPress={goToSavedPosts}
             accessibilityLabel={t('settings.rows.saved')}
+          />
+          <SettingsRow
+            icon="archive-outline"
+            label={t('settings.rows.archive')}
+            onPress={goToArchive}
+            accessibilityLabel={t('settings.rows.archive')}
           />
         </SettingsSection>
 

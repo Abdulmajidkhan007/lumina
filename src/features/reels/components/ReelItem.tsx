@@ -143,8 +143,8 @@ export const ReelItem = React.memo(function ReelItem({
   }, [saveReel]);
 
   const handleComment = useCallback(() => {
-    navigation.navigate('Comments', { postId: reel.id });
-  }, [navigation, reel.id]);
+    navigation.navigate('Comments', { postId: reel.id, postAuthorId: reel.author.id });
+  }, [navigation, reel.id, reel.author.id]);
 
   const handleShare = useCallback(() => {
     // TODO: share sheet integration

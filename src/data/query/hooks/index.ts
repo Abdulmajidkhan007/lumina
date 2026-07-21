@@ -17,6 +17,7 @@ export { useSearchUsers } from './useSearchUsers';
 export { useResetPassword } from './useResetPassword';
 export { useResendVerificationEmail } from './useResendVerificationEmail';
 export { useSavedPosts } from './useSavedPosts';
+export { useArchivedPosts } from './useArchivedPosts';
 
 // Mutation hooks
 export { useLikePost } from './useLikePost';
@@ -36,3 +37,5 @@ export { useUpdateProfile } from './useUpdateProfile';
 export { useDeleteAccount } from './useDeleteAccount';
 export { useChangePassword } from './useChangePassword';
 export { useDeletePost } from './useDeletePost';
+export { useArchivePost } from './useArchivePost';
+export { usePinComment } from './usePinComment';

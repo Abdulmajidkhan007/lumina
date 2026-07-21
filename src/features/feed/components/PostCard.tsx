@@ -12,6 +12,7 @@
 
 import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   Pressable,
   StyleSheet,
   View,
@@ -36,7 +37,9 @@ import { Divider } from '@/design-system/primitives/Divider';
 import { RichCaption } from '@/components/RichCaption';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
+import { useArchivePost } from '@/data/query/hooks/useArchivePost';
 import { usersApi } from '@/data/api/client';
+import { useCurrentUser } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
@@ -175,6 +178,9 @@ export const PostCard = React.memo(function PostCard({
   const { mutate: likePost } = useLikePost();
   const { mutate: savePost } = useSavePost();
   const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
+  const currentUser = useCurrentUser();
+  const { mutate: archivePost } = useArchivePost();
+  const isOwnPost = currentUser?.id === post.author.id;
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -195,8 +201,8 @@ export const PostCard = React.memo(function PostCard({
   }, [navigation, post.author.id]);
 
   const goToComments = useCallback(() => {
-    navigation.navigate('Comments', { postId: post.id });
-  }, [navigation, post.id]);
+    navigation.navigate('Comments', { postId: post.id, postAuthorId: post.author.id });
+  }, [navigation, post.id, post.author.id]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!post.isLikedByMe) {
@@ -263,6 +269,21 @@ export const PostCard = React.memo(function PostCard({
     closeMenu();
     // TODO: unfollow
   }, [closeMenu]);
+
+  const handleArchive = useCallback(() => {
+    closeMenu();
+    Alert.alert(
+      'Archive post',
+      'Only you will be able to see this post. You can restore it anytime from your Archive.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive',
+          onPress: () => archivePost({ id: post.id, archive: true }),
+        },
+      ],
+    );
+  }, [closeMenu, archivePost, post.id]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -410,31 +431,49 @@ export const PostCard = React.memo(function PostCard({
 
       {/* ---- Options Sheet ---- */}
       <Sheet visible={menuOpen} onDismiss={closeMenu}>
-        <SheetAction
-          icon="flag-outline"
-          label="Report"
-          color={theme.colors.danger}
-          onPress={handleReport}
-        />
-        <Divider />
-        <SheetAction
-          icon="ban-outline"
-          label="Block"
-          color={theme.colors.danger}
-          onPress={handleBlock}
-        />
-        <Divider />
-        <SheetAction
-          icon="paper-plane-outline"
-          label="Share"
-          onPress={handleShareFromMenu}
-        />
-        <Divider />
-        <SheetAction
-          icon="person-remove-outline"
-          label="Unfollow"
-          onPress={handleUnfollow}
-        />
+        {isOwnPost ? (
+          <>
+            <SheetAction
+              icon="archive-outline"
+              label="Archive"
+              onPress={handleArchive}
+            />
+            <Divider />
+            <SheetAction
+              icon="paper-plane-outline"
+              label="Share"
+              onPress={handleShareFromMenu}
+            />
+          </>
+        ) : (
+          <>
+            <SheetAction
+              icon="flag-outline"
+              label="Report"
+              color={theme.colors.danger}
+              onPress={handleReport}
+            />
+            <Divider />
+            <SheetAction
+              icon="ban-outline"
+              label="Block"
+              color={theme.colors.danger}
+              onPress={handleBlock}
+            />
+            <Divider />
+            <SheetAction
+              icon="paper-plane-outline"
+              label="Share"
+              onPress={handleShareFromMenu}
+            />
+            <Divider />
+            <SheetAction
+              icon="person-remove-outline"
+              label="Unfollow"
+              onPress={handleUnfollow}
+            />
+          </>
+        )}
       </Sheet>
     </Animated.View>
   );

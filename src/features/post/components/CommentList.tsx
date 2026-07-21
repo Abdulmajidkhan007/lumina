@@ -34,6 +34,8 @@ export interface CommentListProps {
   fetchNextPage: () => void;
   onReply: (comment: Comment) => void;
   onAuthorPress: (userId: string) => void;
+  /** Whether the viewer is the post author (may pin/unpin comments). */
+  canModerate?: boolean;
   /** Extra bottom padding to account for CommentComposer height */
   composerHeight?: number;
 }
@@ -95,6 +97,7 @@ export const CommentList = React.memo(function CommentList({
   fetchNextPage,
   onReply,
   onAuthorPress,
+  canModerate = false,
   composerHeight = 72,
 }: CommentListProps): React.JSX.Element {
   const theme = useTheme();
@@ -116,9 +119,10 @@ export const CommentList = React.memo(function CommentList({
         postId={postId}
         onReply={onReply}
         onAuthorPress={onAuthorPress}
+        canModerate={canModerate}
       />
     ),
-    [postId, onReply, onAuthorPress],
+    [postId, onReply, onAuthorPress, canModerate],
   );
 
   const listFooter = useMemo(

@@ -19,6 +19,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { Avatar } from '@/design-system/primitives/Avatar';
 import { RichCaption } from '@/components/RichCaption';
 import { useLikeComment } from '@/data/query/hooks/useLikeComment';
+import { usePinComment } from '@/data/query/hooks/usePinComment';
 import { usersApi } from '@/data/api/client';
 import { useUiStore } from '@/stores/ui.store';
 import { formatCount, formatRelativeTime } from '@/utils/format';
@@ -34,6 +35,8 @@ export interface CommentItemProps {
   postId: PostId;
   onReply: (comment: Comment) => void;
   onAuthorPress: (userId: string) => void;
+  /** Whether the viewer may pin/unpin this comment (post author only). */
+  canModerate?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,14 +48,23 @@ export const CommentItem = React.memo(function CommentItem({
   postId,
   onReply,
   onAuthorPress,
+  canModerate = false,
 }: CommentItemProps): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const { mutate: likeComment } = useLikeComment();
+  const { mutate: pinComment } = usePinComment();
 
   const isReply = comment.parentId !== undefined;
+  const isPinned = comment.isPinned === true;
+  // Only top-level comments can be pinned (mirrors Instagram).
+  const canTogglePin = canModerate && !isReply;
+
+  const handleTogglePin = useCallback(() => {
+    pinComment({ postId, commentId: comment.id, pin: !isPinned });
+  }, [pinComment, postId, comment.id, isPinned]);
 
   const handleLike = useCallback(() => {
     likeComment({
@@ -120,6 +132,16 @@ export const CommentItem = React.memo(function CommentItem({
 
       {/* Content column */}
       <View style={styles.content}>
+        {/* Pinned indicator */}
+        {isPinned ? (
+          <View style={[styles.pinnedRow, { marginBottom: theme.spacing.xxs }]}>
+            <Ionicons name="pin" size={11} color={theme.colors.textTertiary} />
+            <Text variant="caption" color="tertiary" style={{ marginLeft: 4 }}>
+              Pinned
+            </Text>
+          </View>
+        ) : null}
+
         {/* Username + text */}
         <View style={styles.textRow}>
           <Pressable
@@ -171,6 +193,20 @@ export const CommentItem = React.memo(function CommentItem({
               Reply
             </Text>
           </Pressable>
+
+          {canTogglePin ? (
+            <Pressable
+              onPress={handleTogglePin}
+              hitSlop={hitSlop.sm}
+              style={{ marginLeft: theme.spacing.md }}
+              accessibilityRole="button"
+              accessibilityLabel={isPinned ? 'Unpin comment' : 'Pin comment'}
+            >
+              <Text variant="caption" color="secondary">
+                {isPinned ? 'Unpin' : 'Pin'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* View replies expander (top-level comments only) */}
@@ -244,6 +280,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pinnedRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },

@@ -41,7 +41,7 @@ export type TabsParamList = {
 export type ProtectedStackParamList = {
   Tabs: NavigatorScreenParams<TabsParamList> | undefined;
   PostDetail: { id: string };
-  Comments: { postId: string };
+  Comments: { postId: string; postAuthorId?: string };
   Story: { userId: string };
   StoryComposer: { uri: string };
   UserProfile: { id: string };
@@ -57,6 +57,7 @@ export type ProtectedStackParamList = {
   CreatePost: undefined;
   ChangePassword: undefined;
   SavedPosts: undefined;
+  Archive: undefined;
   NotificationsSettings: undefined;
   Privacy: undefined;
   BlockedAccounts: undefined;

@@ -28,6 +28,7 @@ import { Divider } from '@/design-system/primitives/Divider';
 import { ErrorState } from '@/components/ErrorState';
 import { hitSlop } from '@/constants/layout';
 import { useComments } from '@/data/query/hooks/useComments';
+import { useCurrentUser } from '@/stores/auth.store';
 import { CommentList } from '@/features/post/components/CommentList';
 import { CommentComposer } from '@/features/post/components/CommentComposer';
 import type { PostId, Comment, CommentId } from '@/types/models';
@@ -44,10 +45,14 @@ import type { PostId, Comment, CommentId } from '@/types/models';
 export default function CommentsScreen(): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
-  const { postId: postIdParam } = useRoute<RouteProp<ProtectedStackParamList, 'Comments'>>().params;
+  const { postId: postIdParam, postAuthorId } =
+    useRoute<RouteProp<ProtectedStackParamList, 'Comments'>>().params;
 
   const hasId = typeof postIdParam === 'string' && postIdParam.length > 0;
   const postId = (postIdParam ?? '') as PostId;
+  const currentUser = useCurrentUser();
+  // Only the post's author may pin/unpin comments.
+  const canModerate = !!postAuthorId && postAuthorId === currentUser?.id;
 
   // Reply state
   const [replyTo, setReplyTo] = useState<{
@@ -80,11 +85,11 @@ export default function CommentsScreen(): React.JSX.Element {
 
   const handleClearReply = useCallback(() => setReplyTo(null), []);
 
-  // Flatten all pages into a single array
-  const comments = useMemo(
-    () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data],
-  );
+  // Flatten all pages into a single array, pinned comment first.
+  const comments = useMemo(() => {
+    const flat = data?.pages.flatMap((page) => page.items) ?? [];
+    return [...flat].sort((a, b) => Number(b.isPinned ?? false) - Number(a.isPinned ?? false));
+  }, [data]);
 
   // ---- Missing param guard ----
   if (!hasId) {
@@ -160,6 +165,7 @@ export default function CommentsScreen(): React.JSX.Element {
             fetchNextPage={fetchNextPage}
             onReply={handleReply}
             onAuthorPress={handleAuthorPress}
+            canModerate={canModerate}
           />
         )}
       </View>
