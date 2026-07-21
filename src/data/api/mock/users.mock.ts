@@ -15,6 +15,9 @@ interface FollowRequestRecord {
 
 const mutableFollowRequests = new Map<string, FollowRequestRecord>();
 
+/** In-memory Close Friends set for the current user (user ids). */
+const mutableCloseFriends = new Set<string>();
+
 function requestKey(targetId: string, requesterId: string): string {
   return `${targetId}_${requesterId}`;
 }
@@ -166,5 +169,22 @@ export class MockUsersApi implements IUsersApi {
       .filter((u) => u.id !== id && u.isFollowedByMe)
       .map(toUserSummary);
     return paginateArray(following, params?.cursor, params?.limit);
+  }
+
+  async getCloseFriends(): Promise<UserSummary[]> {
+    await mockDelay();
+    return [...mutableCloseFriends]
+      .map((id) => mutableUsers.find((u) => u.id === id))
+      .filter((u): u is (typeof mutableUsers)[number] => u !== undefined)
+      .map(toUserSummary);
+  }
+
+  async setCloseFriend(id: UserId, isCloseFriend: boolean): Promise<void> {
+    await mockDelay();
+    if (isCloseFriend) {
+      mutableCloseFriends.add(id);
+    } else {
+      mutableCloseFriends.delete(id);
+    }
   }
 }

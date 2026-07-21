@@ -39,6 +39,13 @@ service cloud.firestore {
         // Other users generate notifications for you (like/comment/follow).
         allow create: if signedIn();
       }
+      // Close Friends list. Readable by the owner (to manage it) and by the
+      // listed friend (a viewer checks whether they're in an author's list to
+      // gate Close-Friends stories); writable only by the owner.
+      match /closeFriends/{friendId} {
+        allow read: if isOwner(uid) || isOwner(friendId);
+        allow write: if isOwner(uid);
+      }
     }
 
     // ---------------- posts ----------------

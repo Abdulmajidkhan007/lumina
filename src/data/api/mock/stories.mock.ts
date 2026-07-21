@@ -54,16 +54,22 @@ export class MockStoriesApi implements IStoriesApi {
       createdAt: new Date(now).toISOString(),
       expiresAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
       seen: true, // it's your own story — you've "seen" it by posting it
+      audience: input.audience ?? 'all',
     };
 
+    const isCloseFriends = newStory.audience === 'closeFriends';
     const myReel = mutableStoryReels.find((r) => r.author.id === currentUser.id);
     if (myReel) {
       myReel.stories.push(newStory);
+      (myReel as { isCloseFriends?: boolean }).isCloseFriends = myReel.stories.some(
+        (s) => s.audience === 'closeFriends',
+      );
     } else {
       mutableStoryReels.unshift({
         author: toUserSummary(currentUser),
         stories: [newStory],
         hasUnseen: false,
+        isCloseFriends,
       });
     }
 

@@ -34,6 +34,8 @@ export interface StoryRingProps {
   hasUnseen: boolean;
   /** True for the "Your story" cell — shows a + add badge */
   isCurrentUser?: boolean;
+  /** True when this reel is shared to Close Friends — shows a green ring. */
+  isCloseFriends?: boolean;
   onPress: (userId: string) => void;
   /**
    * Renders the + badge as its own tap target that always opens the story
@@ -64,12 +66,17 @@ export const StoryRing = React.memo(function StoryRing({
   user,
   hasUnseen,
   isCurrentUser = false,
+  isCloseFriends = false,
   onPress,
   onAddPress,
   isUploading = false,
   style,
 }: StoryRingProps): React.JSX.Element {
   const theme = useTheme();
+  // Close Friends stories use a solid green ring instead of the accent gradient.
+  const ringColors: string[] = isCloseFriends
+    ? [theme.colors.success, theme.colors.success]
+    : [...theme.colors.accentGradient];
 
   const handlePress = useCallback(() => {
     onPress(user.id);
@@ -150,7 +157,7 @@ export const StoryRing = React.memo(function StoryRing({
       {/* Ring */}
       {showGradientRing ? (
         <LinearGradient
-          colors={[...theme.colors.accentGradient]}
+          colors={ringColors}
           start={{ x: 0, y: 1 }}
           end={{ x: 1, y: 0 }}
           style={[

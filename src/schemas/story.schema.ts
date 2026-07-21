@@ -16,6 +16,8 @@ export const storySchema = z.object({
   expiresAt: isoTimestampSchema,
   /** Whether the current user has already viewed this story */
   seen: z.boolean(),
+  /** Who this story is shared with — everyone or just the author's Close Friends. */
+  audience: z.enum(['all', 'closeFriends']).optional(),
 });
 
 export type Story = z.infer<typeof storySchema>;
@@ -29,6 +31,8 @@ export const storyReelSchema = z.object({
   stories: z.array(storySchema).min(1),
   /** True when at least one story in this reel has not been seen */
   hasUnseen: z.boolean(),
+  /** True when this reel is shared to the author's Close Friends (green ring). */
+  isCloseFriends: z.boolean().optional(),
 });
 
 export type StoryReel = z.infer<typeof storyReelSchema>;

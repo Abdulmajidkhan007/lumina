@@ -10,6 +10,8 @@ export type CreateStoryInput = {
   width?: number;
   height?: number;
   durationMs?: number;
+  /** Story audience — defaults to everyone; 'closeFriends' restricts it. */
+  audience?: 'all' | 'closeFriends';
 };
 
 // ---------------------------------------------------------------------------

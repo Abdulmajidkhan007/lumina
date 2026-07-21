@@ -43,10 +43,23 @@ interface StoryDocFields {
   createdAt: string;
   expiresAt: string;
   seenByUids?: string[];
+  audience?: 'all' | 'closeFriends';
 }
 
 function storiesCollection() {
   return getFirebaseFirestore().collection('stories');
+}
+
+/** Whether `viewerUid` is in `authorUid`'s Close Friends list. */
+async function isViewerCloseFriendOf(authorUid: string, viewerUid: string): Promise<boolean> {
+  if (authorUid === viewerUid) return true;
+  const snap = await getFirebaseFirestore()
+    .collection('users')
+    .doc(authorUid)
+    .collection('closeFriends')
+    .doc(viewerUid)
+    .get();
+  return snap.exists();
 }
 
 export class FirebaseStoriesApi implements IStoriesApi {
@@ -65,6 +78,13 @@ export class FirebaseStoriesApi implements IStoriesApi {
       const data = docSnap.data() as Partial<StoryDocFields>;
       if (!data.authorId || !data.author) continue;
 
+      // Close Friends stories are only visible to the author's close friends.
+      if (data.audience === 'closeFriends') {
+        if (!viewerUid || !(await isViewerCloseFriendOf(data.authorId, viewerUid))) {
+          continue;
+        }
+      }
+
       const seen = viewerUid ? (data.seenByUids ?? []).includes(viewerUid) : false;
       const storyCandidate = {
         id: docSnap.id,
@@ -73,6 +93,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
         createdAt: data.createdAt,
         expiresAt: data.expiresAt,
         seen,
+        ...(data.audience ? { audience: data.audience } : {}),
       };
 
       const existing = byAuthor.get(data.authorId);
@@ -91,7 +112,10 @@ export class FirebaseStoriesApi implements IStoriesApi {
         return aCreated.localeCompare(bCreated);
       });
       const hasUnseen = sorted.some((s) => !(s as { seen: boolean }).seen);
-      const result = storyReelSchema.safeParse({ author, stories: sorted, hasUnseen });
+      const isCloseFriends = sorted.some(
+        (s) => (s as { audience?: string }).audience === 'closeFriends',
+      );
+      const result = storyReelSchema.safeParse({ author, stories: sorted, hasUnseen, isCloseFriends });
       if (result.success) {
         reels.push(result.data);
       }
@@ -136,6 +160,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
     const createdAt = new Date(now).toISOString();
     const expiresAt = new Date(now + 24 * 60 * 60 * 1000).toISOString();
     const newRef = storiesCollection().doc();
+    const audience = input.audience ?? 'all';
     const storyDoc: StoryDocFields = {
       authorId: uid,
       author,
@@ -143,6 +168,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       createdAt,
       expiresAt,
       seenByUids: [],
+      audience,
     };
     await newRef.set(storyDoc);
 
@@ -153,6 +179,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       createdAt,
       expiresAt,
       seen: false,
+      audience,
     });
   }
 

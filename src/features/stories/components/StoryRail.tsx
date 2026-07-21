@@ -177,6 +177,7 @@ export function StoryRail(): React.JSX.Element {
         <StoryRing
           user={item.reel.author}
           hasUnseen={item.reel.hasUnseen}
+          isCloseFriends={item.reel.isCloseFriends ?? false}
           onPress={handleRingPress}
           style={{
             marginLeft: isFirst ? theme.spacing.lg : 0,

@@ -18,6 +18,7 @@ export { useResetPassword } from './useResetPassword';
 export { useResendVerificationEmail } from './useResendVerificationEmail';
 export { useSavedPosts } from './useSavedPosts';
 export { useArchivedPosts } from './useArchivedPosts';
+export { useCloseFriends } from './useCloseFriends';
 
 // Mutation hooks
 export { useLikePost } from './useLikePost';
@@ -39,3 +40,4 @@ export { useChangePassword } from './useChangePassword';
 export { useDeletePost } from './useDeletePost';
 export { useArchivePost } from './useArchivePost';
 export { usePinComment } from './usePinComment';
+export { useSetCloseFriend } from './useSetCloseFriend';

@@ -65,6 +65,10 @@ export default function SettingsScreen(): React.JSX.Element {
     navigation.navigate('Archive');
   }, [navigation]);
 
+  const goToCloseFriends = useCallback(() => {
+    navigation.navigate('CloseFriends');
+  }, [navigation]);
+
   const goToNotificationsSettings = useCallback(() => {
     navigation.navigate('NotificationsSettings');
   }, [navigation]);
@@ -224,6 +228,12 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.archive')}
             onPress={goToArchive}
             accessibilityLabel={t('settings.rows.archive')}
+          />
+          <SettingsRow
+            icon="star-outline"
+            label={t('settings.rows.closeFriends')}
+            onPress={goToCloseFriends}
+            accessibilityLabel={t('settings.rows.closeFriends')}
           />
         </SettingsSection>
 

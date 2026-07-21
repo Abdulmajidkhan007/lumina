@@ -13,7 +13,7 @@
  * error banner so the user can retry without re-picking the image.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -56,6 +56,7 @@ export default function StoryComposerScreen(): React.JSX.Element {
 
   const createStory = useCreateStory();
   const isUploading = createStory.isPending;
+  const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
 
   // ---- Share button press animation ----
   const scale = useSharedValue(1);
@@ -80,14 +81,16 @@ export default function StoryComposerScreen(): React.JSX.Element {
   const handleShare = useCallback(() => {
     if (isUploading) return;
     createStory.mutate(
-      { uri, type: 'image' },
+      { uri, type: 'image', audience: closeFriendsOnly ? 'closeFriends' : 'all' },
       {
         onSuccess: () => {
           navigation.navigate('Tabs');
         },
       },
     );
-  }, [createStory, isUploading, navigation, uri]);
+  }, [createStory, isUploading, navigation, uri, closeFriendsOnly]);
+
+  const toggleAudience = useCallback(() => setCloseFriendsOnly((v) => !v), []);
 
   const errorMessage =
     createStory.error instanceof Error ? createStory.error.message : t('story.shareError');
@@ -143,6 +146,28 @@ export default function StoryComposerScreen(): React.JSX.Element {
               </Text>
             </View>
           ) : null}
+
+          {/* Audience toggle — Everyone / Close Friends */}
+          <Pressable
+            onPress={isUploading ? undefined : toggleAudience}
+            disabled={isUploading}
+            style={[
+              styles.audienceToggle,
+              {
+                backgroundColor: closeFriendsOnly ? theme.colors.success : 'rgba(0,0,0,0.55)',
+                borderRadius: theme.radii['2xl'],
+                marginBottom: theme.spacing.md,
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: closeFriendsOnly }}
+            accessibilityLabel="Share to Close Friends only"
+          >
+            <Ionicons name={closeFriendsOnly ? 'star' : 'star-outline'} size={18} color="#FFFFFF" />
+            <Text variant="callout" color="inverse">
+              {closeFriendsOnly ? 'Close Friends' : 'Everyone'}
+            </Text>
+          </Pressable>
 
           <AnimatedPressable
             onPress={isUploading ? undefined : handleShare}
@@ -229,5 +254,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+  },
+  audienceToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
 });

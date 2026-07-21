@@ -44,4 +44,8 @@ export interface IUsersApi {
   getFollowRequestStatus(id: UserId): Promise<FollowRequestStatus>;
   getFollowers(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>>;
   getFollowing(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>>;
+  /** The current user's Close Friends list. */
+  getCloseFriends(): Promise<UserSummary[]>;
+  /** Adds or removes `id` from the current user's Close Friends. */
+  setCloseFriend(id: UserId, isCloseFriend: boolean): Promise<void>;
 }

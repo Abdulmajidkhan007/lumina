@@ -16,6 +16,7 @@
  * Explore reuses the posts collection (createdAt-ordered) via FirebasePostsApi.
  */
 import firestore from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import type { IUsersApi, FollowRequestStatus } from '@/data/api/contracts';
 import type { User, UserSummary, Post, UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
@@ -290,6 +291,26 @@ export class FirebaseUsersApi implements IUsersApi {
 
   async getFollowing(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>> {
     return this.getFollowEdgeUsers('followerId', id, 'followeeId', params);
+  }
+
+  async getCloseFriends(): Promise<UserSummary[]> {
+    const uid = requireCurrentUid();
+    const snap = await usersCollection().doc(uid).collection('closeFriends').get();
+    const summaries = await Promise.all(
+      snap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => fetchUserSummary(d.id)),
+    );
+    return summaries.filter((s): s is UserSummary => s !== null);
+  }
+
+  async setCloseFriend(id: UserId, isCloseFriend: boolean): Promise<void> {
+    const uid = requireCurrentUid();
+    if (uid === id) return;
+    const ref = usersCollection().doc(uid).collection('closeFriends').doc(id);
+    if (isCloseFriend) {
+      await ref.set({ createdAt: new Date().toISOString() });
+    } else {
+      await ref.delete();
+    }
   }
 
   /** Pages the `follows` edge collection, then resolves the opposite side to summaries. */
