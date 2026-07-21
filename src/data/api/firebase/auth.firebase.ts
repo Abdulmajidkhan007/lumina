@@ -82,6 +82,14 @@ export class FirebaseAuthApi implements IAuthApi {
     }
 
     const data = snap.data() as Partial<UserDocFields> | undefined;
+    // Signing in reactivates a temporarily-deactivated account.
+    if (data?.deactivated === true) {
+      try {
+        await profileRef.update({ deactivated: false });
+      } catch (error) {
+        console.warn('[auth] failed to reactivate account:', error);
+      }
+    }
     const candidate = {
       id: fbUser.uid,
       username: data?.username,
@@ -251,6 +259,16 @@ export class FirebaseAuthApi implements IAuthApi {
     }
     await usersCollectionDoc(current.uid).update({ isProfessional: enabled });
     return this.fetchOrCreateProfile(current);
+  }
+
+  async deactivateAccount(): Promise<void> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current) {
+      throw new Error('Not authenticated');
+    }
+    await usersCollectionDoc(current.uid).update({ deactivated: true });
+    void logActivity('logout', { reason: 'deactivate' });
+    await getFirebaseAuth().signOut();
   }
 
   /** Delegates to Firebase Auth — errors (e.g. `auth/invalid-email`) propagate as-is. */

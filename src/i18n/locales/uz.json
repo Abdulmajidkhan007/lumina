@@ -120,12 +120,19 @@
       "switchToProfessional": "Professional hisobga o'tish",
       "switchToPersonal": "Shaxsiy hisobga o'tish",
       "logout": "Chiqish",
+      "deactivateAccount": "Hisobni vaqtincha to'xtatish",
       "deleteAccount": "Hisobni o'chirish"
     },
     "logoutConfirm": {
       "title": "Chiqish",
       "message": "Lumina'dan chiqishga aminmisiz?",
       "confirm": "Chiqish",
+      "cancel": "Bekor qilish"
+    },
+    "deactivateConfirm": {
+      "title": "Hisobni vaqtincha to'xtatish",
+      "message": "Profilingiz, postlaringiz va faoliyatingiz siz qayta kirmaguningizcha yashiriladi — qayta kirsangiz hisob qayta faollashadi.",
+      "confirm": "To'xtatish",
       "cancel": "Bekor qilish"
     },
     "deleteConfirm": {

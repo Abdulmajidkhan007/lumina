@@ -23,7 +23,7 @@ import { useSetProfessionalAccount } from '@/data/query/hooks/useSetProfessional
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
-import { useDeleteAccount } from '@/data/query/hooks';
+import { useDeleteAccount, useDeactivateAccount } from '@/data/query/hooks';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
@@ -49,7 +49,9 @@ export default function SettingsScreen(): React.JSX.Element {
   const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
   const [logoutDialogVisible, setLogoutDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [deactivateDialogVisible, setDeactivateDialogVisible] = useState(false);
   const deleteAccountMutation = useDeleteAccount();
+  const deactivateAccountMutation = useDeactivateAccount();
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
@@ -143,6 +145,18 @@ export default function SettingsScreen(): React.JSX.Element {
       },
     });
   }, [deleteAccountMutation, t]);
+
+  const openDeactivateDialog = useCallback(() => setDeactivateDialogVisible(true), []);
+  const closeDeactivateDialog = useCallback(() => setDeactivateDialogVisible(false), []);
+
+  const handleConfirmDeactivate = useCallback(() => {
+    setDeactivateDialogVisible(false);
+    deactivateAccountMutation.mutate(undefined, {
+      onError: (error) => {
+        Alert.alert(t('common.error'), error.message, [{ text: t('common.ok') }]);
+      },
+    });
+  }, [deactivateAccountMutation, t]);
 
   const handleAutoplayChange = useCallback(
     (v: boolean) => setAutoplayVideos(v),
@@ -378,6 +392,18 @@ export default function SettingsScreen(): React.JSX.Element {
             accessibilityLabel={t('settings.rows.logout')}
           />
           <SettingsRow
+            icon="pause-circle-outline"
+            label={
+              deactivateAccountMutation.isPending
+                ? t('common.loading')
+                : t('settings.rows.deactivateAccount')
+            }
+            right={{ type: 'none' }}
+            danger
+            onPress={deactivateAccountMutation.isPending ? undefined : openDeactivateDialog}
+            accessibilityLabel={t('settings.rows.deactivateAccount')}
+          />
+          <SettingsRow
             icon="trash-outline"
             label={
               deleteAccountMutation.isPending
@@ -410,6 +436,18 @@ export default function SettingsScreen(): React.JSX.Element {
         destructive
         onConfirm={handleConfirmSignOut}
         onCancel={closeLogoutDialog}
+      />
+
+      {/* Deactivate account confirmation */}
+      <ConfirmDialog
+        visible={deactivateDialogVisible}
+        title={t('settings.deactivateConfirm.title')}
+        message={t('settings.deactivateConfirm.message')}
+        confirmLabel={t('settings.deactivateConfirm.confirm')}
+        cancelLabel={t('settings.deactivateConfirm.cancel')}
+        destructive
+        onConfirm={handleConfirmDeactivate}
+        onCancel={closeDeactivateDialog}
       />
 
       {/* Delete account confirmation */}

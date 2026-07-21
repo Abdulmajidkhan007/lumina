@@ -120,12 +120,19 @@
       "switchToProfessional": "Перейти на профессиональный аккаунт",
       "switchToPersonal": "Перейти на личный аккаунт",
       "logout": "Выйти",
+      "deactivateAccount": "Деактивировать аккаунт",
       "deleteAccount": "Удалить аккаунт"
     },
     "logoutConfirm": {
       "title": "Выйти",
       "message": "Вы уверены, что хотите выйти из Lumina?",
       "confirm": "Выйти",
+      "cancel": "Отмена"
+    },
+    "deactivateConfirm": {
+      "title": "Деактивировать аккаунт",
+      "message": "Ваш профиль, публикации и активность будут скрыты, пока вы снова не войдёте — это реактивирует аккаунт.",
+      "confirm": "Деактивировать",
       "cancel": "Отмена"
     },
     "deleteConfirm": {

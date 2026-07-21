@@ -53,6 +53,12 @@ export interface IAuthApi {
    */
   deleteAccount(): Promise<void>;
   /**
+   * Temporarily deactivates the account: it's hidden and the session is
+   * cleared, but signing back in reactivates it (unlike deleteAccount, which
+   * is permanent).
+   */
+  deactivateAccount(): Promise<void>;
+  /**
    * Signs in (or, on first use, silently creates an account for) the user
    * via their Google identity. Implementations should throw
    * `Error('cancelled')` when the user backs out of the native picker so

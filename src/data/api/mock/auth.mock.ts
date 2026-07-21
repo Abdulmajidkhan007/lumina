@@ -60,6 +60,12 @@ export class MockAuthApi implements IAuthApi {
     await mockDelay();
   }
 
+  async deactivateAccount(): Promise<void> {
+    // Mock mode has no persistent deactivation flag — mirrors logout and lets
+    // the caller (useDeactivateAccount) clear the local session.
+    await mockDelay();
+  }
+
   async getSession(): Promise<AuthSession | null> {
     await mockDelay();
     return { token: MOCK_TOKEN, user: currentUser };

@@ -38,6 +38,7 @@ export { useCreateStory } from './useCreateStory';
 export { useUpdateProfile } from './useUpdateProfile';
 export { useSetProfessionalAccount } from './useSetProfessionalAccount';
 export { useDeleteAccount } from './useDeleteAccount';
+export { useDeactivateAccount } from './useDeactivateAccount';
 export { useChangePassword } from './useChangePassword';
 export { useDeletePost } from './useDeletePost';
 export { useArchivePost } from './useArchivePost';
