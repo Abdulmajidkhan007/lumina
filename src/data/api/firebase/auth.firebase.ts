@@ -89,6 +89,7 @@ export class FirebaseAuthApi implements IAuthApi {
       avatarUrl: data?.avatarUrl ?? null,
       bio: data?.bio ?? null,
       website: data?.website ?? null,
+      isProfessional: data?.isProfessional ?? false,
       isVerified: data?.isVerified ?? false,
       isPrivate: data?.isPrivate ?? false,
       followerCount: data?.followerCount ?? 0,
@@ -240,6 +241,15 @@ export class FirebaseAuthApi implements IAuthApi {
       isPrivate: input.isPrivate,
       ...(avatarUrl !== undefined ? { avatarUrl } : {}),
     });
+    return this.fetchOrCreateProfile(current);
+  }
+
+  async setProfessionalAccount(enabled: boolean): Promise<User> {
+    const current = getFirebaseAuth().currentUser;
+    if (!current) {
+      throw new Error('Not authenticated');
+    }
+    await usersCollectionDoc(current.uid).update({ isProfessional: enabled });
     return this.fetchOrCreateProfile(current);
   }
 

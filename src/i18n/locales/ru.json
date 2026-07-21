@@ -116,6 +116,9 @@
       "saved": "Сохранённое",
       "archive": "Архив",
       "closeFriends": "Близкие друзья",
+      "insights": "Статистика",
+      "switchToProfessional": "Перейти на профессиональный аккаунт",
+      "switchToPersonal": "Перейти на личный аккаунт",
       "logout": "Выйти",
       "deleteAccount": "Удалить аккаунт"
     },

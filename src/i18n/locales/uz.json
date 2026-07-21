@@ -116,6 +116,9 @@
       "saved": "Saqlanganlar",
       "archive": "Arxiv",
       "closeFriends": "Yaqin do'stlar",
+      "insights": "Statistika",
+      "switchToProfessional": "Professional hisobga o'tish",
+      "switchToPersonal": "Shaxsiy hisobga o'tish",
       "logout": "Chiqish",
       "deleteAccount": "Hisobni o'chirish"
     },

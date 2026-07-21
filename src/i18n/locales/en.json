@@ -116,6 +116,9 @@
       "saved": "Saved",
       "archive": "Archive",
       "closeFriends": "Close Friends",
+      "insights": "Insights",
+      "switchToProfessional": "Switch to professional account",
+      "switchToPersonal": "Switch to personal account",
       "logout": "Log out",
       "deleteAccount": "Delete account"
     },

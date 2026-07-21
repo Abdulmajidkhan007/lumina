@@ -232,6 +232,7 @@ export interface UserDocFields {
   avatarUrl: string | null;
   bio: string | null;
   website: string | null;
+  isProfessional?: boolean;
   isVerified: boolean;
   isPrivate: boolean;
   followerCount: number;

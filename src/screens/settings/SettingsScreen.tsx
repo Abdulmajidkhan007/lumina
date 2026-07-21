@@ -18,7 +18,8 @@ import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { Divider } from '@/design-system/primitives/Divider';
 import { ConfirmDialog } from '@/components';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useCurrentUser } from '@/stores/auth.store';
+import { useSetProfessionalAccount } from '@/data/query/hooks/useSetProfessionalAccount';
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
@@ -39,6 +40,9 @@ export default function SettingsScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const clearSession = useAuthStore((s) => s.clearSession);
+  const currentUser = useCurrentUser();
+  const setProfessional = useSetProfessionalAccount();
+  const isProfessional = currentUser?.isProfessional ?? false;
   const { autoplayVideos, hapticsEnabled, setAutoplayVideos, setHapticsEnabled } =
     usePreferencesStore();
   const locale = useLocale();
@@ -68,6 +72,23 @@ export default function SettingsScreen(): React.JSX.Element {
   const goToCloseFriends = useCallback(() => {
     navigation.navigate('CloseFriends');
   }, [navigation]);
+
+  const goToInsights = useCallback(() => {
+    navigation.navigate('Insights');
+  }, [navigation]);
+
+  const handleToggleProfessional = useCallback(() => {
+    if (isProfessional) {
+      Alert.alert('Switch to personal account?', 'You will lose access to Insights.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Switch', onPress: () => setProfessional.mutate(false) },
+      ]);
+    } else {
+      setProfessional.mutate(true, {
+        onSuccess: () => navigation.navigate('Insights'),
+      });
+    }
+  }, [isProfessional, setProfessional, navigation]);
 
   const goToNotificationsSettings = useCallback(() => {
     navigation.navigate('NotificationsSettings');
@@ -234,6 +255,28 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.closeFriends')}
             onPress={goToCloseFriends}
             accessibilityLabel={t('settings.rows.closeFriends')}
+          />
+          {isProfessional ? (
+            <SettingsRow
+              icon="bar-chart-outline"
+              label={t('settings.rows.insights')}
+              onPress={goToInsights}
+              accessibilityLabel={t('settings.rows.insights')}
+            />
+          ) : null}
+          <SettingsRow
+            icon="briefcase-outline"
+            label={
+              isProfessional
+                ? t('settings.rows.switchToPersonal')
+                : t('settings.rows.switchToProfessional')
+            }
+            onPress={handleToggleProfessional}
+            accessibilityLabel={
+              isProfessional
+                ? t('settings.rows.switchToPersonal')
+                : t('settings.rows.switchToProfessional')
+            }
           />
         </SettingsSection>
 

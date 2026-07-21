@@ -27,6 +27,8 @@ export const userSchema = z.object({
   bio: z.string().nullable(),
   /** Optional external link shown on the profile ("link in bio"). */
   website: z.string().nullable(),
+  /** True when this is a professional (creator/business) account with Insights. */
+  isProfessional: z.boolean().optional(),
   isVerified: z.boolean(),
   isPrivate: z.boolean(),
   followerCount: z.number().int().nonnegative(),

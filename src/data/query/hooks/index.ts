@@ -36,6 +36,7 @@ export { useMarkNotificationsRead } from './useMarkNotificationsRead';
 export { useCreatePost } from './useCreatePost';
 export { useCreateStory } from './useCreateStory';
 export { useUpdateProfile } from './useUpdateProfile';
+export { useSetProfessionalAccount } from './useSetProfessionalAccount';
 export { useDeleteAccount } from './useDeleteAccount';
 export { useChangePassword } from './useChangePassword';
 export { useDeletePost } from './useDeletePost';

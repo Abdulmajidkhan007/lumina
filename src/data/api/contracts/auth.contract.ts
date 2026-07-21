@@ -21,6 +21,8 @@ export interface IAuthApi {
   getSession(): Promise<AuthSession | null>;
   me(): Promise<User>;
   updateProfile(input: EditProfileInput, avatarLocalUri?: string): Promise<User>;
+  /** Switches the current account between personal and professional (creator/business). */
+  setProfessionalAccount(enabled: boolean): Promise<User>;
   /**
    * Sends a password-reset email to the given address. Resolves once the
    * request has been accepted by the backend — it does not indicate whether

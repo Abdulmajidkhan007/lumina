@@ -93,6 +93,14 @@ export class MockAuthApi implements IAuthApi {
     return currentUser;
   }
 
+  async setProfessionalAccount(enabled: boolean): Promise<User> {
+    await mockDelay();
+    currentUser.isProfessional = enabled;
+    const idx = mutableUsers.findIndex((u) => u.id === currentUser.id);
+    if (idx !== -1) mutableUsers[idx] = currentUser;
+    return currentUser;
+  }
+
   async resetPassword(_email: string): Promise<void> {
     // No real email to send in mock mode — just simulate network latency.
     await mockDelay();
