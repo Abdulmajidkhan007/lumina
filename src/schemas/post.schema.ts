@@ -50,6 +50,12 @@ export const postSchema = z.object({
   isSavedByMe: z.boolean(),
   createdAt: isoTimestampSchema,
   location: z.string().optional(),
+  /** People tagged in this post. */
+  taggedUsers: z.array(userSummarySchema).optional(),
+  /** Extra co-authors ("collab"), beyond `author`. */
+  collaborators: z.array(userSummarySchema).optional(),
+  /** ISO timestamp when the owner archived this post (hidden from feed/grid). */
+  archivedAt: isoTimestampSchema.optional(),
 });
 
 export type Post = z.infer<typeof postSchema>;
@@ -69,6 +75,8 @@ export const commentSchema = z.object({
   replyCount: z.number().int().nonnegative(),
   /** Present when this comment is a reply to another comment */
   parentId: commentIdSchema.optional(),
+  /** True when the post author has pinned this comment to the top. */
+  isPinned: z.boolean().optional(),
 });
 
 export type Comment = z.infer<typeof commentSchema>;

@@ -27,6 +27,7 @@
  * `postCount`.
  */
 import firestore from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import type { IPostsApi, AddCommentInput, CreatePostInput } from '@/data/api/contracts';
 import type { Post, Comment, PostId, CommentId, UserId } from '@/types/models';
 import type { Paginated, FeedParams, CommentParams } from '@/types/api';
@@ -60,6 +61,9 @@ interface PostDocFields {
   commentCount: number;
   createdAt: string;
   location?: string;
+  taggedUsers?: UserSummary[];
+  collaborators?: UserSummary[];
+  archivedAt?: string;
 }
 
 interface CommentDocFields {
@@ -71,6 +75,7 @@ interface CommentDocFields {
   createdAt: string;
   replyCount: number;
   parentId: string | null;
+  isPinned?: boolean;
 }
 
 function postsCollection() {
@@ -111,6 +116,9 @@ async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promis
     isSavedByMe,
     createdAt: data.createdAt,
     ...(data.location ? { location: data.location } : {}),
+    ...(data.taggedUsers ? { taggedUsers: data.taggedUsers } : {}),
+    ...(data.collaborators ? { collaborators: data.collaborators } : {}),
+    ...(data.archivedAt ? { archivedAt: data.archivedAt } : {}),
   };
 }
 
@@ -131,7 +139,16 @@ async function buildCommentCandidate(
     createdAt: data.createdAt,
     replyCount: data.replyCount ?? 0,
     ...(data.parentId ? { parentId: data.parentId } : {}),
+    ...(data.isPinned ? { isPinned: true } : {}),
   };
+}
+
+/** Resolves user ids to denormalized summaries, dropping any that don't exist. */
+async function resolveSummaries(ids: UserId[] | undefined): Promise<UserSummary[] | undefined> {
+  if (!ids || ids.length === 0) return undefined;
+  const resolved = await Promise.all(ids.map((id) => fetchUserSummary(id)));
+  const summaries = resolved.filter((s): s is UserSummary => s !== null);
+  return summaries.length > 0 ? summaries : undefined;
 }
 
 export class FirebasePostsApi implements IPostsApi {
@@ -145,11 +162,14 @@ export class FirebasePostsApi implements IPostsApi {
         params.limit,
       );
       const viewerUid = getCurrentUid();
-      const items = await buildValidatedList(
+      const built = await buildValidatedList(
         docs,
         (raw) => buildPostCandidate(raw, viewerUid),
         postSchema,
       );
+      // Archived posts are excluded from the feed/grid (filtered in-memory so
+      // no extra composite index is needed for the "field-absent" case).
+      const items = built.filter((p) => p.archivedAt === undefined);
       return { items, nextCursor };
     });
   }
@@ -202,6 +222,10 @@ export class FirebasePostsApi implements IPostsApi {
     );
 
     const createdAt = new Date(now).toISOString();
+    const [taggedUsers, collaborators] = await Promise.all([
+      resolveSummaries(input.taggedUserIds),
+      resolveSummaries(input.collaboratorIds),
+    ]);
     const newRef = postsCollection().doc();
     const postDoc: PostDocFields = {
       authorId: uid,
@@ -213,6 +237,8 @@ export class FirebasePostsApi implements IPostsApi {
       commentCount: 0,
       createdAt,
       ...(input.location ? { location: input.location } : {}),
+      ...(taggedUsers ? { taggedUsers } : {}),
+      ...(collaborators ? { collaborators } : {}),
     };
     await newRef.set(postDoc);
     await getFirebaseFirestore().collection('users').doc(uid).update({
@@ -230,6 +256,8 @@ export class FirebasePostsApi implements IPostsApi {
       isSavedByMe: false,
       createdAt,
       ...(input.location ? { location: input.location } : {}),
+      ...(taggedUsers ? { taggedUsers } : {}),
+      ...(collaborators ? { collaborators } : {}),
     });
   }
 
@@ -406,11 +434,80 @@ export class FirebasePostsApi implements IPostsApi {
         params.limit,
       );
       const viewerUid = getCurrentUid();
-      const items = await buildValidatedList(
+      const built = await buildValidatedList(
         docs,
         (raw) => buildPostCandidate(raw, viewerUid),
         postSchema,
       );
+      const items = built.filter((p) => p.archivedAt === undefined);
+      return { items, nextCursor };
+    });
+  }
+
+  async pinComment(postId: PostId, commentId: CommentId): Promise<void> {
+    const uid = requireCurrentUid();
+    // Only the post author may pin.
+    const postSnap = await postDocRef(postId).get();
+    if (!postSnap.exists()) throw new Error(`Post ${postId} not found`);
+    if ((postSnap.data() as Partial<PostDocFields>).authorId !== uid) {
+      throw new Error('Only the post author can pin comments.');
+    }
+    // Enforce a single pinned comment: clear any existing pins first.
+    const pinnedSnap = await commentsCollection(postId).where('isPinned', '==', true).get();
+    await Promise.all(
+      pinnedSnap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+        d.ref.update({ isPinned: false }),
+      ),
+    );
+    await commentDocRef(postId, commentId).update({ isPinned: true });
+  }
+
+  async unpinComment(postId: PostId, commentId: CommentId): Promise<void> {
+    const uid = requireCurrentUid();
+    const postSnap = await postDocRef(postId).get();
+    if (!postSnap.exists()) throw new Error(`Post ${postId} not found`);
+    if ((postSnap.data() as Partial<PostDocFields>).authorId !== uid) {
+      throw new Error('Only the post author can unpin comments.');
+    }
+    await commentDocRef(postId, commentId).update({ isPinned: false });
+  }
+
+  async archivePost(id: PostId): Promise<void> {
+    await this.setArchived(id, new Date().toISOString());
+  }
+
+  async unarchivePost(id: PostId): Promise<void> {
+    await this.setArchived(id, null);
+  }
+
+  private async setArchived(id: PostId, archivedAt: string | null): Promise<void> {
+    const uid = requireCurrentUid();
+    const ref = postDocRef(id);
+    const snap = await ref.get();
+    if (!snap.exists()) throw new Error(`Post ${id} not found`);
+    if ((snap.data() as Partial<PostDocFields>).authorId !== uid) {
+      throw new Error('You can only archive your own posts.');
+    }
+    await ref.update({
+      archivedAt: archivedAt ?? firestore.FieldValue.delete(),
+    });
+  }
+
+  async getArchivedPosts(params: FeedParams): Promise<Paginated<Post>> {
+    return withReadableErrors('archived posts', async () => {
+      const uid = requireCurrentUid();
+      const { docs, nextCursor } = await queryCreatedAtPage(
+        postsCollection(),
+        [where('authorId', '==', uid)],
+        params.cursor,
+        params.limit,
+      );
+      const built = await buildValidatedList(
+        docs,
+        (raw) => buildPostCandidate(raw, uid),
+        postSchema,
+      );
+      const items = built.filter((p) => p.archivedAt !== undefined);
       return { items, nextCursor };
     });
   }

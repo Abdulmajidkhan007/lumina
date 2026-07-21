@@ -5,16 +5,27 @@ import { commentIdSchema, postIdSchema } from '@/schemas';
 import { extractHashtags } from '@/utils/richText';
 import { mutablePosts } from './fixtures/posts.fixture';
 import { mutableComments } from './fixtures/comments.fixture';
-import { currentUser, toUserSummary } from './fixtures/users.fixture';
+import { currentUser, toUserSummary, mutableUsers } from './fixtures/users.fixture';
 import { mockDelay } from './latency';
 import { paginateArray } from './pagination';
+
+/** Resolves a list of user ids to their summaries, dropping unknown ids. */
+function resolveSummaries(ids: UserId[] | undefined) {
+  if (!ids || ids.length === 0) return undefined;
+  const summaries = ids
+    .map((id) => mutableUsers.find((u) => u.id === id))
+    .filter((u): u is (typeof mutableUsers)[number] => u !== undefined)
+    .map(toUserSummary);
+  return summaries.length > 0 ? summaries : undefined;
+}
 
 export class MockPostsApi implements IPostsApi {
   async getFeed(params: FeedParams): Promise<Paginated<Post>> {
     await mockDelay();
-    const filtered = params.userId
+    const base = params.userId
       ? mutablePosts.filter((p) => p.author.id === params.userId)
       : mutablePosts;
+    const filtered = base.filter((p) => p.archivedAt === undefined);
     return paginateArray(filtered, params.cursor, params.limit);
   }
 
@@ -163,6 +174,12 @@ export class MockPostsApi implements IPostsApi {
       isSavedByMe: false,
       createdAt: new Date().toISOString(),
       ...(input.location !== undefined ? { location: input.location } : {}),
+      ...(resolveSummaries(input.taggedUserIds) !== undefined
+        ? { taggedUsers: resolveSummaries(input.taggedUserIds) }
+        : {}),
+      ...(resolveSummaries(input.collaboratorIds) !== undefined
+        ? { collaborators: resolveSummaries(input.collaboratorIds) }
+        : {}),
     };
     mutablePosts.unshift(newPost);
     return newPost;
@@ -170,7 +187,51 @@ export class MockPostsApi implements IPostsApi {
 
   async getUserPosts(userId: UserId, params: FeedParams): Promise<Paginated<Post>> {
     await mockDelay();
-    const filtered = mutablePosts.filter((p) => p.author.id === userId);
+    const filtered = mutablePosts.filter(
+      (p) => p.author.id === userId && p.archivedAt === undefined,
+    );
+    return paginateArray(filtered, params.cursor, params.limit);
+  }
+
+  async pinComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await mockDelay();
+    // Only one pinned comment per post — unpin others first (mirrors Instagram).
+    for (const c of mutableComments) {
+      if (c.postId === postId) c.isPinned = c.id === commentId;
+    }
+  }
+
+  async unpinComment(postId: PostId, commentId: CommentId): Promise<void> {
+    await mockDelay();
+    const comment = mutableComments.find((c) => c.id === commentId && c.postId === postId);
+    if (comment) comment.isPinned = false;
+  }
+
+  async archivePost(id: PostId): Promise<void> {
+    await mockDelay();
+    const post = mutablePosts.find((p) => p.id === id);
+    if (!post) throw new Error(`Post ${id} not found`);
+    if (post.author.id !== currentUser.id) {
+      throw new Error('You can only archive your own posts.');
+    }
+    post.archivedAt = new Date().toISOString();
+  }
+
+  async unarchivePost(id: PostId): Promise<void> {
+    await mockDelay();
+    const post = mutablePosts.find((p) => p.id === id);
+    if (!post) throw new Error(`Post ${id} not found`);
+    if (post.author.id !== currentUser.id) {
+      throw new Error('You can only restore your own posts.');
+    }
+    delete post.archivedAt;
+  }
+
+  async getArchivedPosts(params: FeedParams): Promise<Paginated<Post>> {
+    await mockDelay();
+    const filtered = mutablePosts
+      .filter((p) => p.author.id === currentUser.id && p.archivedAt !== undefined)
+      .sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''));
     return paginateArray(filtered, params.cursor, params.limit);
   }
 }
