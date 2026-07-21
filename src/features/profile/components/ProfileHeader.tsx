@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useEffect } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Animated, {
   FadeIn,
@@ -44,6 +44,11 @@ export interface ProfileHeaderProps {
   onMessage?: () => void;
   onFollowersPress?: () => void;
   onFollowingPress?: () => void;
+}
+
+/** Strips the scheme and any trailing slash so the link reads like Instagram's. */
+function formatWebsite(url: string): string {
+  return url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +113,13 @@ export const ProfileHeader = React.memo(function ProfileHeader({
     };
     void share();
   }, [user.id, onShareProfile]);
+
+  const handleOpenWebsite = useCallback(() => {
+    if (!user.website) return;
+    void Linking.openURL(user.website).catch(() => {
+      // Invalid/unsupported URL — silently ignore, mirroring the share sheet.
+    });
+  }, [user.website]);
 
   return (
     <Animated.View
@@ -180,6 +192,21 @@ export const ProfileHeader = React.memo(function ProfileHeader({
         >
           {user.bio}
         </Text>
+      ) : null}
+
+      {/* Website ("link in bio") */}
+      {user.website !== null && user.website.trim() !== '' ? (
+        <Pressable
+          onPress={handleOpenWebsite}
+          hitSlop={8}
+          accessibilityRole="link"
+          accessibilityLabel={user.website}
+          style={{ marginTop: theme.spacing.xxs }}
+        >
+          <Text variant="callout" color="accent" numberOfLines={1}>
+            {formatWebsite(user.website)}
+          </Text>
+        </Pressable>
       ) : null}
 
       {/* Action buttons */}

@@ -39,6 +39,13 @@ function usersCollectionDoc(uid: string) {
   return getFirebaseFirestore().collection('users').doc(uid);
 }
 
+/** Ensures a user-entered link carries a scheme so it opens as a real URL. */
+function normalizeWebsite(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return trimmed;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 function fallbackUsernameFrom(email: string | null, uid: string): string {
   if (email) {
     const [local] = email.split('@');
@@ -62,6 +69,7 @@ export class FirebaseAuthApi implements IAuthApi {
         displayName: fbUser.displayName ?? fallbackUsername,
         avatarUrl: fbUser.photoURL ?? null,
         bio: null,
+        website: null,
         isVerified: false,
         isPrivate: false,
         followerCount: 0,
@@ -80,6 +88,7 @@ export class FirebaseAuthApi implements IAuthApi {
       displayName: data?.displayName,
       avatarUrl: data?.avatarUrl ?? null,
       bio: data?.bio ?? null,
+      website: data?.website ?? null,
       isVerified: data?.isVerified ?? false,
       isPrivate: data?.isPrivate ?? false,
       followerCount: data?.followerCount ?? 0,
@@ -126,6 +135,7 @@ export class FirebaseAuthApi implements IAuthApi {
       displayName: input.displayName,
       avatarUrl: null,
       bio: null,
+      website: null,
       isVerified: false,
       isPrivate: false,
       followerCount: 0,
@@ -215,6 +225,7 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Not authenticated');
     }
     const bio = input.bio && input.bio.length > 0 ? input.bio : null;
+    const website = input.website && input.website.length > 0 ? normalizeWebsite(input.website) : null;
     const isLocalUri = !!avatarLocalUri && !avatarLocalUri.startsWith('http');
     const avatarUrl = isLocalUri
       ? await uploadMedia(avatarLocalUri as string, `avatars/${current.uid}/${Date.now()}`)
@@ -225,6 +236,7 @@ export class FirebaseAuthApi implements IAuthApi {
       username: input.username,
       usernameLower: input.username.toLowerCase(),
       bio,
+      website,
       isPrivate: input.isPrivate,
       ...(avatarUrl !== undefined ? { avatarUrl } : {}),
     });

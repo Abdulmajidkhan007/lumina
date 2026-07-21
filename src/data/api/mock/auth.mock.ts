@@ -21,6 +21,7 @@ export class MockAuthApi implements IAuthApi {
       displayName: input.displayName,
       avatarUrl: null,
       bio: null,
+      website: null,
       isVerified: false,
       isPrivate: false,
       followerCount: 0,
@@ -74,6 +75,12 @@ export class MockAuthApi implements IAuthApi {
     currentUser.displayName = input.displayName;
     currentUser.username = input.username;
     currentUser.bio = input.bio && input.bio.length > 0 ? input.bio : null;
+    currentUser.website =
+      input.website && input.website.length > 0
+        ? /^https?:\/\//i.test(input.website.trim())
+          ? input.website.trim()
+          : `https://${input.website.trim()}`
+        : null;
     currentUser.isPrivate = input.isPrivate;
     if (avatarLocalUri) {
       currentUser.avatarUrl = avatarLocalUri;

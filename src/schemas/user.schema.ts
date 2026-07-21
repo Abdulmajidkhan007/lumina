@@ -25,6 +25,8 @@ export const userSchema = z.object({
   displayName: z.string(),
   avatarUrl: z.string().url().nullable(),
   bio: z.string().nullable(),
+  /** Optional external link shown on the profile ("link in bio"). */
+  website: z.string().nullable(),
   isVerified: z.boolean(),
   isPrivate: z.boolean(),
   followerCount: z.number().int().nonnegative(),

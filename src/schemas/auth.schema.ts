@@ -76,6 +76,11 @@ export const editProfileSchema = z.object({
     .max(150, 'Bio must be 150 characters or fewer')
     .optional()
     .or(z.literal('')),
+  website: z
+    .string()
+    .max(200, 'Link must be 200 characters or fewer')
+    .optional()
+    .or(z.literal('')),
   isPrivate: z.boolean(),
 });
 

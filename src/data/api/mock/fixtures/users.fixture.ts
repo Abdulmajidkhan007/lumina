@@ -12,6 +12,7 @@ function makeUser(
   displayName: string,
   bio: string | null,
   isVerified: boolean,
+  website: string | null = null,
 ): User {
   const id = userIdSchema.parse(`user-${String(index).padStart(3, '0')}`);
   const avatarSeed = `avatar-${username}`;
@@ -21,6 +22,7 @@ function makeUser(
     displayName,
     avatarUrl: `https://picsum.photos/seed/${avatarSeed}/150/150`,
     bio,
+    website,
     isVerified,
     isPrivate: false,
     followerCount: seededInt(100, 250_000, rng),
@@ -33,10 +35,10 @@ function makeUser(
 }
 
 export const mockUsers: User[] = [
-  makeUser(0, 'lumina_you', 'You (Current User)', 'Living my best life ✦', false),
-  makeUser(1, 'aurora_vibes', 'Aurora Vega', 'Photographer & dreamer 📷', true),
+  makeUser(0, 'lumina_you', 'You (Current User)', 'Living my best life ✦', false, 'https://lumina.app'),
+  makeUser(1, 'aurora_vibes', 'Aurora Vega', 'Photographer & dreamer 📷', true, 'https://auroravega.photo'),
   makeUser(2, 'solar_lens', 'Marco Solaris', 'Street photography from Tokyo', false),
-  makeUser(3, 'nova_creates', 'Nova Chen', 'Art director & illustrator', true),
+  makeUser(3, 'nova_creates', 'Nova Chen', 'Art director & illustrator', true, 'https://novacreates.studio'),
   makeUser(4, 'dusk_til_dawn', 'Elara Moon', 'Sunset hunter 🌅', false),
   makeUser(5, 'pixel_poet', 'Jasper Wren', 'Words + images', false),
   makeUser(6, 'urban_frames', 'Sasha Reyes', 'City life & architecture', true),

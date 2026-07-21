@@ -74,6 +74,7 @@ export default function EditProfileScreen(): React.JSX.Element {
       displayName: currentUser?.displayName ?? '',
       username: currentUser?.username ?? '',
       bio: currentUser?.bio ?? '',
+      website: currentUser?.website ?? '',
       isPrivate: currentUser?.isPrivate ?? false,
     },
   });
@@ -85,6 +86,7 @@ export default function EditProfileScreen(): React.JSX.Element {
         displayName: currentUser.displayName,
         username: currentUser.username,
         bio: currentUser.bio ?? '',
+        website: currentUser.website ?? '',
         isPrivate: currentUser.isPrivate,
       });
     }
@@ -310,6 +312,28 @@ export default function EditProfileScreen(): React.JSX.Element {
                     {bioValue.length}/{BIO_MAX}
                   </Text>
                 </View>
+              )}
+            />
+
+            {/* Website / link in bio */}
+            <Controller
+              control={control}
+              name="website"
+              render={({ field: { onChange, onBlur, value, ref } }) => (
+                <Input
+                  ref={ref}
+                  label={t('editProfile.websiteLabel')}
+                  placeholder={t('editProfile.websitePlaceholder')}
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.website?.message}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  containerStyle={{ marginBottom: theme.spacing.lg }}
+                />
               )}
             />
 

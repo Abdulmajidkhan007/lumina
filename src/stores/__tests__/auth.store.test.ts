@@ -9,6 +9,7 @@ const fakeUser: User = {
   displayName: 'Jane Doe',
   avatarUrl: null,
   bio: null,
+  website: null,
   isVerified: false,
   isPrivate: false,
   followerCount: 0,

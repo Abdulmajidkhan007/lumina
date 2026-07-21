@@ -140,6 +140,8 @@
     "usernamePlaceholder": "foydalanuvchinomi",
     "bioLabel": "Bio",
     "bioPlaceholder": "O'zingiz haqingizda yozing…",
+    "websiteLabel": "Veb-sayt",
+    "websitePlaceholder": "Havola qo'shing (masalan lumina.app)",
     "privateLabel": "Yopiq hisob",
     "privateDescription": "Faqat tasdiqlangan obunachilar postlaringizni ko'ra oladi",
     "changePhoto": "Rasmni almashtirish",
