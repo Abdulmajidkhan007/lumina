@@ -2,6 +2,7 @@ export * from './common.schema';
 export * from './user.schema';
 export * from './post.schema';
 export * from './story.schema';
+export * from './highlight.schema';
 export * from './reel.schema';
 export * from './message.schema';
 export * from './note.schema';

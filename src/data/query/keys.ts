@@ -23,6 +23,7 @@ export const queryKeys = {
 
   // Stories
   storyReels: () => ['storyReels'] as const,
+  highlights: (userId: UserId) => ['highlights', userId] as const,
 
   // Reels
   reels: () => ['reels'] as const,

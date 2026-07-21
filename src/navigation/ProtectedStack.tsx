@@ -16,6 +16,7 @@ import PostDetailScreen from '@/screens/post/PostDetailScreen';
 import CommentsScreen from '@/screens/comments/CommentsScreen';
 import StoryScreen from '@/screens/story/StoryScreen';
 import StoryComposerScreen from '@/screens/story/StoryComposerScreen';
+import HighlightViewerScreen from '@/screens/story/HighlightViewerScreen';
 import UserProfileScreen from '@/screens/user/UserProfileScreen';
 import FollowersScreen from '@/screens/user/FollowersScreen';
 import FollowingScreen from '@/screens/user/FollowingScreen';
@@ -66,6 +67,12 @@ export function ProtectedStack(): React.JSX.Element {
       <Stack.Screen
         name="StoryComposer"
         component={StoryComposerScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+      />
+
+      <Stack.Screen
+        name="HighlightViewer"
+        component={HighlightViewerScreen}
         options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
       />
 

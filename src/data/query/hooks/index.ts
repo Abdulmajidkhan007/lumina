@@ -19,6 +19,7 @@ export { useResendVerificationEmail } from './useResendVerificationEmail';
 export { useSavedPosts } from './useSavedPosts';
 export { useArchivedPosts } from './useArchivedPosts';
 export { useCloseFriends } from './useCloseFriends';
+export { useHighlights } from './useHighlights';
 
 // Mutation hooks
 export { useLikePost } from './useLikePost';
@@ -41,3 +42,5 @@ export { useDeletePost } from './useDeletePost';
 export { useArchivePost } from './useArchivePost';
 export { usePinComment } from './usePinComment';
 export { useSetCloseFriend } from './useSetCloseFriend';
+export { useCreateHighlight } from './useCreateHighlight';
+export { useDeleteHighlight } from './useDeleteHighlight';

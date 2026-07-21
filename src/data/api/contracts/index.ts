@@ -5,7 +5,12 @@ export type {
   CreatePostInput,
   IPostsApi,
 } from './posts.contract';
-export type { CreateStoryInput, IStoriesApi } from './stories.contract';
+export type {
+  CreateStoryInput,
+  CreateHighlightInput,
+  HighlightMediaInput,
+  IStoriesApi,
+} from './stories.contract';
 export type { IReelsApi } from './reels.contract';
 export type { IUsersApi, FollowRequestStatus } from './users.contract';
 export type {

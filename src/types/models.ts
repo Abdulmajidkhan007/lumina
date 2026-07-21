@@ -26,6 +26,9 @@ export type { ImageMedia, VideoMedia, Media, Post, Comment } from '@/schemas';
 // Story
 export type { Story, StoryReel } from '@/schemas';
 
+// Highlight
+export type { Highlight } from '@/schemas';
+
 // Reel
 export type { Reel } from '@/schemas';
 

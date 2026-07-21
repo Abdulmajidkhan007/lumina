@@ -1,5 +1,5 @@
-import type { IStoriesApi, CreateStoryInput } from '@/data/api/contracts';
-import type { Story, StoryReel , StoryId } from '@/types/models';
+import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
+import type { Story, StoryReel, Highlight, Media, StoryId, UserId } from '@/types/models';
 import { storyIdSchema } from '@/schemas';
 import { mutableStoryReels } from './fixtures/stories.fixture';
 import { currentUser, toUserSummary } from './fixtures/users.fixture';
@@ -7,6 +7,21 @@ import { mockDelay } from './latency';
 
 /** In-memory reaction store: storyId -> uid -> { emoji, createdAt }. */
 const mutableStoryReactions = new Map<string, Map<string, { emoji: string; createdAt: string }>>();
+
+/** In-memory highlights keyed by owner id. */
+const mutableHighlights = new Map<string, Highlight[]>();
+
+function toMedia(m: { uri: string; type: 'image' | 'video'; width?: number; height?: number; durationMs?: number }): Media {
+  return m.type === 'video'
+    ? {
+        type: 'video',
+        uri: m.uri,
+        width: m.width ?? 1080,
+        height: m.height ?? 1920,
+        ...(m.durationMs !== undefined ? { durationMs: m.durationMs } : {}),
+      }
+    : { type: 'image', uri: m.uri, width: m.width ?? 1080, height: m.height ?? 1920 };
+}
 
 export class MockStoriesApi implements IStoriesApi {
   async getStoryReels(): Promise<StoryReel[]> {
@@ -81,5 +96,37 @@ export class MockStoriesApi implements IStoriesApi {
     const reactionsForStory = mutableStoryReactions.get(storyId) ?? new Map();
     reactionsForStory.set(currentUser.id, { emoji, createdAt: new Date().toISOString() });
     mutableStoryReactions.set(storyId, reactionsForStory);
+  }
+
+  async getHighlights(userId: UserId): Promise<Highlight[]> {
+    await mockDelay();
+    return [...(mutableHighlights.get(userId) ?? [])].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+  }
+
+  async createHighlight(input: CreateHighlightInput): Promise<Highlight> {
+    await mockDelay();
+    const media = input.media.map(toMedia);
+    const now = Date.now();
+    const highlight: Highlight = {
+      id: `highlight-${now}`,
+      title: input.title.trim().slice(0, 20),
+      coverUri: input.coverUri ?? media[0]!.uri,
+      media,
+      createdAt: new Date(now).toISOString(),
+    };
+    const existing = mutableHighlights.get(currentUser.id) ?? [];
+    mutableHighlights.set(currentUser.id, [highlight, ...existing]);
+    return highlight;
+  }
+
+  async deleteHighlight(id: string): Promise<void> {
+    await mockDelay();
+    const existing = mutableHighlights.get(currentUser.id) ?? [];
+    mutableHighlights.set(
+      currentUser.id,
+      existing.filter((h) => h.id !== id),
+    );
   }
 }

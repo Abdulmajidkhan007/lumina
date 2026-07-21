@@ -28,10 +28,10 @@
  * up is a schema change for a separate change.
  */
 import firestore from '@react-native-firebase/firestore';
-import type { IStoriesApi, CreateStoryInput } from '@/data/api/contracts';
-import type { Story, StoryReel, StoryId } from '@/types/models';
+import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
+import type { Story, StoryReel, Highlight, StoryId, UserId } from '@/types/models';
 import type { UserSummary, Media } from '@/schemas';
-import { storyReelSchema, storySchema } from '@/schemas';
+import { highlightSchema, storyReelSchema, storySchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import { fetchUserSummary, getCurrentUid, requireCurrentUid } from './helpers';
 import { uploadMedia } from './upload';
@@ -48,6 +48,18 @@ interface StoryDocFields {
 
 function storiesCollection() {
   return getFirebaseFirestore().collection('stories');
+}
+
+function highlightsCollection() {
+  return getFirebaseFirestore().collection('highlights');
+}
+
+interface HighlightDocFields {
+  ownerId: string;
+  title: string;
+  coverUri: string;
+  media: Media[];
+  createdAt: string;
 }
 
 /** Whether `viewerUid` is in `authorUid`'s Close Friends list. */
@@ -189,5 +201,69 @@ export class FirebaseStoriesApi implements IStoriesApi {
       emoji,
       createdAt: new Date().toISOString(),
     });
+  }
+
+  async getHighlights(userId: UserId): Promise<Highlight[]> {
+    const snapshot = await highlightsCollection()
+      .where('ownerId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+    const highlights: Highlight[] = [];
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data() as Partial<HighlightDocFields>;
+      const parsed = highlightSchema.safeParse({
+        id: docSnap.id,
+        title: data.title,
+        coverUri: data.coverUri,
+        media: data.media,
+        createdAt: data.createdAt,
+      });
+      if (parsed.success) highlights.push(parsed.data);
+    }
+    return highlights;
+  }
+
+  async createHighlight(input: CreateHighlightInput): Promise<Highlight> {
+    const uid = requireCurrentUid();
+    const now = Date.now();
+    const media: Media[] = await Promise.all(
+      input.media.map(async (item, i): Promise<Media> => {
+        const uri = item.uri.startsWith('http')
+          ? item.uri
+          : await uploadMedia(item.uri, `highlights/${uid}/${now}_${i}`);
+        return item.type === 'video'
+          ? {
+              type: 'video',
+              uri,
+              width: item.width ?? 1080,
+              height: item.height ?? 1920,
+              ...(item.durationMs !== undefined ? { durationMs: item.durationMs } : {}),
+            }
+          : { type: 'image', uri, width: item.width ?? 1080, height: item.height ?? 1920 };
+      }),
+    );
+    const coverUri = input.coverUri && input.coverUri.startsWith('http') ? input.coverUri : media[0]!.uri;
+    const createdAt = new Date(now).toISOString();
+    const newRef = highlightsCollection().doc();
+    const doc: HighlightDocFields = {
+      ownerId: uid,
+      title: input.title.trim().slice(0, 20),
+      coverUri,
+      media,
+      createdAt,
+    };
+    await newRef.set(doc);
+    return highlightSchema.parse({ id: newRef.id, title: doc.title, coverUri, media, createdAt });
+  }
+
+  async deleteHighlight(id: string): Promise<void> {
+    const uid = requireCurrentUid();
+    const ref = highlightsCollection().doc(id);
+    const snap = await ref.get();
+    if (!snap.exists()) return;
+    if ((snap.data() as Partial<HighlightDocFields>).ownerId !== uid) {
+      throw new Error('You can only delete your own highlights.');
+    }
+    await ref.delete();
   }
 }

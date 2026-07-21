@@ -23,6 +23,7 @@ import { hitSlop, tabBarHeight } from '@/constants/layout';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { ProfileTabs } from '@/features/profile/components/ProfileTabs';
 import { ProfilePostGrid } from '@/features/profile/components/ProfilePostGrid';
+import { HighlightsRow } from '@/features/profile/components/HighlightsRow';
 import type { ProfileTab } from '@/features/profile/components/ProfileTabs';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +77,7 @@ export default function ProfileScreen(): React.JSX.Element {
       ) : (
         <SkeletonProfileHeader />
       )}
+      {currentUser ? <HighlightsRow userId={currentUser.id} isOwn /> : null}
       <ProfileTabs activeTab={activeTab} onTabChange={handleTabChange} />
     </>
   );

@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useUser } from '@/data/query/hooks/useUser';
 import { hitSlop } from '@/constants/layout';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
+import { HighlightsRow } from '@/features/profile/components/HighlightsRow';
 import { ProfileTabs } from '@/features/profile/components/ProfileTabs';
 import { ProfilePostGrid } from '@/features/profile/components/ProfilePostGrid';
 import type { ProfileTab } from '@/features/profile/components/ProfileTabs';
@@ -106,6 +107,7 @@ export default function UserProfileScreen(): React.JSX.Element {
           onFollowingPress={goToFollowing}
         />
       ) : null}
+      {user ? <HighlightsRow userId={user.id} isOwn={user.isMe} /> : null}
       <ProfileTabs activeTab={activeTab} onTabChange={handleTabChange} />
     </>
   );

@@ -96,6 +96,18 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+      match /reactions/{uid} {
+        allow read: if signedIn();
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ---------------- highlights ----------------
+    match /highlights/{highlightId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // ---------------- follows ----------------
