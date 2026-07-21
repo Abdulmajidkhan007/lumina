@@ -37,6 +37,9 @@ export type {
   Conversation,
 } from '@/schemas';
 
+// Notes
+export type { Note } from '@/schemas';
+
 // Notifications
 export type {
   NotificationPostPreview,

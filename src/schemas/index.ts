@@ -4,5 +4,6 @@ export * from './post.schema';
 export * from './story.schema';
 export * from './reel.schema';
 export * from './message.schema';
+export * from './note.schema';
 export * from './notification.schema';
 export * from './auth.schema';

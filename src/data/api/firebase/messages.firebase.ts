@@ -17,9 +17,9 @@ import type {
   SharedPostSnapshot,
   MessageWithSharedPost,
 } from '@/data/api/contracts';
-import type { Conversation, Message, ConversationId, UserId, PostId } from '@/types/models';
+import type { Conversation, Message, Note, ConversationId, UserId, PostId } from '@/types/models';
 import type { Paginated, ConversationMessagesParams } from '@/types/api';
-import { conversationSchema, messageSchema, postIdSchema } from '@/schemas';
+import { conversationSchema, messageSchema, noteSchema, postIdSchema, NOTE_MAX_LENGTH } from '@/schemas';
 import type { Media, MessagePreview, UserSummary } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import {
@@ -72,6 +72,21 @@ function conversationDocRef(id: string) {
 
 function messagesCollection(conversationId: string) {
   return conversationDocRef(conversationId).collection('messages');
+}
+
+function notesCollection() {
+  return getFirebaseFirestore().collection('notes');
+}
+
+/** 24 hours, in milliseconds — how long a note stays active. */
+const NOTE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Fields stored on a `notes/{uid}` doc. */
+interface NoteDocFields {
+  author: UserSummary;
+  text: string;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export class FirebaseMessagesApi implements IMessagesApi {
@@ -319,5 +334,62 @@ export class FirebaseMessagesApi implements IMessagesApi {
         }),
       ),
     );
+  }
+
+  async getNotes(): Promise<Note[]> {
+    const uid = requireCurrentUid();
+
+    // Who to show notes for: the current user plus the people they follow.
+    // Capped at 30 followees to keep this to a bounded number of doc reads.
+    const followsSnap = await getFirebaseFirestore()
+      .collection('follows')
+      .where('followerId', '==', uid)
+      .limit(30)
+      .get();
+    const followeeIds = followsSnap.docs
+      .map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => (d.data() as { followeeId?: string }).followeeId)
+      .filter((id): id is string => typeof id === 'string');
+
+    const authorIds = [uid, ...followeeIds];
+    const noteSnaps = await Promise.all(authorIds.map((id) => notesCollection().doc(id).get()));
+
+    const nowMs = Date.now();
+    const notes: Note[] = [];
+    for (const snap of noteSnaps) {
+      if (!snap.exists()) continue;
+      const parsed = noteSchema.safeParse(snap.data());
+      if (!parsed.success) continue;
+      if (new Date(parsed.data.expiresAt).getTime() <= nowMs) continue; // expired
+      notes.push(parsed.data);
+    }
+
+    // Own note first, then everyone else's newest-first.
+    const own = notes.filter((n) => n.author.id === uid);
+    const others = notes
+      .filter((n) => n.author.id !== uid)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return [...own, ...others];
+  }
+
+  async setNote(text: string): Promise<Note> {
+    const uid = requireCurrentUid();
+    const author = await fetchUserSummary(uid);
+    if (!author) {
+      throw new Error('Current user profile not found');
+    }
+    const now = new Date();
+    const note: NoteDocFields = {
+      author,
+      text: text.trim().slice(0, NOTE_MAX_LENGTH),
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + NOTE_TTL_MS).toISOString(),
+    };
+    await notesCollection().doc(uid).set(note);
+    return noteSchema.parse(note);
+  }
+
+  async clearNote(): Promise<void> {
+    const uid = requireCurrentUid();
+    await notesCollection().doc(uid).delete();
   }
 }

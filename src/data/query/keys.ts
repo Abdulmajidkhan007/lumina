@@ -46,6 +46,7 @@ export const queryKeys = {
   conversations: () => ['conversations'] as const,
   messages: (conversationId: ConversationId) =>
     ['messages', conversationId] as const,
+  notes: () => ['notes'] as const,
 
   // Notifications
   notifications: () => ['notifications'] as const,

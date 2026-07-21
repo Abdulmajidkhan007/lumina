@@ -1,4 +1,4 @@
-import type { Conversation, Message , ConversationId, UserId, PostId } from '@/types/models';
+import type { Conversation, Message, Note, ConversationId, UserId, PostId } from '@/types/models';
 import type { Paginated, ConversationMessagesParams } from '@/types/api';
 
 // ---------------------------------------------------------------------------
@@ -52,4 +52,16 @@ export interface IMessagesApi {
    * `lastMessage` preview to "Shared a post".
    */
   sharePostToConversations(postId: PostId, conversationIds: ConversationId[]): Promise<void>;
+  /**
+   * Notes shown at the top of the Direct inbox: the current user's own note
+   * (first, if present) followed by the active, non-expired notes of the
+   * people they follow. Newest first among the followed users.
+   */
+  getNotes(): Promise<Note[]>;
+  /**
+   * Publishes (or replaces) the current user's note. It expires 24 h later.
+   */
+  setNote(text: string): Promise<Note>;
+  /** Removes the current user's active note, if any. */
+  clearNote(): Promise<void>;
 }

@@ -98,6 +98,30 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.followerId == request.auth.uid;
     }
 
+    // ---------------- follow requests ----------------
+    // Doc id: `${targetId}_${requesterId}`.
+    match /followRequests/{requestId} {
+      allow read: if signedIn()
+                  && (resource.data.targetId == request.auth.uid
+                      || resource.data.requesterId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.requesterId == request.auth.uid;
+      // The target accepts/rejects; the requester may cancel their own.
+      allow delete: if signedIn()
+                    && (resource.data.targetId == request.auth.uid
+                        || resource.data.requesterId == request.auth.uid);
+    }
+
+    // ---------------- notes (Direct inbox) ----------------
+    // Doc id = author uid. Readable by the author and by anyone who follows
+    // them (follow edge id is `${followerId}_${followeeId}`); writable only
+    // by the author.
+    match /notes/{uid} {
+      allow read: if isOwner(uid)
+                  || (signedIn()
+                      && exists(/databases/$(database)/documents/follows/$(request.auth.uid + '_' + uid)));
+      allow write: if isOwner(uid);
+    }
+
     // ---------------- messaging ----------------
     match /conversations/{conversationId} {
       allow read: if signedIn() && request.auth.uid in resource.data.participantIds;

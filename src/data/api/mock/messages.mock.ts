@@ -8,12 +8,13 @@ import type {
   Conversation,
   Message,
   MessagePreview,
+  Note,
   ConversationId,
   UserId,
   PostId,
 } from '@/types/models';
 import type { Paginated, ConversationMessagesParams } from '@/types/api';
-import { messageIdSchema, conversationIdSchema } from '@/schemas';
+import { messageIdSchema, conversationIdSchema, NOTE_MAX_LENGTH } from '@/schemas';
 import {
   mutableConversations,
   mutableMessagesByConv,
@@ -33,6 +34,32 @@ const SHARED_POST_PREVIEW_TEXT = 'Shared a post';
  * validated message.
  */
 const sharedPostByMessageId = new Map<string, SharedPostSnapshot>();
+
+/** 24 hours, in milliseconds — how long a note stays active. */
+const NOTE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** In-memory notes keyed by author id (one active note per user). */
+const mutableNotesByUser = new Map<string, Note>();
+
+// Seed a couple of notes from other users so the strip has content in mock mode.
+(function seedNotes() {
+  const seedNow = Date.parse('2026-07-21T08:00:00.000Z');
+  const seeds: Array<{ index: number; text: string }> = [
+    { index: 1, text: 'new gallery drop this week 📷' },
+    { index: 3, text: 'taking commissions ✦' },
+    { index: 6, text: 'out shooting the city today' },
+  ];
+  for (const { index, text } of seeds) {
+    const user = mutableUsers[index];
+    if (!user) continue;
+    mutableNotesByUser.set(user.id, {
+      author: toUserSummary(user),
+      text,
+      createdAt: new Date(seedNow).toISOString(),
+      expiresAt: new Date(seedNow + NOTE_TTL_MS).toISOString(),
+    });
+  }
+})();
 
 /** Builds a denormalized shared-post snapshot from a mock post fixture. */
 function buildSharedPostSnapshot(postId: PostId): SharedPostSnapshot {
@@ -187,5 +214,37 @@ export class MockMessagesApi implements IMessagesApi {
         mutableConv.updatedAt = now;
       }
     }
+  }
+
+  async getNotes(): Promise<Note[]> {
+    await mockDelay();
+    const nowMs = Date.now();
+    const active = [...mutableNotesByUser.values()].filter(
+      (n) => new Date(n.expiresAt).getTime() > nowMs,
+    );
+    // Own note first, then everyone else's newest-first.
+    const own = active.filter((n) => n.author.id === currentUser.id);
+    const others = active
+      .filter((n) => n.author.id !== currentUser.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return [...own, ...others];
+  }
+
+  async setNote(text: string): Promise<Note> {
+    await mockDelay();
+    const now = new Date();
+    const note: Note = {
+      author: toUserSummary(currentUser),
+      text: text.trim().slice(0, NOTE_MAX_LENGTH),
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + NOTE_TTL_MS).toISOString(),
+    };
+    mutableNotesByUser.set(currentUser.id, note);
+    return note;
+  }
+
+  async clearNote(): Promise<void> {
+    await mockDelay();
+    mutableNotesByUser.delete(currentUser.id);
   }
 }

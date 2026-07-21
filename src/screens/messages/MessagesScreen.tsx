@@ -20,6 +20,7 @@ import { hitSlop } from '@/constants/layout';
 import { useConversations } from '@/data/query/hooks/useConversations';
 import { useCurrentUser } from '@/stores/auth.store';
 import { ConversationList } from '@/features/messaging/components/ConversationList';
+import { NotesStrip } from '@/features/messaging/components/NotesStrip';
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -101,6 +102,9 @@ export default function MessagesScreen(): React.JSX.Element {
           />
         </Pressable>
       </View>
+
+      {/* Notes strip */}
+      <NotesStrip />
 
       {/* Body */}
       <ConversationList
