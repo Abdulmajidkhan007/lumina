@@ -26,6 +26,7 @@ import { FirebasePostsApi } from './posts.firebase';
 import {
   buildValidatedList,
   fetchUserSummary,
+  getBlockedUids,
   getCurrentUid,
   queryCreatedAtPage,
   queryCursorPage,
@@ -151,7 +152,8 @@ export class FirebaseUsersApi implements IUsersApi {
       },
       userSummarySchema,
     );
-    return { items, nextCursor };
+    const blocked = await getBlockedUids(getCurrentUid());
+    return { items: items.filter((u) => !blocked.has(u.id)), nextCursor };
   }
 
   /** Follows immediately when `id` is public; files a request when it's private. */
@@ -291,6 +293,75 @@ export class FirebaseUsersApi implements IUsersApi {
 
   async getFollowing(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>> {
     return this.getFollowEdgeUsers('followerId', id, 'followeeId', params);
+  }
+
+  async blockUser(id: UserId): Promise<void> {
+    const uid = requireCurrentUid();
+    if (uid === id) return;
+    await usersCollection().doc(uid).collection('blocked').doc(id).set({
+      createdAt: new Date().toISOString(),
+    });
+    // Drop any follow edges in both directions so blocked users disappear.
+    await Promise.allSettled([
+      this.setFollow(id, false),
+      followsCollection().doc(followDocId(id, uid)).delete(),
+    ]);
+  }
+
+  async unblockUser(id: UserId): Promise<void> {
+    const uid = requireCurrentUid();
+    await usersCollection().doc(uid).collection('blocked').doc(id).delete();
+  }
+
+  async getBlockedUsers(): Promise<UserSummary[]> {
+    const uid = requireCurrentUid();
+    const snap = await usersCollection().doc(uid).collection('blocked').get();
+    const summaries = await Promise.all(
+      snap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => fetchUserSummary(d.id)),
+    );
+    return summaries.filter((s): s is UserSummary => s !== null);
+  }
+
+  async isBlocked(id: UserId): Promise<boolean> {
+    const uid = getCurrentUid();
+    if (!uid) return false;
+    const snap = await usersCollection().doc(uid).collection('blocked').doc(id).get();
+    return snap.exists();
+  }
+
+  async setRestricted(id: UserId, restricted: boolean): Promise<void> {
+    const uid = requireCurrentUid();
+    if (uid === id) return;
+    const ref = usersCollection().doc(uid).collection('restricted').doc(id);
+    if (restricted) {
+      await ref.set({ createdAt: new Date().toISOString() });
+    } else {
+      await ref.delete();
+    }
+  }
+
+  async getRestrictedUsers(): Promise<UserSummary[]> {
+    const uid = requireCurrentUid();
+    const snap = await usersCollection().doc(uid).collection('restricted').get();
+    const summaries = await Promise.all(
+      snap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => fetchUserSummary(d.id)),
+    );
+    return summaries.filter((s): s is UserSummary => s !== null);
+  }
+
+  async reportContent(input: {
+    targetType: 'user' | 'post' | 'comment';
+    targetId: string;
+    reason?: string;
+  }): Promise<void> {
+    const uid = requireCurrentUid();
+    await getFirebaseFirestore().collection('reports').doc().set({
+      reporterId: uid,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      reason: input.reason ?? '',
+      createdAt: new Date().toISOString(),
+    });
   }
 
   async getCloseFriends(): Promise<UserSummary[]> {

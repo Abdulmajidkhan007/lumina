@@ -44,3 +44,10 @@ export { usePinComment } from './usePinComment';
 export { useSetCloseFriend } from './useSetCloseFriend';
 export { useCreateHighlight } from './useCreateHighlight';
 export { useDeleteHighlight } from './useDeleteHighlight';
+export {
+  useBlockedUsers,
+  useSetBlocked,
+  useRestrictedUsers,
+  useSetRestricted,
+  useReportContent,
+} from './useModeration';

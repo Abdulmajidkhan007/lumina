@@ -46,6 +46,13 @@ service cloud.firestore {
         allow read: if isOwner(uid) || isOwner(friendId);
         allow write: if isOwner(uid);
       }
+      // Block / restrict lists — private to the owner.
+      match /blocked/{blockedId} {
+        allow read, write: if isOwner(uid);
+      }
+      match /restricted/{restrictedId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // ---------------- posts ----------------
@@ -156,6 +163,14 @@ service cloud.firestore {
       }
     }
   
+    // ---------------- reports (moderation) ----------------
+    // Anyone signed-in can file a report; only admins read them.
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read: if signedIn() && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+      allow update, delete: if false;
+    }
+
     // ---------------- activity logs (admin) ----------------
     match /activityLogs/{logId} {
       allow create: if true;

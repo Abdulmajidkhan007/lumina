@@ -38,6 +38,8 @@ import { RichCaption } from '@/components/RichCaption';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
 import { useArchivePost } from '@/data/query/hooks/useArchivePost';
+import { useSetBlocked, useSetRestricted, useReportContent } from '@/data/query/hooks/useModeration';
+import { useFollowUser } from '@/data/query/hooks/useFollowUser';
 import { usersApi } from '@/data/api/client';
 import { useCurrentUser } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
@@ -180,6 +182,10 @@ export const PostCard = React.memo(function PostCard({
   const setPendingSearchQuery = useUiStore((s) => s.setPendingSearchQuery);
   const currentUser = useCurrentUser();
   const { mutate: archivePost } = useArchivePost();
+  const { mutate: setBlocked } = useSetBlocked();
+  const { mutate: setRestricted } = useSetRestricted();
+  const { mutate: reportContent } = useReportContent();
+  const { mutate: followUser } = useFollowUser();
   const isOwnPost = currentUser?.id === post.author.id;
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -252,13 +258,50 @@ export const PostCard = React.memo(function PostCard({
 
   const handleReport = useCallback(() => {
     closeMenu();
-    // TODO: report flow
-  }, [closeMenu]);
+    Alert.alert('Report post', 'Thanks for letting us know. Why are you reporting this?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: "It's inappropriate",
+        onPress: () =>
+          reportContent(
+            { targetType: 'post', targetId: post.id, reason: 'inappropriate' },
+            { onSuccess: () => Alert.alert('Reported', 'Thanks — our team will review it.') },
+          ),
+      },
+      {
+        text: "It's spam",
+        onPress: () =>
+          reportContent(
+            { targetType: 'post', targetId: post.id, reason: 'spam' },
+            { onSuccess: () => Alert.alert('Reported', 'Thanks — our team will review it.') },
+          ),
+      },
+    ]);
+  }, [closeMenu, reportContent, post.id]);
 
   const handleBlock = useCallback(() => {
     closeMenu();
-    // TODO: block flow
-  }, [closeMenu]);
+    Alert.alert(
+      `Block ${post.author.username}?`,
+      "They won't be able to find your profile, posts or story. We won't tell them you blocked them.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: () => setBlocked({ id: post.author.id, block: true }),
+        },
+      ],
+    );
+  }, [closeMenu, setBlocked, post.author.id, post.author.username]);
+
+  const handleRestrict = useCallback(() => {
+    closeMenu();
+    setRestricted(
+      { id: post.author.id, restricted: true },
+      { onSuccess: () => Alert.alert('Restricted', `${post.author.username} has been restricted.`) },
+    );
+  }, [closeMenu, setRestricted, post.author.id, post.author.username]);
 
   const handleShareFromMenu = useCallback(() => {
     closeMenu();
@@ -267,8 +310,8 @@ export const PostCard = React.memo(function PostCard({
 
   const handleUnfollow = useCallback(() => {
     closeMenu();
-    // TODO: unfollow
-  }, [closeMenu]);
+    followUser({ userId: post.author.id, follow: false, targetIsPrivate: false });
+  }, [closeMenu, followUser, post.author.id]);
 
   const handleArchive = useCallback(() => {
     closeMenu();
@@ -471,6 +514,12 @@ export const PostCard = React.memo(function PostCard({
               label="Block"
               color={theme.colors.danger}
               onPress={handleBlock}
+            />
+            <Divider />
+            <SheetAction
+              icon="remove-circle-outline"
+              label="Restrict"
+              onPress={handleRestrict}
             />
             <Divider />
             <SheetAction

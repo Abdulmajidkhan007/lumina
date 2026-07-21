@@ -48,4 +48,18 @@ export interface IUsersApi {
   getCloseFriends(): Promise<UserSummary[]>;
   /** Adds or removes `id` from the current user's Close Friends. */
   setCloseFriend(id: UserId, isCloseFriend: boolean): Promise<void>;
+  /** Blocks `id`: their content is hidden from the current user everywhere. */
+  blockUser(id: UserId): Promise<void>;
+  /** Reverses a block. */
+  unblockUser(id: UserId): Promise<void>;
+  /** The accounts the current user has blocked. */
+  getBlockedUsers(): Promise<UserSummary[]>;
+  /** Whether the current user has blocked `id`. */
+  isBlocked(id: UserId): Promise<boolean>;
+  /** Restricts/unrestricts `id` (a lighter block — limits their interactions). */
+  setRestricted(id: UserId, restricted: boolean): Promise<void>;
+  /** The accounts the current user has restricted. */
+  getRestrictedUsers(): Promise<UserSummary[]>;
+  /** Files a report against a user or a piece of content. */
+  reportContent(input: { targetType: 'user' | 'post' | 'comment'; targetId: string; reason?: string }): Promise<void>;
 }

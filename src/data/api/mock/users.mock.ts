@@ -18,6 +18,15 @@ const mutableFollowRequests = new Map<string, FollowRequestRecord>();
 /** In-memory Close Friends set for the current user (user ids). */
 const mutableCloseFriends = new Set<string>();
 
+/** In-memory blocked / restricted sets for the current user (user ids). */
+const mutableBlocked = new Set<string>();
+const mutableRestricted = new Set<string>();
+
+/** Exposed so the mock feed/search can hide blocked authors. */
+export function isUserBlockedByMe(id: string): boolean {
+  return mutableBlocked.has(id);
+}
+
 function requestKey(targetId: string, requesterId: string): string {
   return `${targetId}_${requesterId}`;
 }
@@ -58,8 +67,9 @@ export class MockUsersApi implements IUsersApi {
     const matched = mutableUsers
       .filter(
         (u) =>
-          u.username.toLowerCase().includes(q) ||
-          u.displayName.toLowerCase().includes(q),
+          !mutableBlocked.has(u.id) &&
+          (u.username.toLowerCase().includes(q) ||
+            u.displayName.toLowerCase().includes(q)),
       )
       .map(toUserSummary);
     return paginateArray(matched, params?.cursor, params?.limit);
@@ -186,5 +196,61 @@ export class MockUsersApi implements IUsersApi {
     } else {
       mutableCloseFriends.delete(id);
     }
+  }
+
+  async blockUser(id: UserId): Promise<void> {
+    await mockDelay();
+    if (id === currentUser.id) return;
+    mutableBlocked.add(id);
+    // Blocking also drops any follow relationship, mirroring Instagram.
+    const user = mutableUsers.find((u) => u.id === id);
+    if (user && user.isFollowedByMe) {
+      user.isFollowedByMe = false;
+      user.followerCount = Math.max(0, user.followerCount - 1);
+    }
+  }
+
+  async unblockUser(id: UserId): Promise<void> {
+    await mockDelay();
+    mutableBlocked.delete(id);
+  }
+
+  async getBlockedUsers(): Promise<UserSummary[]> {
+    await mockDelay();
+    return [...mutableBlocked]
+      .map((id) => mutableUsers.find((u) => u.id === id))
+      .filter((u): u is (typeof mutableUsers)[number] => u !== undefined)
+      .map(toUserSummary);
+  }
+
+  async isBlocked(id: UserId): Promise<boolean> {
+    await mockDelay();
+    return mutableBlocked.has(id);
+  }
+
+  async setRestricted(id: UserId, restricted: boolean): Promise<void> {
+    await mockDelay();
+    if (restricted) {
+      mutableRestricted.add(id);
+    } else {
+      mutableRestricted.delete(id);
+    }
+  }
+
+  async getRestrictedUsers(): Promise<UserSummary[]> {
+    await mockDelay();
+    return [...mutableRestricted]
+      .map((id) => mutableUsers.find((u) => u.id === id))
+      .filter((u): u is (typeof mutableUsers)[number] => u !== undefined)
+      .map(toUserSummary);
+  }
+
+  async reportContent(_input: {
+    targetType: 'user' | 'post' | 'comment';
+    targetId: string;
+    reason?: string;
+  }): Promise<void> {
+    await mockDelay();
+    // Mock backend: reports are accepted and dropped (no moderation queue).
   }
 }

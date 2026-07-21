@@ -240,6 +240,17 @@ export interface UserDocFields {
   createdAt: string;
 }
 
+/** The set of user ids the viewer has blocked (empty when signed out). */
+export async function getBlockedUids(viewerUid: string | null): Promise<Set<string>> {
+  if (!viewerUid) return new Set();
+  const snap = await getFirebaseFirestore()
+    .collection('users')
+    .doc(viewerUid)
+    .collection('blocked')
+    .get();
+  return new Set(snap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => d.id));
+}
+
 /** Fetches a `users/{id}` doc and maps it to a lightweight UserSummary embed. */
 export async function fetchUserSummary(id: string): Promise<UserSummary | null> {
   const snap = await getFirebaseFirestore().collection('users').doc(id).get();

@@ -39,6 +39,7 @@ import { getFirebaseFirestore } from '@/lib/firebase';
 import {
   buildValidatedList,
   fetchUserSummary,
+  getBlockedUids,
   getMembershipFlags,
   queryCreatedAtPage,
   requireCurrentUid,
@@ -162,14 +163,14 @@ export class FirebasePostsApi implements IPostsApi {
         params.limit,
       );
       const viewerUid = getCurrentUid();
-      const built = await buildValidatedList(
-        docs,
-        (raw) => buildPostCandidate(raw, viewerUid),
-        postSchema,
-      );
+      const [built, blocked] = await Promise.all([
+        buildValidatedList(docs, (raw) => buildPostCandidate(raw, viewerUid), postSchema),
+        getBlockedUids(viewerUid),
+      ]);
       // Archived posts are excluded from the feed/grid (filtered in-memory so
-      // no extra composite index is needed for the "field-absent" case).
-      const items = built.filter((p) => p.archivedAt === undefined);
+      // no extra composite index is needed for the "field-absent" case), as
+      // are posts from accounts the viewer has blocked.
+      const items = built.filter((p) => p.archivedAt === undefined && !blocked.has(p.author.id));
       return { items, nextCursor };
     });
   }

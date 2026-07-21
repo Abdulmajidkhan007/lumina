@@ -6,6 +6,7 @@ import { extractHashtags } from '@/utils/richText';
 import { mutablePosts } from './fixtures/posts.fixture';
 import { mutableComments } from './fixtures/comments.fixture';
 import { currentUser, toUserSummary, mutableUsers } from './fixtures/users.fixture';
+import { isUserBlockedByMe } from './users.mock';
 import { mockDelay } from './latency';
 import { paginateArray } from './pagination';
 
@@ -25,7 +26,9 @@ export class MockPostsApi implements IPostsApi {
     const base = params.userId
       ? mutablePosts.filter((p) => p.author.id === params.userId)
       : mutablePosts;
-    const filtered = base.filter((p) => p.archivedAt === undefined);
+    const filtered = base.filter(
+      (p) => p.archivedAt === undefined && !isUserBlockedByMe(p.author.id),
+    );
     return paginateArray(filtered, params.cursor, params.limit);
   }
 
