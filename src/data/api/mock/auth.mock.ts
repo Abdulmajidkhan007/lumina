@@ -87,6 +87,8 @@ export class MockAuthApi implements IAuthApi {
           ? input.website.trim()
           : `https://${input.website.trim()}`
         : null;
+    currentUser.birthday =
+      input.birthday && input.birthday.length > 0 ? input.birthday : null;
     currentUser.isPrivate = input.isPrivate;
     if (avatarLocalUri) {
       currentUser.avatarUrl = avatarLocalUri;

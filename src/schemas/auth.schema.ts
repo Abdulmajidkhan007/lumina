@@ -81,6 +81,11 @@ export const editProfileSchema = z.object({
     .max(200, 'Link must be 200 characters or fewer')
     .optional()
     .or(z.literal('')),
+  birthday: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use the format YYYY-MM-DD')
+    .optional()
+    .or(z.literal('')),
   isPrivate: z.boolean(),
 });
 

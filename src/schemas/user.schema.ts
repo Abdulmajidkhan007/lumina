@@ -29,6 +29,8 @@ export const userSchema = z.object({
   website: z.string().nullable(),
   /** True when this is a professional (creator/business) account with Insights. */
   isProfessional: z.boolean().optional(),
+  /** Private birthday (ISO date, YYYY-MM-DD). Never shown publicly. */
+  birthday: z.string().nullable().optional(),
   isVerified: z.boolean(),
   isPrivate: z.boolean(),
   followerCount: z.number().int().nonnegative(),

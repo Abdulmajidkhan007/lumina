@@ -154,6 +154,7 @@
     "bioPlaceholder": "Tell the world about yourself…",
     "websiteLabel": "Website",
     "websitePlaceholder": "Add a link (e.g. lumina.app)",
+    "birthdayLabel": "Birthday (private)",
     "privateLabel": "Private account",
     "privateDescription": "Only approved followers can see your posts",
     "changePhoto": "Change photo",

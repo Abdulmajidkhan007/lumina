@@ -92,6 +92,7 @@ export class FirebaseUsersApi implements IUsersApi {
       bio: data.bio ?? null,
       website: data.website ?? null,
       isProfessional: data.isProfessional ?? false,
+      birthday: data.birthday ?? null,
       isVerified: data.isVerified ?? false,
       isPrivate: data.isPrivate ?? false,
       followerCount: data.followerCount ?? 0,

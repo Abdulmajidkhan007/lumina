@@ -98,6 +98,7 @@ export class FirebaseAuthApi implements IAuthApi {
       bio: data?.bio ?? null,
       website: data?.website ?? null,
       isProfessional: data?.isProfessional ?? false,
+      birthday: data?.birthday ?? null,
       isVerified: data?.isVerified ?? false,
       isPrivate: data?.isPrivate ?? false,
       followerCount: data?.followerCount ?? 0,
@@ -235,6 +236,7 @@ export class FirebaseAuthApi implements IAuthApi {
     }
     const bio = input.bio && input.bio.length > 0 ? input.bio : null;
     const website = input.website && input.website.length > 0 ? normalizeWebsite(input.website) : null;
+    const birthday = input.birthday && input.birthday.length > 0 ? input.birthday : null;
     const isLocalUri = !!avatarLocalUri && !avatarLocalUri.startsWith('http');
     const avatarUrl = isLocalUri
       ? await uploadMedia(avatarLocalUri as string, `avatars/${current.uid}/${Date.now()}`)
@@ -246,6 +248,7 @@ export class FirebaseAuthApi implements IAuthApi {
       usernameLower: input.username.toLowerCase(),
       bio,
       website,
+      birthday,
       isPrivate: input.isPrivate,
       ...(avatarUrl !== undefined ? { avatarUrl } : {}),
     });

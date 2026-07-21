@@ -75,6 +75,7 @@ export default function EditProfileScreen(): React.JSX.Element {
       username: currentUser?.username ?? '',
       bio: currentUser?.bio ?? '',
       website: currentUser?.website ?? '',
+      birthday: currentUser?.birthday ?? '',
       isPrivate: currentUser?.isPrivate ?? false,
     },
   });
@@ -87,6 +88,7 @@ export default function EditProfileScreen(): React.JSX.Element {
         username: currentUser.username,
         bio: currentUser.bio ?? '',
         website: currentUser.website ?? '',
+        birthday: currentUser.birthday ?? '',
         isPrivate: currentUser.isPrivate,
       });
     }
@@ -331,6 +333,28 @@ export default function EditProfileScreen(): React.JSX.Element {
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
+                  returnKeyType="done"
+                  containerStyle={{ marginBottom: theme.spacing.lg }}
+                />
+              )}
+            />
+
+            {/* Birthday (private) */}
+            <Controller
+              control={control}
+              name="birthday"
+              render={({ field: { onChange, onBlur, value, ref } }) => (
+                <Input
+                  ref={ref}
+                  label={t('editProfile.birthdayLabel')}
+                  placeholder="YYYY-MM-DD"
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.birthday?.message}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="numbers-and-punctuation"
                   returnKeyType="done"
                   containerStyle={{ marginBottom: theme.spacing.lg }}
                 />

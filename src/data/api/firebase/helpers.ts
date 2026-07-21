@@ -233,6 +233,7 @@ export interface UserDocFields {
   bio: string | null;
   website: string | null;
   isProfessional?: boolean;
+  birthday?: string | null;
   /** When true the account is temporarily deactivated (reactivated on next sign-in). */
   deactivated?: boolean;
   isVerified: boolean;
