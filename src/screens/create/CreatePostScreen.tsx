@@ -20,6 +20,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Pressable,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -42,7 +43,9 @@ import { Config } from '@/constants/config';
 import { formatDuration } from '@/utils/format';
 import { useCreatePost } from '@/data/query/hooks';
 import type { CreatePostInput } from '@/data/api/contracts';
+import { UserMultiSelectModal } from '@/components/UserMultiSelectModal';
 import { useCurrentUser } from '@/stores';
+import type { UserId, UserSummary } from '@/types/models';
 import {
   MediaPickerGrid,
   SelectedMediaPreview,
@@ -85,6 +88,11 @@ export default function CreatePostModal(): React.JSX.Element {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
+  const [location, setLocation] = useState('');
+  const [taggedUsers, setTaggedUsers] = useState<UserSummary[]>([]);
+  const [collaborators, setCollaborators] = useState<UserSummary[]>([]);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [collabModalOpen, setCollabModalOpen] = useState(false);
 
   // ---- Create post mutation ----
   const createPostMutation = useCreatePost();
@@ -194,6 +202,7 @@ export default function CreatePostModal(): React.JSX.Element {
     (values: CreatePostFormValues) => {
       if (isSubmitting || selectedMedia.length === 0) return;
 
+      const trimmedLocation = location.trim();
       const input: CreatePostInput = {
         media: selectedMedia.map((m) => ({
           uri: m.uri,
@@ -203,6 +212,13 @@ export default function CreatePostModal(): React.JSX.Element {
           durationMs: m.durationMs,
         })),
         caption: values.caption,
+        ...(trimmedLocation.length > 0 ? { location: trimmedLocation } : {}),
+        ...(taggedUsers.length > 0
+          ? { taggedUserIds: taggedUsers.map((u) => u.id as UserId) }
+          : {}),
+        ...(collaborators.length > 0
+          ? { collaboratorIds: collaborators.map((u) => u.id as UserId) }
+          : {}),
       };
 
       createPostMutation.mutate(input, {
@@ -211,7 +227,7 @@ export default function CreatePostModal(): React.JSX.Element {
         },
       });
     },
-    [isSubmitting, selectedMedia, createPostMutation, navigation],
+    [isSubmitting, selectedMedia, createPostMutation, navigation, location, taggedUsers, collaborators],
   );
 
   // ---- Accessors ----
@@ -433,6 +449,64 @@ export default function CreatePostModal(): React.JSX.Element {
           avatarUri={currentUser?.avatarUrl ?? undefined}
           displayName={currentUser?.displayName ?? undefined}
         />
+
+        {/* Location */}
+        <View style={[styles.metaRow, { borderTopColor: theme.colors.border, paddingHorizontal: theme.spacing.lg }]}>
+          <Ionicons name="location-outline" size={22} color={theme.colors.textSecondary} />
+          <TextInput
+            value={location}
+            onChangeText={setLocation}
+            placeholder="Add location"
+            placeholderTextColor={theme.colors.textTertiary}
+            style={[styles.metaInput, { color: theme.colors.textPrimary }]}
+            returnKeyType="done"
+          />
+        </View>
+
+        {/* Tag people */}
+        <Pressable
+          style={[styles.metaRow, { borderTopColor: theme.colors.border, paddingHorizontal: theme.spacing.lg }]}
+          onPress={() => setTagModalOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Tag people"
+        >
+          <Ionicons name="person-outline" size={22} color={theme.colors.textSecondary} />
+          <Text variant="callout" color={taggedUsers.length > 0 ? 'primary' : 'tertiary'} style={styles.metaLabel}>
+            {taggedUsers.length > 0 ? `Tagged: ${taggedUsers.map((u) => u.username).join(', ')}` : 'Tag people'}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.textTertiary} />
+        </Pressable>
+
+        {/* Invite collaborator */}
+        <Pressable
+          style={[styles.metaRow, { borderTopColor: theme.colors.border, paddingHorizontal: theme.spacing.lg }]}
+          onPress={() => setCollabModalOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Invite collaborator"
+        >
+          <Ionicons name="people-outline" size={22} color={theme.colors.textSecondary} />
+          <Text variant="callout" color={collaborators.length > 0 ? 'primary' : 'tertiary'} style={styles.metaLabel}>
+            {collaborators.length > 0
+              ? `Collab: ${collaborators.map((u) => u.username).join(', ')}`
+              : 'Invite collaborator'}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.textTertiary} />
+        </Pressable>
+
+        <UserMultiSelectModal
+          visible={tagModalOpen}
+          title="Tag people"
+          initialSelected={taggedUsers}
+          onClose={() => setTagModalOpen(false)}
+          onDone={setTaggedUsers}
+        />
+        <UserMultiSelectModal
+          visible={collabModalOpen}
+          title="Invite collaborators"
+          initialSelected={collaborators}
+          onClose={() => setCollabModalOpen(false)}
+          onDone={setCollaborators}
+        />
         {createPostMutation.isError ? (
           <View
             style={[
@@ -534,5 +608,20 @@ const styles = StyleSheet.create({
   errorBanner: {
     borderWidth: StyleSheet.hairlineWidth,
     marginTop: 12,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  metaInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
+  },
+  metaLabel: {
+    flex: 1,
   },
 });

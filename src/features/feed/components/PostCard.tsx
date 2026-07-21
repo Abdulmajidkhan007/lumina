@@ -328,10 +328,22 @@ export const PostCard = React.memo(function PostCard({
               {post.author.isVerified ? (
                 <Text variant="bodyStrong" color="accent"> ✓</Text>
               ) : null}
+              {post.collaborators && post.collaborators.length > 0 ? (
+                <Text variant="bodyStrong" color="primary">
+                  {post.collaborators.length === 1
+                    ? ` and ${post.collaborators[0]!.username}`
+                    : ` and ${post.collaborators.length} others`}
+                </Text>
+              ) : null}
             </Text>
             {post.location != null && post.location.trim() !== '' ? (
               <Text variant="overline" color="secondary">
                 {post.location}
+              </Text>
+            ) : null}
+            {post.taggedUsers && post.taggedUsers.length > 0 ? (
+              <Text variant="overline" color="secondary">
+                {`👤 ${post.taggedUsers.length} ${post.taggedUsers.length === 1 ? 'person' : 'people'}`}
               </Text>
             ) : null}
           </View>
