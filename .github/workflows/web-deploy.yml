@@ -62,13 +62,30 @@ jobs:
       # (Storage rules are deployed separately/manually — the default service
       # account lacks the Service Usage permission to enable the Storage API,
       # so including `storage` here 403s and blocks the Firestore deploy.)
-      - name: Deploy Firestore rules + indexes
+      # Publishes Firestore rules + composite indexes and Storage rules.
+      # Prefers a FIREBASE_TOKEN secret (from `firebase login:ci`) which carries
+      # the owner's full permissions; falls back to the hosting service account.
+      # NOTE: the hosting SA frequently lacks `firebaserules.admin`, which makes
+      # the rules deploy 403 — if you see that warning, either add a
+      # FIREBASE_TOKEN secret or grant the SA the "Firebase Rules Admin" +
+      # "Cloud Datastore Index Admin" roles in GCP IAM.
+      - name: Deploy Firestore + Storage rules + indexes
         if: env.skip != 'true'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx --yes firebase-tools@13 deploy \
-            --only firestore:rules,firestore:indexes \
-            --project lumina-007app --non-interactive || \
-            echo "::warning::Firestore deploy failed — publish firestore.rules/indexes manually in the console."
-          rm -f "$RUNNER_TEMP/sa.json"
+          if [ -n "$FIREBASE_TOKEN" ]; then
+            echo "Deploying with FIREBASE_TOKEN…"
+            npx --yes firebase-tools@13 deploy \
+              --only firestore:rules,firestore:indexes,storage \
+              --project lumina-007app --non-interactive --token "$FIREBASE_TOKEN" || \
+              echo "::warning::Firestore/Storage deploy (token) failed — publish rules manually in the console."
+          else
+            printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+            npx --yes firebase-tools@13 deploy \
+              --only firestore:rules,firestore:indexes \
+              --project lumina-007app --non-interactive || \
+              echo "::warning::Firestore deploy failed (service account lacks firebaserules.admin) — add a FIREBASE_TOKEN secret or publish firestore.rules/indexes manually in the console."
+            rm -f "$RUNNER_TEMP/sa.json"
+          fi
