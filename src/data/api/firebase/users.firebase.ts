@@ -22,6 +22,7 @@ import type { User, UserSummary, Post, UserId } from '@/types/models';
 import type { Paginated, ExploreParams, CursorParams } from '@/types/api';
 import { userIdSchema, userSchema, userSummarySchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
+import { logActivity } from '@/data/services/activityLog';
 import { FirebasePostsApi } from './posts.firebase';
 import {
   buildValidatedList,
@@ -287,6 +288,7 @@ export class FirebaseUsersApi implements IUsersApi {
         tx.update(followerUserRef, { followingCount: firestore.FieldValue.increment(-1) });
       }
     });
+    void logActivity(shouldFollow ? 'follow' : 'unfollow', { targetId: id });
   }
 
   async getFollowers(id: UserId, params?: CursorParams): Promise<Paginated<UserSummary>> {
@@ -303,6 +305,7 @@ export class FirebaseUsersApi implements IUsersApi {
     await usersCollection().doc(uid).collection('blocked').doc(id).set({
       createdAt: new Date().toISOString(),
     });
+    void logActivity('block', { targetId: id });
     // Drop any follow edges in both directions so blocked users disappear.
     await Promise.allSettled([
       this.setFollow(id, false),
@@ -364,6 +367,7 @@ export class FirebaseUsersApi implements IUsersApi {
       reason: input.reason ?? '',
       createdAt: new Date().toISOString(),
     });
+    void logActivity('report', { targetType: input.targetType, targetId: input.targetId });
   }
 
   async getCloseFriends(): Promise<UserSummary[]> {

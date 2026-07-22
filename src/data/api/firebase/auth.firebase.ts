@@ -261,6 +261,7 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Not authenticated');
     }
     await usersCollectionDoc(current.uid).update({ isProfessional: enabled });
+    void logActivity('professional_switch', { enabled: String(enabled) });
     return this.fetchOrCreateProfile(current);
   }
 
@@ -270,7 +271,7 @@ export class FirebaseAuthApi implements IAuthApi {
       throw new Error('Not authenticated');
     }
     await usersCollectionDoc(current.uid).update({ deactivated: true });
-    void logActivity('logout', { reason: 'deactivate' });
+    void logActivity('account_deactivate');
     await getFirebaseAuth().signOut();
   }
 

@@ -36,6 +36,7 @@ import type { Media } from '@/schemas';
 import type { UserSummary } from '@/types/models';
 import { extractHashtags } from '@/utils/richText';
 import { getFirebaseFirestore } from '@/lib/firebase';
+import { logActivity } from '@/data/services/activityLog';
 import {
   buildValidatedList,
   fetchUserSummary,
@@ -245,6 +246,7 @@ export class FirebasePostsApi implements IPostsApi {
     await getFirebaseFirestore().collection('users').doc(uid).update({
       postCount: firestore.FieldValue.increment(1),
     });
+    void logActivity('post_create', { postId: newRef.id });
 
     return postSchema.parse({
       id: newRef.id,

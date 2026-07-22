@@ -33,6 +33,7 @@ import type { Story, StoryReel, Highlight, StoryId, UserId } from '@/types/model
 import type { UserSummary, Media } from '@/schemas';
 import { highlightSchema, storyReelSchema, storySchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
+import { logActivity } from '@/data/services/activityLog';
 import { fetchUserSummary, getCurrentUid, requireCurrentUid } from './helpers';
 import { uploadMedia } from './upload';
 
@@ -183,6 +184,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       audience,
     };
     await newRef.set(storyDoc);
+    void logActivity('story_create', { storyId: newRef.id, audience });
 
     return storySchema.parse({
       id: newRef.id,

@@ -65,6 +65,14 @@ export const ACTIVITY_TYPES = [
   'password_reset',
   'password_change',
   'account_delete',
+  'account_deactivate',
+  'post_create',
+  'story_create',
+  'follow',
+  'unfollow',
+  'block',
+  'report',
+  'professional_switch',
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];

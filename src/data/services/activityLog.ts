@@ -13,7 +13,6 @@
  *  - No-ops entirely when Firebase isn't configured (mock/dev builds).
  */
 import { Platform } from 'react-native';
-import { collection, doc, setDoc } from '@react-native-firebase/firestore';
 import { getFirebaseAuth, getFirebaseFirestore, isFirebaseConfigured } from '@/lib/firebase';
 
 export type ActivityLogType =
@@ -23,7 +22,15 @@ export type ActivityLogType =
   | 'logout'
   | 'password_reset'
   | 'password_change'
-  | 'account_delete';
+  | 'account_delete'
+  | 'account_deactivate'
+  | 'post_create'
+  | 'story_create'
+  | 'follow'
+  | 'unfollow'
+  | 'block'
+  | 'report'
+  | 'professional_switch';
 
 export interface ActivityLogEntry {
   type: ActivityLogType;
@@ -35,7 +42,7 @@ export interface ActivityLogEntry {
 }
 
 function activityLogsCollection() {
-  return collection(getFirebaseFirestore(), 'activityLogs');
+  return getFirebaseFirestore().collection('activityLogs');
 }
 
 /**
@@ -59,8 +66,8 @@ export async function logActivity(
       createdAt: new Date().toISOString(),
       platform: Platform.OS === 'ios' ? 'ios' : 'android',
     };
-    const ref = doc(activityLogsCollection());
-    await setDoc(ref, entry);
+    const ref = activityLogsCollection().doc();
+    await ref.set(entry);
   } catch (error) {
     console.warn('[activityLog] failed to record activity:', error);
   }

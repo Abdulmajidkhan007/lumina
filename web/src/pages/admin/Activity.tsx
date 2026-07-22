@@ -12,14 +12,26 @@ const BADGE: Record<ActivityType, string> = {
   password_reset: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   password_change: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
   account_delete: 'bg-red-500/15 text-red-400 border-red-500/30',
+  account_deactivate: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  post_create: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  story_create: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30',
+  follow: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+  unfollow: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
+  block: 'bg-red-500/15 text-red-400 border-red-500/30',
+  report: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  professional_switch: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
 };
+
+const FALLBACK_BADGE = 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30';
 
 function TypeBadge({ type }: { type: ActivityType }) {
   return (
     <span
-      className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${BADGE[type]}`}
+      className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+        BADGE[type] ?? FALLBACK_BADGE
+      }`}
     >
-      {type.replace('_', ' ')}
+      {type.replace(/_/g, ' ')}
     </span>
   );
 }
