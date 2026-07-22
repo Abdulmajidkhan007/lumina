@@ -19,5 +19,16 @@ service firebase.storage {
                    && request.auth.uid == uid
                    && request.resource.size < 10 * 1024 * 1024;
     }
+    // Stories and Highlights upload to their own per-user folders too.
+    match /stories/{uid}/{fileName} {
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 50 * 1024 * 1024;
+    }
+    match /highlights/{uid}/{fileName} {
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 50 * 1024 * 1024;
+    }
   }
 }
