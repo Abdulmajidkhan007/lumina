@@ -74,18 +74,22 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
+          # Auth: prefer FIREBASE_TOKEN, else the hosting service account.
+          AUTH=""
           if [ -n "$FIREBASE_TOKEN" ]; then
-            echo "Deploying with FIREBASE_TOKEN…"
-            npx --yes firebase-tools@13 deploy \
-              --only firestore:rules,firestore:indexes,storage \
-              --project lumina-007app --non-interactive --token "$FIREBASE_TOKEN" || \
-              echo "::warning::Firestore/Storage deploy (token) failed — publish rules manually in the console."
+            AUTH="--token $FIREBASE_TOKEN"
           else
             printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
             export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-            npx --yes firebase-tools@13 deploy \
-              --only firestore:rules,firestore:indexes \
-              --project lumina-007app --non-interactive || \
-              echo "::warning::Firestore deploy failed (service account lacks firebaserules.admin) — add a FIREBASE_TOKEN secret or publish firestore.rules/indexes manually in the console."
-            rm -f "$RUNNER_TEMP/sa.json"
           fi
+          FB="npx --yes firebase-tools@13"
+          # 1) Rules FIRST — critical for the app; never blocked by index drift.
+          $FB deploy --only firestore:rules --project lumina-007app --non-interactive $AUTH || \
+            echo "::warning::Firestore rules deploy failed — check SA has 'Firebase Rules Admin'."
+          # 2) Composite indexes — --force reconciles any drift (deletes stray indexes).
+          $FB deploy --only firestore:indexes --project lumina-007app --non-interactive --force $AUTH || \
+            echo "::warning::Firestore indexes deploy failed — create them from the in-app index links."
+          # 3) Storage rules — needed for media upload/playback.
+          $FB deploy --only storage --project lumina-007app --non-interactive $AUTH || \
+            echo "::warning::Storage rules deploy failed — publish storage.rules in the console."
+          rm -f "$RUNNER_TEMP/sa.json" 2>/dev/null || true
