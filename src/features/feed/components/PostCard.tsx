@@ -423,6 +423,7 @@ export const PostCard = React.memo(function PostCard({
             media={post.media}
             onDoubleTapLike={handleDoubleTapLike}
             isLiked={post.isLikedByMe}
+            onLongPress={handleShare}
           />
         </Animated.View>
       </Pressable>

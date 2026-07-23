@@ -40,6 +40,8 @@ export interface PostMediaPagerProps {
   onDoubleTapLike: () => void;
   /** Pass the external liked state so the heart shows only when not already liked */
   isLiked: boolean;
+  /** Long-press opens the share/quick-actions sheet. */
+  onLongPress?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,6 +162,7 @@ export const PostMediaPager = React.memo(function PostMediaPager({
   media,
   onDoubleTapLike,
   isLiked,
+  onLongPress,
 }: PostMediaPagerProps): React.JSX.Element {
   const heartScale = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -188,6 +191,14 @@ export const PostMediaPager = React.memo(function PostMediaPager({
         runOnJS(triggerHeartPop)();
       }
     });
+
+  const longPress = Gesture.LongPress()
+    .minDuration(350)
+    .onStart(() => {
+      if (onLongPress) runOnJS(onLongPress)();
+    });
+
+  const composedGesture = Gesture.Race(doubleTap, longPress);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -228,7 +239,7 @@ export const PostMediaPager = React.memo(function PostMediaPager({
   );
 
   return (
-    <GestureDetector gesture={doubleTap}>
+    <GestureDetector gesture={composedGesture}>
       <View style={{ width: mediaWidth, height: mediaHeight }}>
         <FlatList
           data={media}
