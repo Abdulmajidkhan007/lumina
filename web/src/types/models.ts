@@ -53,7 +53,19 @@ export interface Post {
   likeCount: number;
   commentCount: number;
   isLikedByMe: boolean;
+  isSavedByMe: boolean;
+  location?: string;
+  taggedUsers?: UserSummary[];
   /** ISO 8601 timestamp. */
+  createdAt: string;
+}
+
+export interface Comment {
+  id: string;
+  postId: string;
+  author: UserSummary;
+  text: string;
+  likeCount: number;
   createdAt: string;
 }
 

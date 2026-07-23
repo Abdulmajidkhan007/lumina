@@ -12,6 +12,10 @@ import { Login } from './pages/app/Login';
 import { Signup } from './pages/app/Signup';
 import { AppLayout } from './pages/app/AppLayout';
 import { Feed } from './pages/app/Feed';
+import { Explore } from './pages/app/Explore';
+import { CreatePost } from './pages/app/CreatePost';
+import { Profile } from './pages/app/Profile';
+import { PostDetail } from './pages/app/PostDetail';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { Overview } from './pages/admin/Overview';
 import { Users } from './pages/admin/Users';
@@ -40,6 +44,11 @@ function App() {
         }
       >
         <Route index element={<Feed />} />
+        <Route path="explore" element={<Explore />} />
+        <Route path="create" element={<CreatePost />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="u/:id" element={<Profile />} />
+        <Route path="p/:id" element={<PostDetail />} />
       </Route>
 
       <Route

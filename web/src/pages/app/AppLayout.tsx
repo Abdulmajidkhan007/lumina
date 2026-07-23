@@ -1,8 +1,15 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOutUser } from '../../lib/auth';
 import { Avatar } from '../../components/Avatar';
+
+const NAV = [
+  { to: '/app', label: 'Home', end: true },
+  { to: '/app/explore', label: 'Explore', end: false },
+  { to: '/app/create', label: 'Create', end: false },
+  { to: '/app/profile', label: 'Profile', end: false },
+];
 
 export function AppLayout() {
   const { profile, firebaseUser } = useAuth();
@@ -21,11 +28,27 @@ export function AppLayout() {
       <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link
-            to="/"
+            to="/app"
             className="bg-gradient-brand bg-clip-text text-xl font-extrabold tracking-tight text-transparent"
           >
             Lumina
           </Link>
+          <nav className="hidden items-center gap-1 sm:flex">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:bg-white/5 ${
+                    isActive ? 'text-text' : 'text-text-muted'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
           <div className="relative">
             <button
               type="button"
@@ -59,9 +82,25 @@ export function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl px-0 py-6 sm:px-4">
+      <main className="mx-auto w-full max-w-5xl px-0 py-6 pb-24 sm:px-4 sm:pb-6">
         <Outlet />
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-bg/90 py-2 backdrop-blur sm:hidden">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              `px-4 py-1 text-xs font-semibold transition ${isActive ? 'text-text' : 'text-text-muted'}`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

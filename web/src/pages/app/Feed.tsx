@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { fetchFeedPage, setPostLiked } from '../../lib/posts';
+import { fetchFeedPage, setPostLiked, setPostSaved } from '../../lib/posts';
 import type { Post } from '../../types/models';
 import { formatRelativeTime } from '../../lib/time';
 import { Avatar } from '../../components/Avatar';
@@ -24,7 +25,9 @@ function HeartIcon({ filled }: { filled: boolean }) {
 function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(post.isLikedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [saved, setSaved] = useState(post.isSavedByMe);
   const media = post.media[0];
+  const isVideo = media?.type === 'video';
 
   const toggleLike = async () => {
     const next = !liked;
@@ -38,45 +41,60 @@ function PostCard({ post }: { post: Post }) {
     }
   };
 
+  const toggleSave = async () => {
+    const next = !saved;
+    setSaved(next);
+    try {
+      await setPostSaved(post.id, next);
+    } catch {
+      setSaved(!next);
+    }
+  };
+
   const imageUri = media ? (media.type === 'video' ? media.thumbnailUri ?? media.uri : media.uri) : null;
 
   return (
     <article className="overflow-hidden border-border bg-surface sm:rounded-2xl sm:border">
       <header className="flex items-center gap-3 px-4 py-3">
-        <Avatar name={post.author.displayName} avatarUrl={post.author.avatarUrl} size="sm" />
-        <div className="min-w-0">
+        <Link to={`/app/u/${post.author.id}`} className="flex items-center gap-3">
+          <Avatar name={post.author.displayName} avatarUrl={post.author.avatarUrl} size="sm" />
           <p className="truncate text-sm font-semibold">{post.author.username}</p>
-        </div>
+        </Link>
         <time className="ml-auto shrink-0 text-xs text-text-muted">
           {formatRelativeTime(post.createdAt)}
         </time>
       </header>
-      {imageUri ? (
-        <img
-          src={imageUri}
-          alt={post.caption ?? `Post by ${post.author.username}`}
-          loading="lazy"
-          className="aspect-square w-full object-cover"
-        />
+      {isVideo && media ? (
+        <video src={media.uri} controls playsInline poster={media.thumbnailUri} className="aspect-square w-full bg-black object-contain" />
+      ) : imageUri ? (
+        <Link to={`/app/p/${post.id}`}>
+          <img
+            src={imageUri}
+            alt={post.caption ?? `Post by ${post.author.username}`}
+            loading="lazy"
+            className="aspect-square w-full object-cover"
+          />
+        </Link>
       ) : null}
       <div className="space-y-2 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleLike}
-            aria-pressed={liked}
-            aria-label={liked ? 'Unlike' : 'Like'}
-            className="transition active:scale-90"
-          >
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} className="transition active:scale-90">
             <HeartIcon filled={liked} />
           </button>
-          <span className="text-sm font-semibold">{likeCount.toLocaleString()} likes</span>
+          <Link to={`/app/p/${post.id}`} aria-label="Comments" className="text-sm font-semibold text-text-muted">
+            💬 {post.commentCount.toLocaleString()}
+          </Link>
+          <button type="button" onClick={toggleSave} className="ml-auto text-sm font-semibold text-text-muted">
+            {saved ? 'Saved' : 'Save'}
+          </button>
         </div>
+        <span className="text-sm font-semibold">{likeCount.toLocaleString()} likes</span>
         {post.caption ? (
           <p className="text-sm leading-relaxed">
-            <span className="font-semibold">{post.author.username}</span> {post.caption}
+            <Link to={`/app/u/${post.author.id}`} className="font-semibold">{post.author.username}</Link> {post.caption}
           </p>
         ) : null}
+        <Link to={`/app/p/${post.id}`} className="block text-xs text-text-muted">View post</Link>
       </div>
     </article>
   );
