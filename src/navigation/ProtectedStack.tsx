@@ -35,6 +35,7 @@ import PrivacyScreen from '@/screens/settings/PrivacyScreen';
 import BlockedAccountsScreen from '@/screens/settings/BlockedAccountsScreen';
 import CloseFriendsScreen from '@/screens/settings/CloseFriendsScreen';
 import InsightsScreen from '@/screens/settings/InsightsScreen';
+import AdminScreen from '@/screens/settings/AdminScreen';
 import ActivityStatusScreen from '@/screens/settings/ActivityStatusScreen';
 import HelpCentreScreen from '@/screens/settings/HelpCentreScreen';
 import PrivacyPolicyScreen from '@/screens/settings/PrivacyPolicyScreen';
@@ -182,6 +183,12 @@ export function ProtectedStack(): React.JSX.Element {
       <Stack.Screen
         name="Insights"
         component={InsightsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="Admin"
+        component={AdminScreen}
         options={{ animation: 'slide_from_right' }}
       />
 

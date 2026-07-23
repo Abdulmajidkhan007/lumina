@@ -5,7 +5,7 @@
  * and a danger Log Out row.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +23,7 @@ import { useSetProfessionalAccount } from '@/data/query/hooks/useSetProfessional
 import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
+import { ADMIN_EMAIL } from '@/data/services/activityLog';
 import { useDeleteAccount, useDeactivateAccount } from '@/data/query/hooks';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
@@ -50,6 +51,17 @@ export default function SettingsScreen(): React.JSX.Element {
   const [logoutDialogVisible, setLogoutDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [deactivateDialogVisible, setDeactivateDialogVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void authApi.getCurrentUserEmail().then((email) => {
+      if (active) setIsAdmin((email ?? '').toLowerCase() === ADMIN_EMAIL);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const deleteAccountMutation = useDeleteAccount();
   const deactivateAccountMutation = useDeactivateAccount();
 
@@ -77,6 +89,10 @@ export default function SettingsScreen(): React.JSX.Element {
 
   const goToInsights = useCallback(() => {
     navigation.navigate('Insights');
+  }, [navigation]);
+
+  const goToAdmin = useCallback(() => {
+    navigation.navigate('Admin');
   }, [navigation]);
 
   const handleToggleProfessional = useCallback(() => {
@@ -292,6 +308,14 @@ export default function SettingsScreen(): React.JSX.Element {
                 : t('settings.rows.switchToProfessional')
             }
           />
+          {isAdmin ? (
+            <SettingsRow
+              icon="shield-checkmark-outline"
+              label="Admin · Activity"
+              onPress={goToAdmin}
+              accessibilityLabel="Admin activity panel"
+            />
+          ) : null}
         </SettingsSection>
 
         {/* Preferences */}

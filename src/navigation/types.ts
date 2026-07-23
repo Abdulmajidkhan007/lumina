@@ -64,6 +64,7 @@ export type ProtectedStackParamList = {
   BlockedAccounts: undefined;
   CloseFriends: undefined;
   Insights: undefined;
+  Admin: undefined;
   ActivityStatus: undefined;
   HelpCentre: undefined;
   PrivacyPolicy: undefined;

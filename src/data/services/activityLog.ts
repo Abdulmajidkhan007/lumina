@@ -72,3 +72,31 @@ export async function logActivity(
     console.warn('[activityLog] failed to record activity:', error);
   }
 }
+
+/** The email allowed to read the admin activity feed (matches firestore.rules). */
+export const ADMIN_EMAIL = 'santexnika.atoyo@gmail.com';
+
+export interface ActivityLogRecord extends ActivityLogEntry {
+  id: string;
+}
+
+/**
+ * Reads the most recent activity events for the in-app admin panel. Only the
+ * admin account is permitted by the Firestore rules; returns [] otherwise.
+ */
+export async function fetchRecentActivity(max = 100): Promise<ActivityLogRecord[]> {
+  if (!isFirebaseConfigured()) return [];
+  const snapshot = await activityLogsCollection().orderBy('createdAt', 'desc').limit(max).get();
+  return snapshot.docs.map((d) => {
+    const data = d.data() as Partial<ActivityLogEntry>;
+    return {
+      id: d.id,
+      type: (data.type ?? 'login') as ActivityLogType,
+      uid: data.uid ?? null,
+      email: data.email ?? null,
+      meta: data.meta ?? {},
+      createdAt: data.createdAt ?? '',
+      platform: data.platform ?? 'android',
+    };
+  });
+}
