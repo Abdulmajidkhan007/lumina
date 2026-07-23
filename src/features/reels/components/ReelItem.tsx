@@ -51,6 +51,8 @@ import { hitSlop, screen } from '@/constants/layout';
 import type { Reel, ReelId, UserId } from '@/types/models';
 
 import { ReelActions } from './ReelActions';
+import { ShareToConversationsSheet } from '@/components/ShareToConversationsSheet';
+import type { PostId } from '@/types/models';
 import { ReelOverlay } from './ReelOverlay';
 
 // ---------------------------------------------------------------------------
@@ -108,6 +110,7 @@ export const ReelItem = React.memo(function ReelItem({
   // Local mute preference — defaults muted like most short-video feeds;
   // the user can toggle it per-reel via the bottom-right overlay button.
   const [isMuted, setIsMuted] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Stable ref so gesture closure always has the latest value without
   // re-creating the gesture object on every render.
@@ -147,7 +150,7 @@ export const ReelItem = React.memo(function ReelItem({
   }, [navigation, reel.id, reel.author.id]);
 
   const handleShare = useCallback(() => {
-    // TODO: share sheet integration
+    setShareOpen(true);
   }, []);
 
   const handleAuthorPress = useCallback((userId: UserId) => {
@@ -312,6 +315,12 @@ export const ReelItem = React.memo(function ReelItem({
           pointerEvents="none"
         />
       ) : null}
+
+      <ShareToConversationsSheet
+        visible={shareOpen}
+        postId={reel.id as unknown as PostId}
+        onClose={() => setShareOpen(false)}
+      />
     </View>
   );
 });

@@ -13,7 +13,6 @@
 
 import React from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -21,10 +20,8 @@ import {
   View,
 } from 'react-native';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme , Text , Divider , Avatar } from '@/design-system';
-import { hitSlop } from '@/constants/layout';
 import { Config } from '@/constants/config';
 import type { CreatePostFormValues } from '../types';
 
@@ -40,52 +37,6 @@ export interface CaptionFormProps {
   /** Current user display name */
   displayName?: string;
 }
-
-// ---------------------------------------------------------------------------
-// ActionRow — generic tappable row in the details list
-// ---------------------------------------------------------------------------
-
-interface ActionRowProps {
-  icon: string;
-  label: string;
-  onPress?: () => void;
-}
-
-const ActionRow = React.memo(function ActionRow({
-  icon,
-  label,
-  onPress,
-}: ActionRowProps): React.JSX.Element {
-  const theme = useTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={hitSlop.sm}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.actionRow,
-        {
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          backgroundColor: pressed ? theme.colors.surface : 'transparent',
-        },
-      ]}
-    >
-      <Text variant="callout" color="primary" style={styles.actionRowLabel}>
-        {label}
-      </Text>
-      <Ionicons
-        name={icon}
-        size={18}
-        color={theme.colors.textTertiary}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      />
-    </Pressable>
-  );
-});
 
 // ---------------------------------------------------------------------------
 // ToggleRow — row with a Switch (placeholder shares)
@@ -227,27 +178,8 @@ export function CaptionForm({
 
       <Divider />
 
-      {/* ---- Location row ---- */}
-      <ActionRow
-        icon="chevron-forward"
-        label="Add location"
-        onPress={() => {
-          // TODO: location picker
-        }}
-      />
-
-      <Divider mx={16} />
-
-      {/* ---- Tag people row ---- */}
-      <ActionRow
-        icon="chevron-forward"
-        label="Tag people"
-        onPress={() => {
-          // TODO: tag people
-        }}
-      />
-
-      <Divider />
+      {/* Location, tag-people and collaborator rows live in CreatePostScreen
+          (below this form) so they can drive the actual create payload. */}
 
       {/* ---- Also share to section ---- */}
       <View
