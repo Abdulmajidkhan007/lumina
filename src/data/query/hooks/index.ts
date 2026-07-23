@@ -14,6 +14,7 @@ export { useMessages } from './useMessages';
 export { useNotes } from './useNotes';
 export { useNotifications } from './useNotifications';
 export { useSearchUsers } from './useSearchUsers';
+export { useSuggestedUsers } from './useSuggestedUsers';
 export { useResetPassword } from './useResetPassword';
 export { useResendVerificationEmail } from './useResendVerificationEmail';
 export { useSavedPosts } from './useSavedPosts';

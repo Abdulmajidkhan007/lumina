@@ -21,6 +21,7 @@ import { useConversations } from '@/data/query/hooks/useConversations';
 import { useCurrentUser } from '@/stores/auth.store';
 import { ConversationList } from '@/features/messaging/components/ConversationList';
 import { NotesStrip } from '@/features/messaging/components/NotesStrip';
+import { SuggestedUsers } from '@/features/messaging/components/SuggestedUsers';
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -106,15 +107,19 @@ export default function MessagesScreen(): React.JSX.Element {
       {/* Notes strip */}
       <NotesStrip />
 
-      {/* Body */}
-      <ConversationList
-        conversations={conversations}
-        currentUserId={currentUserId}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={handleRetry}
-        onSelectConversation={handleSelectConversation}
-      />
+      {/* Body — suggested users when the inbox is empty, else the chat list */}
+      {!isLoading && !isError && (conversations?.length ?? 0) === 0 ? (
+        <SuggestedUsers />
+      ) : (
+        <ConversationList
+          conversations={conversations}
+          currentUserId={currentUserId}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={handleRetry}
+          onSelectConversation={handleSelectConversation}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -23,6 +23,8 @@ export interface IUsersApi {
   getUserByUsername(username: string): Promise<User | null>;
   getExplore(params: ExploreParams): Promise<Paginated<Post>>;
   searchUsers(query: string, params?: CursorParams): Promise<Paginated<UserSummary>>;
+  /** A handful of suggested accounts (e.g. to start a chat with), excluding self/blocked. */
+  getSuggestedUsers(): Promise<UserSummary[]>;
   /**
    * Follows a public profile immediately. When the target is private, this
    * files a follow request instead (equivalent to calling `requestFollow`) —

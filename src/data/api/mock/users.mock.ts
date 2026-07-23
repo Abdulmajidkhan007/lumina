@@ -75,6 +75,14 @@ export class MockUsersApi implements IUsersApi {
     return paginateArray(matched, params?.cursor, params?.limit);
   }
 
+  async getSuggestedUsers(): Promise<UserSummary[]> {
+    await mockDelay();
+    return mutableUsers
+      .filter((u) => u.id !== currentUser.id && !mutableBlocked.has(u.id))
+      .slice(0, 12)
+      .map(toUserSummary);
+  }
+
   /** Follows immediately when `id` is public; files a request when it's private. */
   async followUser(id: UserId): Promise<void> {
     await mockDelay();

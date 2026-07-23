@@ -168,6 +168,28 @@ export class FirebaseUsersApi implements IUsersApi {
     return { items: items.filter((u) => !blocked.has(u.id)), nextCursor };
   }
 
+  async getSuggestedUsers(): Promise<UserSummary[]> {
+    const viewerUid = getCurrentUid();
+    // Most-followed accounts (single-field orderBy — no composite index).
+    const snap = await usersCollection().orderBy('followerCount', 'desc').limit(20).get();
+    const blocked = await getBlockedUids(viewerUid);
+    const items = await buildValidatedList(
+      snap.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({ id: d.id, data: d.data() })),
+      (raw: RawDoc) => {
+        const data = raw.data as Partial<UserDocFields>;
+        return {
+          id: raw.id,
+          username: data.username,
+          displayName: data.displayName,
+          avatarUrl: data.avatarUrl ?? null,
+          isVerified: data.isVerified ?? false,
+        };
+      },
+      userSummarySchema,
+    );
+    return items.filter((u) => u.id !== viewerUid && !blocked.has(u.id)).slice(0, 12);
+  }
+
   /** Follows immediately when `id` is public; files a request when it's private. */
   async followUser(id: UserId): Promise<void> {
     const targetSnap = await usersCollection().doc(id).get();

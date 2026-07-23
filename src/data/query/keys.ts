@@ -43,6 +43,7 @@ export const queryKeys = {
   followers: (id: UserId) => ['user', id, 'followers'] as const,
   following: (id: UserId) => ['user', id, 'following'] as const,
   searchUsers: (term: string) => ['searchUsers', term] as const,
+  suggestedUsers: () => ['suggestedUsers'] as const,
   closeFriends: () => ['closeFriends'] as const,
   blockedUsers: () => ['blockedUsers'] as const,
   restrictedUsers: () => ['restrictedUsers'] as const,
