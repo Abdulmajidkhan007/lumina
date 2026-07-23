@@ -31,6 +31,7 @@ import { Divider } from '@/design-system/primitives/Divider';
 import { Sheet } from '@/design-system/primitives/Sheet';
 import { ConfirmDialog } from '@/components';
 import { RichCaption } from '@/components/RichCaption';
+import { ShareToConversationsSheet } from '@/components/ShareToConversationsSheet';
 import { PostActions } from '@/features/feed/components/PostActions';
 import { PostMediaPager } from '@/features/feed/components/PostMediaPager';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
@@ -76,6 +77,7 @@ export function PostDetail({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const canDelete = currentUser !== null && currentUser.id === post.author.id;
 
@@ -96,7 +98,7 @@ export function PostDetail({
   }, [savePost, post.id, post.isSavedByMe]);
 
   const handleShare = useCallback(() => {
-    // Share sheet — no-op placeholder (native share would go here)
+    setShareOpen(true);
   }, []);
 
   const handleAuthorPress = useCallback(() => {
@@ -427,6 +429,13 @@ export function PostDetail({
         destructive
         onConfirm={handleConfirmDelete}
         onCancel={closeDeleteDialog}
+      />
+
+      {/* Share-to-DM sheet */}
+      <ShareToConversationsSheet
+        visible={shareOpen}
+        postId={post.id}
+        onClose={() => setShareOpen(false)}
       />
     </>
   );

@@ -35,6 +35,7 @@ import { Text } from '@/design-system/primitives/Text';
 import { Sheet } from '@/design-system/primitives/Sheet';
 import { Divider } from '@/design-system/primitives/Divider';
 import { RichCaption } from '@/components/RichCaption';
+import { ShareToConversationsSheet } from '@/components/ShareToConversationsSheet';
 import { useLikePost } from '@/data/query/hooks/useLikePost';
 import { useSavePost } from '@/data/query/hooks/useSavePost';
 import { useArchivePost } from '@/data/query/hooks/useArchivePost';
@@ -189,6 +190,7 @@ export const PostCard = React.memo(function PostCard({
   const isOwnPost = currentUser?.id === post.author.id;
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const mediaScale = useSharedValue(1);
   const mediaAnimatedStyle = useAnimatedStyle(() => ({
@@ -253,7 +255,7 @@ export const PostCard = React.memo(function PostCard({
   );
 
   const handleShare = useCallback(() => {
-    // TODO: share sheet integration
+    setShareOpen(true);
   }, []);
 
   const handleReport = useCallback(() => {
@@ -536,6 +538,13 @@ export const PostCard = React.memo(function PostCard({
           </>
         )}
       </Sheet>
+
+      {/* Share-to-DM sheet */}
+      <ShareToConversationsSheet
+        visible={shareOpen}
+        postId={post.id}
+        onClose={() => setShareOpen(false)}
+      />
     </Animated.View>
   );
 });
