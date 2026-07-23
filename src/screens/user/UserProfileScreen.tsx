@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
@@ -19,6 +19,7 @@ import { SkeletonProfileHeader } from '@/design-system/primitives/Skeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { EmptyState } from '@/components/EmptyState';
 import { useUser } from '@/data/query/hooks/useUser';
+import { useStartConversation } from '@/data/query/hooks/useStartConversation';
 import { hitSlop } from '@/constants/layout';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { HighlightsRow } from '@/features/profile/components/HighlightsRow';
@@ -54,6 +55,7 @@ export default function UserProfileScreen(): React.JSX.Element {
   const { data: user, isLoading, isError, refetch } = useUser(
     userId as UserId,
   );
+  const startConversation = useStartConversation();
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
@@ -70,9 +72,20 @@ export default function UserProfileScreen(): React.JSX.Element {
   }, [navigation, userId]);
 
   const goToMessage = useCallback(() => {
-    // TODO: navigate to DM thread
-    navigation.navigate('Messages');
-  }, [navigation]);
+    if (!userId) return;
+    // Open (or create) the 1:1 thread with this user, not the inbox list.
+    startConversation.mutate(userId, {
+      onSuccess: (conversation) => {
+        navigation.navigate('MessageThread', { threadId: conversation.id });
+      },
+      onError: (error) => {
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Could not open the conversation.',
+        );
+      },
+    });
+  }, [navigation, userId, startConversation]);
 
   const handleTabChange = useCallback((tab: ProfileTab) => {
     setActiveTab(tab);

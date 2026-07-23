@@ -42,6 +42,7 @@ import {
   fetchUserSummary,
   getBlockedUids,
   getMembershipFlags,
+  queryAllWhere,
   queryCreatedAtPage,
   requireCurrentUid,
   getCurrentUid,
@@ -319,12 +320,17 @@ export class FirebasePostsApi implements IPostsApi {
   }
 
   async getComments(params: CommentParams): Promise<Paginated<Comment>> {
-    const constraints = [where('parentId', '==', params.parentCommentId ?? null)];
-    const { docs, nextCursor } = await queryCreatedAtPage(
-      commentsCollection(params.postId),
-      constraints,
-      params.cursor,
-      params.limit,
+    // Index-free: filter by parentId only (equality — no composite index),
+    // then sort newest-first client-side. Avoids "failed-precondition"
+    // errors when the comments composite index isn't deployed.
+    const docs = (
+      await queryAllWhere(commentsCollection(params.postId), [
+        where('parentId', '==', params.parentCommentId ?? null),
+      ])
+    ).sort((a, b) =>
+      String((b.data as { createdAt?: string }).createdAt ?? '').localeCompare(
+        String((a.data as { createdAt?: string }).createdAt ?? ''),
+      ),
     );
     const viewerUid = getCurrentUid();
     const items = await buildValidatedList(
@@ -332,7 +338,7 @@ export class FirebasePostsApi implements IPostsApi {
       (raw) => buildCommentCandidate(raw, params.postId, viewerUid),
       commentSchema,
     );
-    return { items, nextCursor };
+    return { items, nextCursor: null };
   }
 
   async addComment(input: AddCommentInput): Promise<Comment> {

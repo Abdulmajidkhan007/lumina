@@ -7,8 +7,9 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Clipboard from '@react-native-clipboard/clipboard';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '@/design-system/theme';
@@ -66,6 +67,20 @@ export function ShareToConversationsSheet({
   );
 
   const rows = useMemo(() => conversations ?? [], [conversations]);
+
+  // External link to the post (opens on the web app once its post page ships).
+  const postLink = `https://lumina-007app.web.app/p/${postId}`;
+
+  const handleCopyLink = useCallback(() => {
+    Clipboard.setString(postLink);
+    Alert.alert('Link copied', 'The post link has been copied to your clipboard.');
+  }, [postLink]);
+
+  const handleShareExternal = useCallback(() => {
+    void Share.share({ message: postLink }).catch(() => {
+      // Share sheet dismissed — no action needed.
+    });
+  }, [postLink]);
 
   const renderItem = useCallback(
     ({ item }: { item: Conversation }) => {
@@ -134,7 +149,23 @@ export function ShareToConversationsSheet({
             />
           )}
 
-          <View style={{ padding: theme.spacing.lg }}>
+          {/* External share row — copy link / share to other apps */}
+          <View style={[styles.externalRow, { borderTopColor: theme.colors.border, paddingHorizontal: theme.spacing.lg }]}>
+            <Pressable style={styles.externalAction} onPress={handleCopyLink} accessibilityRole="button" accessibilityLabel="Copy link">
+              <View style={[styles.externalIcon, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Ionicons name="link-outline" size={22} color={theme.colors.textPrimary} />
+              </View>
+              <Text variant="caption" color="secondary">Copy link</Text>
+            </Pressable>
+            <Pressable style={styles.externalAction} onPress={handleShareExternal} accessibilityRole="button" accessibilityLabel="Share to other apps">
+              <View style={[styles.externalIcon, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Ionicons name="share-social-outline" size={22} color={theme.colors.textPrimary} />
+              </View>
+              <Text variant="caption" color="secondary">Share to…</Text>
+            </Pressable>
+          </View>
+
+          <View style={{ paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.lg }}>
             <Button
               label={selected.length > 0 ? `Send (${selected.length})` : 'Send'}
               variant="primary"
@@ -168,4 +199,20 @@ const styles = StyleSheet.create({
   center: { paddingVertical: 40, alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   rowText: { flex: 1 },
+  externalRow: {
+    flexDirection: 'row',
+    gap: 28,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  externalAction: { alignItems: 'center', gap: 6 },
+  externalIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+

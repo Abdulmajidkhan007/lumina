@@ -267,6 +267,14 @@ jest.mock('@react-native-firebase/storage', () => {
   return { __esModule: true, default: storageDefault };
 });
 
+jest.mock('@react-native-clipboard/clipboard', () => ({
+  __esModule: true,
+  default: {
+    setString: jest.fn(),
+    getString: jest.fn(async () => ''),
+  },
+}));
+
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: () => undefined,

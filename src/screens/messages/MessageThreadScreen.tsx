@@ -191,10 +191,14 @@ export default function MessageThreadScreen(): React.JSX.Element {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* KeyboardAvoidingView wraps body + composer so the list scrolls up */}
+      {/* KeyboardAvoidingView wraps body + composer so the list scrolls up.
+          On Android the manifest's adjustResize already resizes the window, so
+          behavior must be undefined there (a 'height' behavior double-adjusts
+          and pushes the composer off-screen — the reported bug). iOS needs
+          'padding'. */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
         {/* Message list */}
