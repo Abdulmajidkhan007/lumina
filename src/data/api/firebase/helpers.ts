@@ -131,6 +131,28 @@ export async function queryCursorPage(
   return { docs, nextCursor };
 }
 
+/**
+ * Runs a filter-only query (equality `where` constraints + a `limit`, NO
+ * `orderBy`) and returns the raw docs. An equality filter without an explicit
+ * `orderBy` on another field never requires a composite index, so this is the
+ * index-free counterpart to `queryCursorPage` for small per-user collections
+ * (followers, following, conversations, highlights…). Callers sort/paginate
+ * the result client-side. Prevents "failed-precondition / index needed"
+ * errors when composite indexes haven't been deployed.
+ */
+export async function queryAllWhere(
+  base: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query,
+  extraConstraints: FirestoreQueryConstraint[],
+  cap = 300,
+): Promise<RawDoc[]> {
+  const q = applyConstraints(base, extraConstraints).limit(cap);
+  const snapshot = await q.get();
+  return snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+    id: docSnap.id,
+    data: docSnap.data(),
+  }));
+}
+
 /** Convenience wrapper for the common case: order by `createdAt desc`. */
 export function queryCreatedAtPage(
   base: FirebaseFirestoreTypes.CollectionReference | FirebaseFirestoreTypes.Query,

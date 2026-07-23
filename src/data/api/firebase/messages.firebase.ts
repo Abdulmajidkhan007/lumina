@@ -92,11 +92,18 @@ interface NoteDocFields {
 export class FirebaseMessagesApi implements IMessagesApi {
   async getConversations(): Promise<Conversation[]> {
     const uid = requireCurrentUid();
+    // Filter-only query (no orderBy) so it never needs a composite index; we
+    // sort by updatedAt client-side below.
     const snapshot = await conversationsCollection()
       .where('participantIds', 'array-contains', uid)
-      .orderBy('updatedAt', 'desc')
       .get();
-    const docs: RawDoc[] = snapshot.docs.map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({ id: d.id, data: d.data() }));
+    const docs: RawDoc[] = snapshot.docs
+      .map((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({ id: d.id, data: d.data() }))
+      .sort((a, b) =>
+        String((b.data as { updatedAt?: string }).updatedAt ?? '').localeCompare(
+          String((a.data as { updatedAt?: string }).updatedAt ?? ''),
+        ),
+      );
     return buildValidatedList(
       docs,
       (raw: RawDoc) => {

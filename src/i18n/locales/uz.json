@@ -7,6 +7,16 @@
     "loading": "Yuklanmoqda…",
     "error": "Xatolik yuz berdi"
   },
+  "social": {
+    "followButton": {
+      "follow": "Kuzatish",
+      "following": "Kuzatilmoqda",
+      "requested": "So'rov yuborildi",
+      "followA11y": "{{username}}ni kuzatish",
+      "unfollowA11y": "{{username}}ni kuzatishni bekor qilish",
+      "cancelRequestA11y": "{{username}}ga so'rovni bekor qilish"
+    }
+  },
   "tabs": {
     "home": "Bosh sahifa",
     "explore": "Qidiruv",

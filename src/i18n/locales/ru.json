@@ -7,6 +7,16 @@
     "loading": "Загрузка…",
     "error": "Что-то пошло не так"
   },
+  "social": {
+    "followButton": {
+      "follow": "Подписаться",
+      "following": "Вы подписаны",
+      "requested": "Запрос отправлен",
+      "followA11y": "Подписаться на {{username}}",
+      "unfollowA11y": "Отписаться от {{username}}",
+      "cancelRequestA11y": "Отменить запрос к {{username}}"
+    }
+  },
   "tabs": {
     "home": "Главная",
     "explore": "Поиск",

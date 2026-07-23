@@ -8,14 +8,15 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  FlatList,
+  Pressable,
   View,
   StyleSheet,
   type ViewToken,
   type ListRenderItemInfo,
 } from 'react-native';
 import { Image } from '@/components/Image';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { FlatList, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -69,23 +70,49 @@ interface MediaItemProps {
   item: Media;
   width: number;
   height: number;
+  /** Whether this item is the one currently shown in the pager. */
+  isActive: boolean;
 }
 
 const MediaItem = React.memo(function MediaItem({
   item,
   width,
   height,
+  isActive,
 }: MediaItemProps): React.JSX.Element {
-  const uri =
-    item.type === 'video' ? (item.thumbnailUri ?? item.uri) : item.uri;
+  const [userPaused, setUserPaused] = useState(false);
+
+  if (item.type === 'video') {
+    // Real playback (muted + looping, like Instagram); autoplays when this
+    // page is active. Tapping toggles play/pause. Renders the poster until
+    // the first frame is ready. Fixes videos showing blank in the feed.
+    return (
+      <Pressable
+        onPress={() => setUserPaused((p) => !p)}
+        style={{ width, height }}
+        accessibilityRole="button"
+        accessibilityLabel="Video post — tap to play or pause"
+      >
+        <VideoPlayer
+          uri={item.uri}
+          paused={!isActive || userPaused}
+          muted
+          repeat
+          resizeMode="cover"
+          posterUri={item.thumbnailUri}
+          style={{ width, height }}
+        />
+      </Pressable>
+    );
+  }
 
   return (
     <Image
-      source={{ uri }}
+      source={{ uri: item.uri }}
       style={{ width, height }}
       contentFit="cover"
       accessibilityRole="image"
-      accessibilityLabel={item.type === 'video' ? 'Video post thumbnail' : 'Post image'}
+      accessibilityLabel="Post image"
       transition={200}
     />
   );
@@ -136,8 +163,6 @@ export const PostMediaPager = React.memo(function PostMediaPager({
 }: PostMediaPagerProps): React.JSX.Element {
   const heartScale = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList<Media>>(null);
-  void flatListRef; // used implicitly for type
 
   const mediaWidth = screen.width;
   const firstItem = media[0];
@@ -177,10 +202,15 @@ export const PostMediaPager = React.memo(function PostMediaPager({
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Media>) => (
-      <MediaItem item={item} width={mediaWidth} height={mediaHeight} />
+    ({ item, index }: ListRenderItemInfo<Media>) => (
+      <MediaItem
+        item={item}
+        width={mediaWidth}
+        height={mediaHeight}
+        isActive={index === activeIndex}
+      />
     ),
-    [mediaWidth, mediaHeight],
+    [mediaWidth, mediaHeight, activeIndex],
   );
 
   const keyExtractor = useCallback(
@@ -201,7 +231,6 @@ export const PostMediaPager = React.memo(function PostMediaPager({
     <GestureDetector gesture={doubleTap}>
       <View style={{ width: mediaWidth, height: mediaHeight }}>
         <FlatList
-          ref={flatListRef}
           data={media}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
@@ -221,12 +250,6 @@ export const PostMediaPager = React.memo(function PostMediaPager({
         {/* Dot indicators — only show for multi-media posts */}
         {media.length > 1 ? (
           <PagerDots count={media.length} activeIndex={activeIndex} />
-        ) : null}
-        {/* Video badge */}
-        {firstItem?.type === 'video' ? (
-          <View style={styles.videoBadge}>
-            <Ionicons name="play-circle" size={28} color="white" />
-          </View>
         ) : null}
       </View>
     </GestureDetector>
@@ -251,10 +274,5 @@ const styles = StyleSheet.create({
   dot: {
     height: 5,
     borderRadius: 9999,
-  },
-  videoBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
   },
 });

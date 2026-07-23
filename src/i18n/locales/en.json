@@ -7,6 +7,16 @@
     "loading": "Loading…",
     "error": "Something went wrong"
   },
+  "social": {
+    "followButton": {
+      "follow": "Follow",
+      "following": "Following",
+      "requested": "Requested",
+      "followA11y": "Follow {{username}}",
+      "unfollowA11y": "Unfollow {{username}}",
+      "cancelRequestA11y": "Cancel follow request to {{username}}"
+    }
+  },
   "tabs": {
     "home": "Home",
     "explore": "Explore",

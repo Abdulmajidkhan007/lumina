@@ -29,13 +29,22 @@ import {
   fetchUserSummary,
   getBlockedUids,
   getCurrentUid,
-  queryCreatedAtPage,
+  queryAllWhere,
   queryCursorPage,
   requireCurrentUid,
   where,
   type RawDoc,
   type UserDocFields,
 } from './helpers';
+
+/** Sorts raw docs by their `createdAt` field, newest first (client-side). */
+function sortByCreatedAtDesc(docs: RawDoc[]): RawDoc[] {
+  return [...docs].sort((a, b) =>
+    String((b.data as { createdAt?: string }).createdAt ?? '').localeCompare(
+      String((a.data as { createdAt?: string }).createdAt ?? ''),
+    ),
+  );
+}
 
 function usersCollection() {
   return getFirebaseFirestore().collection('users');
@@ -229,13 +238,11 @@ export class FirebaseUsersApi implements IUsersApi {
     await followRequestsCollection().doc(followRequestDocId(uid, requesterId)).delete();
   }
 
-  async getIncomingFollowRequests(params?: CursorParams): Promise<Paginated<UserSummary>> {
+  async getIncomingFollowRequests(_params?: CursorParams): Promise<Paginated<UserSummary>> {
     const uid = requireCurrentUid();
-    const { docs, nextCursor } = await queryCreatedAtPage(
-      followRequestsCollection(),
-      [where('targetId', '==', uid)],
-      params?.cursor,
-      params?.limit,
+    // Index-free: filter by targetId only, sort newest-first client-side.
+    const docs = sortByCreatedAtDesc(
+      await queryAllWhere(followRequestsCollection(), [where('targetId', '==', uid)]),
     );
     const summaries = await Promise.all(
       docs.map((raw) => {
@@ -245,7 +252,7 @@ export class FirebaseUsersApi implements IUsersApi {
     );
     return {
       items: summaries.filter((s): s is UserSummary => s !== null),
-      nextCursor,
+      nextCursor: null,
     };
   }
 
@@ -395,13 +402,11 @@ export class FirebaseUsersApi implements IUsersApi {
     matchField: 'followerId' | 'followeeId',
     matchValue: string,
     resolveField: 'followerId' | 'followeeId',
-    params?: CursorParams,
+    _params?: CursorParams,
   ): Promise<Paginated<UserSummary>> {
-    const { docs, nextCursor } = await queryCreatedAtPage(
-      followsCollection(),
-      [where(matchField, '==', matchValue)],
-      params?.cursor,
-      params?.limit,
+    // Index-free: filter by one edge field only (no orderBy), sort client-side.
+    const docs = sortByCreatedAtDesc(
+      await queryAllWhere(followsCollection(), [where(matchField, '==', matchValue)]),
     );
     const summaries = await Promise.all(
       docs.map((raw) => {
@@ -412,7 +417,7 @@ export class FirebaseUsersApi implements IUsersApi {
     );
     return {
       items: summaries.filter((s): s is UserSummary => s !== null),
-      nextCursor,
+      nextCursor: null,
     };
   }
 }

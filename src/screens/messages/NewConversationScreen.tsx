@@ -7,7 +7,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput, View, type ListRenderItem } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, TextInput, View, type ListRenderItem } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -49,10 +49,16 @@ export default function NewConversationScreen(): React.JSX.Element {
           setPendingId(null);
           navigation.replace('MessageThread', { threadId: conversation.id });
         },
-        onError: () => setPendingId(null),
+        onError: (error) => {
+          setPendingId(null);
+          Alert.alert(
+            t('common.error'),
+            error instanceof Error ? error.message : 'Could not open the conversation.',
+          );
+        },
       });
     },
-    [navigation, startConversation],
+    [navigation, startConversation, t],
   );
 
   const renderItem = useCallback<ListRenderItem<UserSummary>>(

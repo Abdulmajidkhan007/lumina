@@ -104,7 +104,9 @@ export const ProfileHeader = React.memo(function ProfileHeader({
     const share = async (): Promise<void> => {
       try {
         await Share.share({
-          message: `https://lumina.app/user/${user.id}`,
+          // The dead lumina.app domain is replaced with the live web app URL
+          // plus the handle, so the shared link actually resolves.
+          message: `Check out @${user.username} on Lumina ✦\nhttps://lumina-007app.web.app/u/${user.username}`,
         });
       } catch {
         // Share sheet dismissed or failed — no action needed.
@@ -112,7 +114,7 @@ export const ProfileHeader = React.memo(function ProfileHeader({
       onShareProfile?.();
     };
     void share();
-  }, [user.id, onShareProfile]);
+  }, [user.username, onShareProfile]);
 
   const handleOpenWebsite = useCallback(() => {
     if (!user.website) return;

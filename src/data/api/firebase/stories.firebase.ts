@@ -206,10 +206,8 @@ export class FirebaseStoriesApi implements IStoriesApi {
   }
 
   async getHighlights(userId: UserId): Promise<Highlight[]> {
-    const snapshot = await highlightsCollection()
-      .where('ownerId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
+    // Index-free: filter by ownerId only, sort newest-first client-side.
+    const snapshot = await highlightsCollection().where('ownerId', '==', userId).get();
     const highlights: Highlight[] = [];
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data() as Partial<HighlightDocFields>;
@@ -222,7 +220,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       });
       if (parsed.success) highlights.push(parsed.data);
     }
-    return highlights;
+    return highlights.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async createHighlight(input: CreateHighlightInput): Promise<Highlight> {
