@@ -28,6 +28,7 @@ export function TabsNavigator(): React.JSX.Element {
     >
       <Tab.Screen name="Feed" component={FeedScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
+      {/* Center tab — the Direct/DM entry (Create moved to the feed header "+"). */}
       <Tab.Screen
         name="Create"
         component={CreatePlaceholderScreen}
@@ -36,7 +37,7 @@ export function TabsNavigator(): React.JSX.Element {
             e.preventDefault();
             navigation
               .getParent<NativeStackNavigationProp<ProtectedStackParamList>>()
-              ?.navigate('CreatePost');
+              ?.navigate('Messages');
           },
         })}
       />

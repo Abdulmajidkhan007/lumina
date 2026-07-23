@@ -190,14 +190,15 @@ const TabItem = React.memo(function TabItem({
     >
       <Animated.View style={[styles.tabItemInner, animatedStyle]}>
         {config.name === 'Create' ? (
-          // Create tab: gradient circle icon
+          // Center tab: prominent gradient circle — now the Direct/DM entry
+          // (Create moved to the feed header "+"). See TabsNavigator.
           <LinearGradient
             colors={[...theme.colors.accentGradient]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.createGradient}
           >
-            <Ionicons name="add" size={26} color="#FFFFFF" />
+            <Ionicons name="paper-plane" size={22} color="#FFFFFF" />
           </LinearGradient>
         ) : isProfileTab && currentUser ? (
           // Profile tab: user avatar when logged in

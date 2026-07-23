@@ -29,7 +29,6 @@ import { Text } from '@/design-system/primitives/Text';
 import { hitSlop, headerHeight } from '@/constants/layout';
 
 // Bundled brand mark (gradient rounded square + luminous spark).
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const LUMINA_MARK = require('../../../../assets/images/lumina-mark.png');
 
 // ---------------------------------------------------------------------------
@@ -44,8 +43,8 @@ export function FeedHeader(): React.JSX.Element {
     navigation.navigate('Notifications');
   }, [navigation]);
 
-  const goToMessages = useCallback(() => {
-    navigation.navigate('Messages');
+  const goToCreate = useCallback(() => {
+    navigation.navigate('CreatePost');
   }, [navigation]);
 
   return (
@@ -60,44 +59,35 @@ export function FeedHeader(): React.JSX.Element {
         },
       ]}
     >
-      {/* Brand: logo mark + wordmark. Fixed sizes so the row never collapses. */}
-      <View style={styles.brand}>
+      {/* Left: plain "+" (create post) — gradientless */}
+      <Pressable
+        onPress={goToCreate}
+        hitSlop={hitSlop.sm}
+        accessibilityRole="button"
+        accessibilityLabel="New post"
+        style={styles.iconBtn}
+      >
+        <Ionicons name="add" size={30} color={theme.colors.textPrimary} />
+      </Pressable>
+
+      {/* Center: brand (logo mark + wordmark), absolutely centered */}
+      <View style={styles.brandCenter} pointerEvents="none">
         <Image source={LUMINA_MARK} style={styles.mark} resizeMode="contain" />
         <Text variant="title" numberOfLines={1} style={styles.wordmark}>
           Lumina
         </Text>
       </View>
 
-      {/* Right icons — fixed intrinsic size, never shrink off-screen */}
-      <View style={[styles.icons, { gap: theme.spacing.md }]}>
-        <Pressable
-          onPress={goToNotifications}
-          hitSlop={hitSlop.sm}
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          style={styles.iconBtn}
-        >
-          <Ionicons
-            name="heart-outline"
-            size={26}
-            color={theme.colors.textPrimary}
-          />
-        </Pressable>
-
-        <Pressable
-          onPress={goToMessages}
-          hitSlop={hitSlop.sm}
-          accessibilityRole="button"
-          accessibilityLabel="Messages"
-          style={styles.iconBtn}
-        >
-          <Ionicons
-            name="paper-plane-outline"
-            size={24}
-            color={theme.colors.textPrimary}
-          />
-        </Pressable>
-      </View>
+      {/* Right: notifications only (DM moved to the bottom bar) */}
+      <Pressable
+        onPress={goToNotifications}
+        hitSlop={hitSlop.sm}
+        accessibilityRole="button"
+        accessibilityLabel="Notifications"
+        style={styles.iconBtn}
+      >
+        <Ionicons name="heart-outline" size={26} color={theme.colors.textPrimary} />
+      </Pressable>
     </View>
   );
 }
@@ -113,28 +103,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  brand: {
+  // Absolutely centered brand so it stays centered regardless of side widths.
+  brandCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    flexShrink: 1,
   },
   mark: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 9,
   },
   wordmark: {
     letterSpacing: 0.3,
   },
-  icons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // Icons must always keep their intrinsic size — never shrink/overflow.
-    flexShrink: 0,
-  },
   iconBtn: {
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
 });
