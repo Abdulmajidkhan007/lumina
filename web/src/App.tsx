@@ -18,6 +18,9 @@ import { Profile } from './pages/app/Profile';
 import { PostDetail } from './pages/app/PostDetail';
 import { Messages } from './pages/app/Messages';
 import { Thread } from './pages/app/Thread';
+import { Reels } from './pages/app/Reels';
+import { Notifications } from './pages/app/Notifications';
+import { Saved } from './pages/app/Saved';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { Overview } from './pages/admin/Overview';
 import { Users } from './pages/admin/Users';
@@ -53,6 +56,9 @@ function App() {
         <Route path="p/:id" element={<PostDetail />} />
         <Route path="messages" element={<Messages />} />
         <Route path="messages/:id" element={<Thread />} />
+        <Route path="reels" element={<Reels />} />
+        <Route path="notifications" element={<Notifications />} />
+        <Route path="saved" element={<Saved />} />
       </Route>
 
       <Route

@@ -7,9 +7,16 @@ import { Avatar } from '../../components/Avatar';
 const NAV = [
   { to: '/app', label: 'Home', end: true },
   { to: '/app/explore', label: 'Explore', end: false },
+  { to: '/app/reels', label: 'Reels', end: false },
   { to: '/app/create', label: 'Create', end: false },
   { to: '/app/messages', label: 'Messages', end: false },
   { to: '/app/profile', label: 'Profile', end: false },
+];
+
+/** Secondary links surfaced in the account menu rather than the main nav. */
+const MENU_LINKS = [
+  { to: '/app/notifications', label: 'Notifications' },
+  { to: '/app/saved', label: 'Saved' },
 ];
 
 export function AppLayout() {
@@ -70,6 +77,17 @@ export function AppLayout() {
                   <p className="truncate text-sm font-semibold">{displayName}</p>
                   <p className="truncate text-xs text-text-muted">{firebaseUser?.email}</p>
                 </div>
+                {MENU_LINKS.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm transition hover:bg-white/5"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <button
                   type="button"
                   role="menuitem"

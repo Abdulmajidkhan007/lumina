@@ -5,6 +5,7 @@ import { fetchFeedPage, setPostLiked, setPostSaved } from '../../lib/posts';
 import type { Post } from '../../types/models';
 import { formatRelativeTime } from '../../lib/time';
 import { Avatar } from '../../components/Avatar';
+import { StoriesStrip } from '../../components/StoriesStrip';
 import { EmptyState, ErrorState, PostCardSkeleton } from '../../components/StateViews';
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -144,6 +145,7 @@ export function Feed() {
 
   return (
     <div className="mx-auto w-full max-w-[470px] space-y-6">
+      <StoriesStrip />
       {loading ? (
         <>
           <PostCardSkeleton />
