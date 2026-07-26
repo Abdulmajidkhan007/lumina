@@ -8,6 +8,7 @@ const NAV = [
   { to: '/app', label: 'Home', end: true },
   { to: '/app/explore', label: 'Explore', end: false },
   { to: '/app/create', label: 'Create', end: false },
+  { to: '/app/messages', label: 'Messages', end: false },
   { to: '/app/profile', label: 'Profile', end: false },
 ];
 
