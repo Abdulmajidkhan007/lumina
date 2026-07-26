@@ -56,6 +56,8 @@ import { PostActions } from './PostActions';
 
 export interface PostCardProps {
   post: Post;
+  /** True when this card is the most-visible one in the feed (drives video autoplay). */
+  isActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +176,7 @@ const SheetAction = React.memo(function SheetAction({
 
 export const PostCard = React.memo(function PostCard({
   post,
+  isActive = true,
 }: PostCardProps): React.JSX.Element {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
@@ -424,6 +427,7 @@ export const PostCard = React.memo(function PostCard({
             onDoubleTapLike={handleDoubleTapLike}
             isLiked={post.isLikedByMe}
             onLongPress={handleShare}
+            feedActive={isActive}
           />
         </Animated.View>
       </Pressable>

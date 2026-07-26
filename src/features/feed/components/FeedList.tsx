@@ -17,6 +17,7 @@ import {
   View,
   useWindowDimensions,
   type ListRenderItemInfo,
+  type ViewToken,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -98,6 +99,16 @@ export function FeedList(): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const [activePostId, setActivePostId] = React.useState<string | null>(null);
+
+  // Only the most-visible post autoplays its video (perf + one-audio-source).
+  const onViewableItemsChanged = React.useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const first = viewableItems.find((v) => v.isViewable);
+      if (first?.item) setActivePostId((first.item as Post).id);
+    },
+  ).current;
+  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 60 }).current;
 
   const {
     data,
@@ -127,8 +138,10 @@ export function FeedList(): React.JSX.Element {
   }, [refetch]);
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Post>) => <PostCard post={item} />,
-    [],
+    ({ item }: ListRenderItemInfo<Post>) => (
+      <PostCard post={item} isActive={item.id === activePostId} />
+    ),
+    [activePostId],
   );
 
   const renderHeader = useCallback(() => <ListHeader />, []);
@@ -201,6 +214,8 @@ export function FeedList(): React.JSX.Element {
       ListEmptyComponent={renderEmpty}
       onEndReached={handleEndReached}
       onEndReachedThreshold={END_REACHED_THRESHOLD}
+      onViewableItemsChanged={onViewableItemsChanged}
+      viewabilityConfig={viewabilityConfig}
       refreshControl={
         <RefreshControl
           refreshing={isRefetching && !isLoading}

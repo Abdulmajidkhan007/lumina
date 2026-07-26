@@ -42,6 +42,8 @@ export interface PostMediaPagerProps {
   isLiked: boolean;
   /** Long-press opens the share/quick-actions sheet. */
   onLongPress?: () => void;
+  /** True when this post is the most-visible one in the feed (video autoplay). */
+  feedActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,6 +165,7 @@ export const PostMediaPager = React.memo(function PostMediaPager({
   onDoubleTapLike,
   isLiked,
   onLongPress,
+  feedActive = true,
 }: PostMediaPagerProps): React.JSX.Element {
   const heartScale = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -218,10 +221,10 @@ export const PostMediaPager = React.memo(function PostMediaPager({
         item={item}
         width={mediaWidth}
         height={mediaHeight}
-        isActive={index === activeIndex}
+        isActive={index === activeIndex && feedActive}
       />
     ),
-    [mediaWidth, mediaHeight, activeIndex],
+    [mediaWidth, mediaHeight, activeIndex, feedActive],
   );
 
   const keyExtractor = useCallback(
