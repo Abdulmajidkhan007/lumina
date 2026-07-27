@@ -73,8 +73,11 @@ export function HighlightsRow({ userId, isOwn }: HighlightsRowProps): React.JSX.
 
   const pickImages = useCallback(async () => {
     const res = await new Promise<Asset[] | undefined>((resolve) => {
-      launchImageLibrary({ mediaType: 'photo', selectionLimit: 10, quality: 0.9 }, (r) =>
-        resolve(r.didCancel ? undefined : r.assets),
+      launchImageLibrary(
+        // Downscaled like post media — full-resolution originals are never
+        // rendered at that size and just cost upload time and storage.
+        { mediaType: 'photo', selectionLimit: 10, quality: 0.8, maxWidth: 1440, maxHeight: 1440 },
+        (r) => resolve(r.didCancel ? undefined : r.assets),
       );
     });
     if (!res) return;

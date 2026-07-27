@@ -120,7 +120,9 @@ export default function EditProfileScreen(): React.JSX.Element {
   const handleChangePhoto = useCallback(async () => {
     const response: ImagePickerResponse = await new Promise((resolve) => {
       launchImageLibrary(
-        { mediaType: 'photo', selectionLimit: 1, quality: 0.9 },
+        // Avatars render at most ~96pt, so 512px is plenty — keeps the
+        // upload small instead of shipping a full-resolution photo.
+        { mediaType: 'photo', selectionLimit: 1, quality: 0.8, maxWidth: 512, maxHeight: 512 },
         resolve,
       );
     });

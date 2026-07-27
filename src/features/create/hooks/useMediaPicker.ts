@@ -53,16 +53,29 @@ export interface UseMediaPickerResult {
 // Shared picker options
 // ---------------------------------------------------------------------------
 
+/**
+ * Images are downscaled to at most POST_IMAGE_MAX_PX on the long edge before
+ * upload. A modern phone photo is ~12MP / 5-8 MB at full size, which is far
+ * more than the feed ever renders — capping here cuts upload time, Storage
+ * cost and viewer egress without any visible quality loss.
+ * (maxWidth/maxHeight apply to images only; videos are unaffected.)
+ */
+const POST_IMAGE_MAX_PX = 1440;
+
 const GALLERY_OPTIONS: ImageLibraryOptions = {
   mediaType: 'mixed',
   selectionLimit: Config.MAX_POST_MEDIA_COUNT,
-  quality: 0.9,
+  quality: 0.8,
+  maxWidth: POST_IMAGE_MAX_PX,
+  maxHeight: POST_IMAGE_MAX_PX,
   videoQuality: 'high',
 };
 
 const CAMERA_OPTIONS: CameraOptions = {
   mediaType: 'mixed',
-  quality: 0.9,
+  quality: 0.8,
+  maxWidth: POST_IMAGE_MAX_PX,
+  maxHeight: POST_IMAGE_MAX_PX,
   videoQuality: 'high',
   saveToPhotos: true,
 };
