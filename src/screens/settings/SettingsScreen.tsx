@@ -24,6 +24,7 @@ import { usePreferencesStore, useLocale } from '@/stores/preferences.store';
 import type { AppLocale } from '@/stores/preferences.store';
 import { authApi } from '@/data/api/client';
 import { ADMIN_EMAIL } from '@/data/services/activityLog';
+import { exportMyData } from '@/data/services/exportData';
 import { useDeleteAccount, useDeactivateAccount } from '@/data/query/hooks';
 import { hitSlop } from '@/constants/layout';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
@@ -52,6 +53,7 @@ export default function SettingsScreen(): React.JSX.Element {
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [deactivateDialogVisible, setDeactivateDialogVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -94,6 +96,18 @@ export default function SettingsScreen(): React.JSX.Element {
   const goToAdmin = useCallback(() => {
     navigation.navigate('Admin');
   }, [navigation]);
+
+  const handleExportData = useCallback(() => {
+    setExporting(true);
+    void exportMyData()
+      .catch((error: unknown) => {
+        Alert.alert(
+          t('common.error'),
+          error instanceof Error ? error.message : 'Could not export your data.',
+        );
+      })
+      .finally(() => setExporting(false));
+  }, [t]);
 
   const handleToggleProfessional = useCallback(() => {
     if (isProfessional) {
@@ -285,6 +299,12 @@ export default function SettingsScreen(): React.JSX.Element {
             label={t('settings.rows.closeFriends')}
             onPress={goToCloseFriends}
             accessibilityLabel={t('settings.rows.closeFriends')}
+          />
+          <SettingsRow
+            icon="download-outline"
+            label={exporting ? t('common.loading') : t('settings.rows.downloadData')}
+            onPress={exporting ? undefined : handleExportData}
+            accessibilityLabel={t('settings.rows.downloadData')}
           />
           {isProfessional ? (
             <SettingsRow
