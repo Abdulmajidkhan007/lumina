@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchMessages, sendMessage, type Message } from '../../lib/messages';
+import { sendMessage, subscribeToMessages, type Message } from '../../lib/messages';
 
 export function Thread() {
   const { id } = useParams<{ id: string }>();
@@ -12,21 +12,15 @@ export function Thread() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    try {
-      setMessages(await fetchMessages(id));
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
+  // Real-time: messages stream in via onSnapshot (no polling).
   useEffect(() => {
-    void load();
-    // Light polling so new messages appear (real-time listener is a follow-up).
-    const timer = setInterval(() => void load(), 5000);
-    return () => clearInterval(timer);
-  }, [load]);
+    if (!id) return;
+    const unsubscribe = subscribeToMessages(id, (next) => {
+      setMessages(next);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, [id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,8 +32,8 @@ export function Thread() {
     setText('');
     setSending(true);
     try {
+      // The snapshot listener renders the new message; no manual refetch.
       await sendMessage(id, body);
-      await load();
     } finally {
       setSending(false);
     }

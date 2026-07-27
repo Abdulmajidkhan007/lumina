@@ -233,6 +233,8 @@ jest.mock('@react-native-firebase/firestore', () => {
     set: async () => undefined,
     update: async () => undefined,
     delete: async () => undefined,
+    // Realtime subscriptions (useLiveMessages) — emit nothing, return unsubscribe.
+    onSnapshot: () => () => undefined,
   };
   const fakeTx = {
     get: async () => fakeDocSnapshot,

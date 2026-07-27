@@ -247,4 +247,9 @@ export class MockMessagesApi implements IMessagesApi {
     await mockDelay();
     mutableNotesByUser.delete(currentUser.id);
   }
+
+  /** No realtime channel in mock mode — callers keep using their fetch. */
+  subscribeToMessages(): () => void {
+    return () => undefined;
+  }
 }

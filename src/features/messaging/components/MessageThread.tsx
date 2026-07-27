@@ -26,6 +26,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { useTheme } from '@/design-system/theme';
 import type { Message , ConversationId, PostId } from '@/types/models';
 import { useMessages } from '@/data/query/hooks/useMessages';
+import { useLiveMessages } from '@/data/query/hooks/useLiveMessages';
 
 import { MessageBubble } from './MessageBubble';
 
@@ -64,6 +65,9 @@ export function MessageThread({
     hasNextPage,
     isFetchingNextPage,
   } = useMessages(conversationId);
+
+  // Stream new messages into the cache while this thread is open.
+  useLiveMessages(conversationId);
 
   const handlePressSharedPost = useCallback(
     (postId: PostId) => {

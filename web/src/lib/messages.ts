@@ -10,6 +10,7 @@ import {
   getDoc,
   getDocs,
   increment,
+  onSnapshot,
   query,
   runTransaction,
   setDoc,
@@ -122,6 +123,33 @@ export async function fetchMessages(conversationId: string): Promise<Message[]> 
     })
     .filter((m): m is Message => m !== null)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/**
+ * Live subscription to a thread's messages. Returns the unsubscribe function —
+ * real-time delivery, so no polling is needed.
+ */
+export function subscribeToMessages(
+  conversationId: string,
+  onChange: (messages: Message[]) => void,
+): () => void {
+  return onSnapshot(collection(db, 'conversations', conversationId, 'messages'), (snap) => {
+    const messages = snap.docs
+      .map((d): Message | null => {
+        const data = d.data() as Record<string, unknown>;
+        if (!data.sender || typeof data.createdAt !== 'string') return null;
+        return {
+          id: d.id,
+          senderId: (data.senderId as string) ?? '',
+          sender: data.sender as UserSummary,
+          text: data.text as string | undefined,
+          createdAt: data.createdAt,
+        };
+      })
+      .filter((m): m is Message => m !== null)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    onChange(messages);
+  });
 }
 
 export async function sendMessage(conversationId: string, text: string): Promise<void> {

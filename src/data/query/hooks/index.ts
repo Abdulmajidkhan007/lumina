@@ -11,6 +11,7 @@ export { useUserByUsername } from './useUserByUsername';
 export { useFollowers, useFollowing } from './useFollowers';
 export { useConversations } from './useConversations';
 export { useMessages } from './useMessages';
+export { useLiveMessages } from './useLiveMessages';
 export { useNotes } from './useNotes';
 export { useNotifications } from './useNotifications';
 export { useSearchUsers } from './useSearchUsers';

@@ -64,4 +64,14 @@ export interface IMessagesApi {
   setNote(text: string): Promise<Note>;
   /** Removes the current user's active note, if any. */
   clearNote(): Promise<void>;
+  /**
+   * Subscribes to live message updates for a conversation and returns an
+   * unsubscribe function. Providers without a realtime channel (the mock)
+   * return a no-op, so callers can always call this and rely on their
+   * existing fetch as the source of truth.
+   */
+  subscribeToMessages(
+    conversationId: ConversationId,
+    onChange: (messages: MessageWithSharedPost[]) => void,
+  ): () => void;
 }

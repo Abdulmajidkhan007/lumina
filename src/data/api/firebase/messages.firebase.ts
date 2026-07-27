@@ -399,4 +399,42 @@ export class FirebaseMessagesApi implements IMessagesApi {
     const uid = requireCurrentUid();
     await notesCollection().doc(uid).delete();
   }
+
+  /**
+   * Live message stream for a conversation. Mirrors `getMessages`' parsing
+   * (including the out-of-schema `sharedPost`) but pushes on every server
+   * change, newest first to match the inverted thread list.
+   */
+  subscribeToMessages(
+    conversationId: ConversationId,
+    onChange: (messages: MessageWithSharedPost[]) => void,
+  ): () => void {
+    return messagesCollection(conversationId).onSnapshot(
+      (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
+        const items: MessageWithSharedPost[] = [];
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as Partial<MessageDocFields>;
+          const parsed = messageSchema.safeParse({
+            id: docSnap.id,
+            conversationId,
+            sender: data.sender,
+            ...(data.text !== undefined ? { text: data.text } : {}),
+            ...(data.media !== undefined ? { media: data.media } : {}),
+            createdAt: data.createdAt,
+            status: data.status ?? 'sent',
+          });
+          if (!parsed.success) continue;
+          const sharedPost = sharedPostDocSchema.safeParse(data.sharedPost);
+          items.push(
+            sharedPost.success ? { ...parsed.data, sharedPost: sharedPost.data } : parsed.data,
+          );
+        }
+        items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        onChange(items);
+      },
+      (error: Error) => {
+        console.warn('[messages] realtime subscription failed:', error);
+      },
+    );
+  }
 }
