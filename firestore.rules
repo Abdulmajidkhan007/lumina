@@ -172,6 +172,14 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
       allow read: if signedIn() && request.auth.token.email == 'santexnika.atoyo@gmail.com';
       allow update, delete: if false;
+
+      // Moderator decisions. Reports stay append-only, so outcomes live here
+      // as an audit trail. Admin-only, and never edited once written.
+      match /resolutions/{resolutionId} {
+        allow read, create: if signedIn()
+          && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+        allow update, delete: if false;
+      }
     }
 
     // ---------------- activity logs (admin) ----------------

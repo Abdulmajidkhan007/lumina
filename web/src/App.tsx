@@ -25,6 +25,7 @@ import { AdminLayout } from './pages/admin/AdminLayout';
 import { Overview } from './pages/admin/Overview';
 import { Users } from './pages/admin/Users';
 import { Activity } from './pages/admin/Activity';
+import { Reports } from './pages/admin/Reports';
 
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
         <Route index element={<Overview />} />
         <Route path="users" element={<Users />} />
         <Route path="activity" element={<Activity />} />
+        <Route path="reports" element={<Reports />} />
       </Route>
     </Routes>
   );
