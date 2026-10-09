@@ -7,6 +7,7 @@ import { formatRelativeTime } from '../../lib/time';
 import { Avatar } from '../../components/Avatar';
 import { StoriesStrip } from '../../components/StoriesStrip';
 import { EmptyState, ErrorState, PostCardSkeleton } from '../../components/StateViews';
+import { MediaImage } from '../../components/MediaImage';
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -69,7 +70,7 @@ function PostCard({ post }: { post: Post }) {
         <video src={media.uri} controls playsInline poster={media.thumbnailUri} className="aspect-square w-full bg-black object-contain" />
       ) : imageUri ? (
         <Link to={`/app/p/${post.id}`}>
-          <img
+          <MediaImage
             src={imageUri}
             alt={post.caption ?? `Post by ${post.author.username}`}
             loading="lazy"

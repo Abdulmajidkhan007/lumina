@@ -6,6 +6,7 @@ import { fetchUserPosts } from '../../lib/posts';
 import type { Post, UserProfile } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState, ErrorState } from '../../components/StateViews';
+import { MediaImage } from '../../components/MediaImage';
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
@@ -110,7 +111,7 @@ export function Profile() {
             const uri = m ? (m.type === 'video' ? m.thumbnailUri ?? m.uri : m.uri) : null;
             return (
               <Link key={post.id} to={`/app/p/${post.id}`} className="block aspect-square overflow-hidden bg-surface">
-                {uri ? <img src={uri} alt="" loading="lazy" className="h-full w-full object-cover" /> : null}
+                {uri ? <MediaImage src={uri} alt="" loading="lazy" className="h-full w-full object-cover" /> : null}
               </Link>
             );
           })}

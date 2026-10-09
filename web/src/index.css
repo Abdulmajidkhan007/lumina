@@ -4,6 +4,9 @@
   --color-bg: #0e0b16;
   --color-bg-elevated: #16121f;
   --color-bg-elevated-2: #1c1728;
+  /* Cards, menus, inputs. 29 components use `bg-surface`, but the token was
+     never defined — the account menu and admin inputs rendered transparent. */
+  --color-surface: #16121f;
   --color-border: #2a2438;
   --color-text: #f5f3fa;
   --color-text-muted: #a89fc0;

@@ -5,6 +5,7 @@ import type { Comment, Post } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { ErrorState } from '../../components/StateViews';
 import { formatRelativeTime } from '../../lib/time';
+import { MediaImage } from '../../components/MediaImage';
 
 export function PostDetail() {
   const { id } = useParams<{ id: string }>();
@@ -80,7 +81,7 @@ export function PostDetail() {
         {media.type === 'video' ? (
           <video src={media.uri} controls playsInline className="aspect-square w-full rounded-2xl bg-black object-contain" />
         ) : (
-          <img src={uri} alt={post.caption ?? ''} className="aspect-square w-full rounded-2xl object-cover" />
+          <MediaImage src={uri} alt={post.caption ?? ''} className="aspect-square w-full rounded-2xl object-cover" />
         )}
         {post.media.length > 1 ? (
           <div className="mt-2 flex justify-center gap-2">

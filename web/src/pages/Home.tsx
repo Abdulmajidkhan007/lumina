@@ -3,8 +3,7 @@ import { Button } from '../components/Button';
 import { Reveal } from '../components/Reveal';
 import { PhoneMockup } from '../components/PhoneMockup';
 import { ExploreIcon, MessagesIcon, ReelsIcon, StoriesIcon } from '../components/icons';
-
-const GITHUB_RELEASES_URL = '#';
+import { APK_DOWNLOAD_URL } from '../lib/constants';
 
 interface Feature {
   title: string;
@@ -66,7 +65,7 @@ export function Home() {
               crafted app for the things worth showing off.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Button kind="anchor" href={GITHUB_RELEASES_URL} variant="primary">
+              <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
                 Get the app
               </Button>
               <Button kind="link" to="/app" variant="secondary">
@@ -142,7 +141,7 @@ export function Home() {
               Lumina is free, open source, and built to grow with its community.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button kind="anchor" href={GITHUB_RELEASES_URL} variant="primary">
+              <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
                 Get the app
               </Button>
               <Button kind="link" to="/product" variant="ghost">

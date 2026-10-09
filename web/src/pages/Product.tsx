@@ -2,8 +2,7 @@ import { Container } from '../components/Container';
 import { Reveal } from '../components/Reveal';
 import { Button } from '../components/Button';
 import { AndroidIcon, AppleIcon, ExploreIcon, MessagesIcon, ReelsIcon, StoriesIcon } from '../components/icons';
-
-const GITHUB_RELEASES_URL = '#';
+import { APK_DOWNLOAD_URL } from '../lib/constants';
 
 interface Capability {
   title: string;
@@ -101,7 +100,7 @@ export function Product() {
           Download the latest build straight from GitHub releases. iOS is coming soon.
         </p>
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Button kind="anchor" href={GITHUB_RELEASES_URL} variant="primary">
+          <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
             <AndroidIcon className="h-5 w-5" />
             Download for Android
           </Button>

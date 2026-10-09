@@ -1,0 +1,93 @@
+name: APK Release
+
+# Builds the Android APK and publishes it as a GitHub Release, so the landing
+# page's "Get the app" button can link straight to a download:
+#   https://github.com/Abdulmajidkhan007/lumina/releases/latest/download/lumina.apk
+#
+# Runs on every push to main that touches the app, or manually (Actions → APK
+# Release → Run workflow). Signed with the Play upload key when the LUMINA_*
+# secrets exist (see release.yml); otherwise with the committed debug keystore,
+# which is fine for sideloading but NOT for the Play Store.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'android/**'
+      - 'App.tsx'
+      - 'index.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/apk-release.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-release
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Upload key (if configured)
+        env:
+          KS: ${{ secrets.LUMINA_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.LUMINA_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LUMINA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.LUMINA_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+            {
+              echo "LUMINA_UPLOAD_STORE_FILE=$RUNNER_TEMP/upload.keystore"
+              echo "LUMINA_UPLOAD_STORE_PASSWORD=$STORE_PASSWORD"
+              echo "LUMINA_UPLOAD_KEY_ALIAS=$KEY_ALIAS"
+              echo "LUMINA_UPLOAD_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo "SIGNED_WITH=upload key" >> "$GITHUB_ENV"
+          else
+            echo "SIGNED_WITH=debug keystore (sideload only)" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/lumina.apk"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="apk-${{ github.run_number }}"
+          SHA="${GITHUB_SHA::7}"
+          gh release create "$TAG" "$RUNNER_TEMP/lumina.apk" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Lumina APK #${{ github.run_number }} ($SHA)" \
+            --notes "Android APK, commit $SHA. Signed with: $SIGNED_WITH. Install: download lumina.apk on the phone and allow installs from this source." \
+            --latest
+
+      - name: Remove key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.keystore"

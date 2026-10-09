@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchSavedPosts } from '../../lib/content';
 import type { Post } from '../../types/models';
 import { EmptyState } from '../../components/StateViews';
+import { MediaImage } from '../../components/MediaImage';
 
 export function Saved() {
   const [posts, setPosts] = useState<Post[] | null>(null);
@@ -25,7 +26,7 @@ export function Saved() {
             const uri = m ? (m.type === 'video' ? m.thumbnailUri ?? m.uri : m.uri) : null;
             return (
               <Link key={post.id} to={`/app/p/${post.id}`} className="block aspect-square overflow-hidden bg-surface">
-                {uri ? <img src={uri} alt="" loading="lazy" className="h-full w-full object-cover" /> : null}
+                {uri ? <MediaImage src={uri} alt="" loading="lazy" className="h-full w-full object-cover" /> : null}
               </Link>
             );
           })}
