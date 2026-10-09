@@ -9,6 +9,15 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Moderator. The email alone is not proof: an unverified email/password
+    // account could claim any address. The owner signs in with Google, whose
+    // tokens always carry email_verified == true.
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email == 'santexnika.atoyo@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
     }
@@ -170,22 +179,30 @@ service cloud.firestore {
     // Anyone signed-in can file a report; only admins read them.
     match /reports/{reportId} {
       allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
-      allow read: if signedIn() && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+      allow read: if isAdmin();
       allow update, delete: if false;
 
       // Moderator decisions. Reports stay append-only, so outcomes live here
       // as an audit trail. Admin-only, and never edited once written.
       match /resolutions/{resolutionId} {
-        allow read, create: if signedIn()
-          && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+        allow read, create: if isAdmin();
         allow update, delete: if false;
       }
     }
 
     // ---------------- activity logs (admin) ----------------
+    // Only a signed-in user may log, only about themselves, and only in the
+    // shape src/data/services/activityLog.ts writes — this used to be
+    // `create: if true`, an open, anonymous write path (spam + billed writes).
     match /activityLogs/{logId} {
-      allow create: if true;
-      allow read: if signedIn() && request.auth.token.email == 'santexnika.atoyo@gmail.com';
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['type', 'uid', 'email', 'meta', 'createdAt', 'platform'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.type is string && request.resource.data.type.size() <= 40
+        && (!('meta' in request.resource.data)
+            || (request.resource.data.meta is map && request.resource.data.meta.size() <= 5))
+        && request.resource.data.createdAt is string && request.resource.data.createdAt.size() <= 40;
+      allow read: if isAdmin();
       allow update, delete: if false;
     }
 }
