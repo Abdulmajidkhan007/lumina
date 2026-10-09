@@ -82,8 +82,10 @@ android {
         applicationId "com.lumina"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI (apk-release.yml) passes the run number, so every published APK is
+        // a higher version and installs over the previous one as an update.
+        versionCode (System.getenv('APP_VERSION_CODE') ?: '1').toInteger()
+        versionName "1.0.${System.getenv('APP_VERSION_CODE') ?: '0'}"
     }
     signingConfigs {
         debug {

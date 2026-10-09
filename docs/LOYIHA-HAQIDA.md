@@ -21,9 +21,9 @@ versiyada odamlar allaqachon post joylayapti.
 | Explore / qidiruv, profil, follow, block | ✅ | ✅ | |
 | Close friends, arxiv, professional rejim | ✅ | — | |
 | Shikoyat qilish | ✅ | ✅ | |
-| Admin: foydalanuvchilar, faollik, shikoyatlar | — | ✅ | `/admin`, faqat egasi (Google, tasdiqlangan email) |
+| Admin: umumiy, shikoyatlar (moderatsiya), foydalanuvchilar, faollik | ✅ | ✅ | Ilovada Sozlamalar → Admin; vebda `/admin`; faqat egasi (Google, tasdiqlangan email) |
 | "Ma'lumotlarimni yuklab olish" | ✅ | — | |
-| APK yuklab olish | ✅ | — | Har `main` push'da GitHub Release (`apk-release.yml`) |
+| APK yuklab olish | ✅ | — | Har `main` push'da GitHub Release (`apk-release.yml`); versionCode = run raqami, yangilanish sifatida o'rnatiladi |
 | Play Store | 🚧 | — | AAB workflow va rasmlar tayyor; akkaunt/test kerak |
 
 ## Arxitektura — asosiy qarorlar va nega

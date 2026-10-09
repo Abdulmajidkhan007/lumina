@@ -69,6 +69,8 @@ jobs:
           fi
 
       - name: Build release APK
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
         run: |
           cd android
           chmod +x gradlew
