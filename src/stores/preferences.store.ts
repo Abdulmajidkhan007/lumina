@@ -26,6 +26,8 @@ type PreferencesState = {
   hapticsEnabled: boolean;
   /** App locale preference — read by src/i18n/index.ts */
   locale: AppLocale;
+  /** First-launch Welcome screen shown once; afterwards the auth flow opens on Login. */
+  hasSeenWelcome: boolean;
 };
 
 type PreferencesActions = {
@@ -33,6 +35,7 @@ type PreferencesActions = {
   setAutoplayVideos(enabled: boolean): void;
   setHapticsEnabled(enabled: boolean): void;
   setLocale(locale: AppLocale): void;
+  markWelcomeSeen(): void;
 };
 
 // ---------------------------------------------------------------------------
@@ -46,6 +49,7 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
       autoplayVideos: true,
       hapticsEnabled: true,
       locale: 'system',
+      hasSeenWelcome: false,
 
       setColorSchemePreference(pref) {
         set({ colorSchemePreference: pref });
@@ -62,6 +66,10 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
       setLocale(locale) {
         set({ locale });
       },
+
+      markWelcomeSeen() {
+        set({ hasSeenWelcome: true });
+      },
     }),
     {
       name: 'lumina_preferences',
@@ -75,14 +83,11 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
 // ---------------------------------------------------------------------------
 
 /** Used by the design system's ThemeProvider to read colour scheme preference */
-export const useThemeMode = () =>
-  usePreferencesStore((s) => s.colorSchemePreference);
+export const useThemeMode = () => usePreferencesStore((s) => s.colorSchemePreference);
 
-export const useAutoplayVideos = () =>
-  usePreferencesStore((s) => s.autoplayVideos);
+export const useAutoplayVideos = () => usePreferencesStore((s) => s.autoplayVideos);
 
-export const useHapticsEnabled = () =>
-  usePreferencesStore((s) => s.hapticsEnabled);
+export const useHapticsEnabled = () => usePreferencesStore((s) => s.hapticsEnabled);
 
 /** Used by src/i18n to resolve and react to the active app locale */
 export const useLocale = () => usePreferencesStore((s) => s.locale);

@@ -87,6 +87,13 @@
       "sending": "Sending…",
       "dismiss": "Dismiss",
       "sent": "Verification email sent!"
+    },
+    "welcome": {
+      "tagline": "Share your world in a new light",
+      "getStarted": "Get started",
+      "login": "I already have an account",
+      "termsPrefix": "By continuing you agree to our",
+      "privacy": "Privacy Policy"
     }
   },
   "settings": {

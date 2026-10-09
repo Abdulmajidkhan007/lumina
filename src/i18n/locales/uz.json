@@ -87,6 +87,13 @@
       "sending": "Yuborilmoqda…",
       "dismiss": "Yopish",
       "sent": "Xat yuborildi!"
+    },
+    "welcome": {
+      "tagline": "Dunyongizni yangi nurda ulashing",
+      "getStarted": "Boshlash",
+      "login": "Hisobim bor",
+      "termsPrefix": "Davom etish orqali siz rozilik bildirasiz:",
+      "privacy": "Maxfiylik siyosati"
     }
   },
   "settings": {
