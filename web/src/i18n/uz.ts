@@ -261,4 +261,8 @@ export const uz: Record<string, string> = {
   "Couldn't load viewers.": "Ko'rganlar ro'yxati yuklanmadi.",
   "Retry": "Qayta urinish",
   "No views yet": "Hali hech kim ko'rmagan",
+  "Video — tap to play or pause, double-tap to like": "Video — bosing: pauza/davom, ikki marta: like",
+  "Mute": "Ovozni o'chirish",
+  "Unmute": "Ovozni yoqish",
+  "Couldn't load reels.": "Reels yuklanmadi.",
 };

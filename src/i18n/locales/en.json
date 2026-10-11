@@ -337,5 +337,13 @@
     "notFound": "No stories found for this user.",
     "loadError": "Couldn't load stories.",
     "progress": "Story {{current}} of {{total}}"
+  },
+  "video": {
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "playPause": "Video — tap to play or pause, double-tap to like"
+  },
+  "profile": {
+    "openStory": "View {{username}}'s story"
   }
 }

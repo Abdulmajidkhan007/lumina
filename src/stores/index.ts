@@ -10,6 +10,8 @@ export {
   usePreferencesStore,
   useThemeMode,
   useAutoplayVideos,
+  useVideoMuted,
+  useToggleVideoMuted,
   useHapticsEnabled,
   type ColorSchemePreference,
 } from './preferences.store';

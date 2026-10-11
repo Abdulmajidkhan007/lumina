@@ -337,5 +337,13 @@
     "notFound": "Bu foydalanuvchida story yo'q.",
     "loadError": "Story'lar yuklanmadi.",
     "progress": "{{total}} tadan {{current}}-story"
+  },
+  "video": {
+    "mute": "Ovozni o'chirish",
+    "unmute": "Ovozni yoqish",
+    "playPause": "Video — bosing: pauza/davom, ikki marta: like"
+  },
+  "profile": {
+    "openStory": "{{username}} story'sini ko'rish"
   }
 }

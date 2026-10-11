@@ -9,9 +9,11 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
+  runTransaction,
   setDoc,
   where,
   writeBatch,
@@ -25,35 +27,71 @@ import type { MediaItem, Post, UserSummary, VideoMedia } from '../types/models';
 
 export interface Reel {
   id: string;
+  /** Set when the reel mirrors a feed post — likes then live on the post. */
+  postId?: string;
   author: UserSummary;
   video: VideoMedia;
   caption: string | null;
   likeCount: number;
   commentCount: number;
+  isLikedByMe: boolean;
   audioTitle?: string;
   createdAt: string;
 }
 
+/**
+ * Newest reels. A reel at `reels/{postId}` is the twin of a single-video post:
+ * its like state and counts are read from the post, so the feed and Reels
+ * always agree (same as the app).
+ */
 export async function fetchReels(): Promise<Reel[]> {
+  const uid = auth.currentUser?.uid;
   const snap = await getDocs(query(collection(db, 'reels'), orderBy('createdAt', 'desc'), limit(30)));
-  return snap.docs
-    .map((d): Reel | null => {
+  const reels = await Promise.all(
+    snap.docs.map(async (d): Promise<Reel | null> => {
       const data = d.data() as Record<string, unknown>;
       const video = data.video as VideoMedia | undefined;
       const author = data.author as UserSummary | undefined;
       if (!video || !author || typeof data.createdAt !== 'string') return null;
+      const postSnap = await getDoc(doc(db, 'posts', d.id));
+      const twin = postSnap.exists() ? (postSnap.data() as { likeCount?: number; commentCount?: number }) : null;
+      const likeParent = twin ? doc(db, 'posts', d.id) : doc(db, 'reels', d.id);
+      const isLikedByMe = uid ? (await getDoc(doc(likeParent, 'likes', uid))).exists() : false;
       return {
         id: d.id,
+        ...(twin ? { postId: d.id } : {}),
         author,
         video,
         caption: (data.caption as string | null) ?? null,
-        likeCount: (data.likeCount as number) ?? 0,
-        commentCount: (data.commentCount as number) ?? 0,
+        likeCount: (twin ? twin.likeCount : (data.likeCount as number | undefined)) ?? 0,
+        commentCount: (twin ? twin.commentCount : (data.commentCount as number | undefined)) ?? 0,
+        isLikedByMe,
         audioTitle: data.audioTitle as string | undefined,
         createdAt: data.createdAt,
       };
-    })
-    .filter((r): r is Reel => r !== null);
+    }),
+  );
+  return reels.filter((r): r is Reel => r !== null);
+}
+
+/** Like for a reel without a post twin — `reels/{id}/likes/{uid}` + likeCount. */
+export async function setReelLiked(reelId: string, liked: boolean): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('You must be signed in to like reels.');
+  const parentRef = doc(db, 'reels', reelId);
+  const memberRef = doc(parentRef, 'likes', uid);
+  await runTransaction(db, async (tx) => {
+    const parent = await tx.get(parentRef);
+    if (!parent.exists()) return;
+    const member = await tx.get(memberRef);
+    if (liked && !member.exists()) {
+      tx.set(memberRef, { uid, createdAt: new Date().toISOString() });
+      tx.update(parentRef, { likeCount: increment(1) });
+    } else if (!liked && member.exists()) {
+      tx.delete(memberRef);
+      tx.update(parentRef, { likeCount: increment(-1) });
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------

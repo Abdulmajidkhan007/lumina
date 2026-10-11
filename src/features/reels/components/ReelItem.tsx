@@ -7,8 +7,10 @@
  * - Top + bottom dark gradient overlays for legibility
  * - Right-side ReelActions column
  * - Bottom-left ReelOverlay (username, caption, audio)
- * - Bottom-right mute toggle overlay
- * - Double-tap anywhere on the video/poster to like (Reanimated heart pop)
+ * - Playback controls: tap = pause/resume (centered icon), hold = 2x speed
+ *   (back to 1x on release), double-tap = like (heart pop), global mute
+ *   button (shared with feed videos), progress line above the tab bar
+ * - Pauses when the Reels screen loses focus or the app goes to background
  *
  * Only the "active" item (tracked by ReelsPager) shows the overlay UI and
  * autoplays; adjacent items preload the video (muted, paused) so playback
@@ -18,12 +20,9 @@
  * Memoized. All callbacks must be stable.
  */
 
-import React, { useCallback, useRef, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from '@/components/Image';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import LinearGradient from 'react-native-linear-gradient';
@@ -37,6 +36,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
@@ -46,8 +46,16 @@ import { useLikeReel } from '@/data/query/hooks/useLikeReel';
 import { useSaveReel } from '@/data/query/hooks/useSaveReel';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
 import { useCurrentUser } from '@/stores/auth.store';
-import { useAutoplayVideos } from '@/stores/preferences.store';
-import { hitSlop, screen } from '@/constants/layout';
+import { useAutoplayVideos, useVideoMuted } from '@/stores/preferences.store';
+import { screen, tabBarHeight } from '@/constants/layout';
+import {
+  FAST_RATE,
+  MuteButton,
+  NORMAL_RATE,
+  PlaybackIndicator,
+  VideoProgressBar,
+  playbackFraction,
+} from '@/components/video';
 import type { Reel, ReelId, UserId } from '@/types/models';
 
 import { ReelActions } from './ReelActions';
@@ -64,6 +72,8 @@ export interface ReelItemProps {
   isActive: boolean;
   /** True for items directly before/after the active one — preloads video. */
   isAdjacent?: boolean;
+  /** False while the screen is unfocused or the app is backgrounded. */
+  playbackAllowed?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,8 +108,11 @@ export const ReelItem = React.memo(function ReelItem({
   reel,
   isActive,
   isAdjacent = false,
+  playbackAllowed = true,
 }: ReelItemProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
   const autoplayVideos = useAutoplayVideos();
@@ -107,10 +120,21 @@ export const ReelItem = React.memo(function ReelItem({
   const { mutate: saveReel } = useSaveReel();
   const { mutate: followUser } = useFollowUser();
 
-  // Local mute preference — defaults muted like most short-video feeds;
-  // the user can toggle it per-reel via the bottom-right overlay button.
-  const [isMuted, setIsMuted] = useState(true);
+  // Global sound switch, shared with feed videos.
+  const isMuted = useVideoMuted();
   const [shareOpen, setShareOpen] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const [isFast, setIsFast] = useState(false);
+  const progress = useSharedValue(0);
+  const durationRef = useRef(0);
+
+  // Coming back to a reel always resumes it at normal speed.
+  useEffect(() => {
+    if (!isActive) {
+      setUserPaused(false);
+      setIsFast(false);
+    }
+  }, [isActive]);
 
   // Stable ref so gesture closure always has the latest value without
   // re-creating the gesture object on every render.
@@ -132,14 +156,33 @@ export const ReelItem = React.memo(function ReelItem({
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isLikedRef.current) {
-      likeReel({ reelId: reel.id, liked: true });
+      likeReel({ reelId: reel.id, postId: reel.postId, liked: true });
     }
     triggerHeartPop();
-  }, [likeReel, reel.id, triggerHeartPop]);
+  }, [likeReel, reel.id, reel.postId, triggerHeartPop]);
 
   const handleLike = useCallback((reelId: ReelId, liked: boolean) => {
-    likeReel({ reelId, liked });
-  }, [likeReel]);
+    likeReel({ reelId, postId: reel.postId, liked });
+  }, [likeReel, reel.postId]);
+
+  const handleTogglePause = useCallback(() => setUserPaused((p) => !p), []);
+  const handleFastStart = useCallback(() => {
+    setUserPaused(false);
+    setIsFast(true);
+  }, []);
+  const handleFastEnd = useCallback(() => setIsFast(false), []);
+
+  const handleVideoLoad = useCallback((durationMs: number) => {
+    durationRef.current = durationMs;
+  }, []);
+
+  const handleVideoProgress = useCallback(
+    (positionMs: number) => {
+      // onProgress fires every 250 ms — glide between ticks.
+      progress.value = withTiming(playbackFraction(positionMs, durationRef.current), { duration: 250 });
+    },
+    [progress],
+  );
 
   const handleSave = useCallback((reelId: ReelId, saved: boolean) => {
     saveReel({ reelId, saved });
@@ -168,20 +211,34 @@ export const ReelItem = React.memo(function ReelItem({
     followUser({ userId: reel.author.id, follow: true });
   }, [followUser, reel.author.id]);
 
-  const handleToggleMute = useCallback(() => {
-    setIsMuted((prev) => !prev);
-  }, []);
+  // ---------------------------------------------------------------------------
+  // Gestures: hold (2x) > double-tap (like) > single tap (pause). Each lower
+  // priority gesture waits for the higher one to fail, so a double-tap never
+  // also toggles pause and a hold never counts as a tap.
+  // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Double-tap gesture
-  // ---------------------------------------------------------------------------
+  const longPress = Gesture.LongPress()
+    .minDuration(300)
+    .maxDistance(30)
+    .onStart(() => {
+      runOnJS(handleFastStart)();
+    })
+    .onFinalize((_e, success) => {
+      if (success) runOnJS(handleFastEnd)();
+    });
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .maxDelay(250)
-    .onEnd(() => {
-      runOnJS(handleDoubleTapLike)();
+    .onEnd((_e, success) => {
+      if (success) runOnJS(handleDoubleTapLike)();
     });
+
+  const singleTap = Gesture.Tap().onEnd((_e, success) => {
+    if (success) runOnJS(handleTogglePause)();
+  });
+
+  const controls = Gesture.Exclusive(longPress, doubleTap, singleTap);
 
   // ---------------------------------------------------------------------------
   // Derived values
@@ -191,6 +248,9 @@ export const ReelItem = React.memo(function ReelItem({
   // Mount the real player for the active item plus its immediate neighbors
   // so playback starts instantly on swipe; everything else keeps the poster.
   const shouldLoadVideo = isActive || isAdjacent;
+  const isPlaying = isActive && playbackAllowed && autoplayVideos && !userPaused;
+  // The tab bar floats over the bottom of the pager.
+  const chromeBottom = tabBarHeight.default + Math.max(insets.bottom, 8);
   const isMe = currentUser?.id === reel.author.id;
   // We use isFollowedByMe from author if available; fall back to false
   // UserSummary doesn't carry isFollowedByMe so we use a local check via
@@ -207,11 +267,14 @@ export const ReelItem = React.memo(function ReelItem({
       {shouldLoadVideo ? (
         <VideoPlayer
           uri={reel.video.uri}
-          paused={!isActive || !autoplayVideos}
-          muted={isMuted}
+          paused={!isPlaying}
+          muted={isMuted || !isActive}
+          rate={isFast && isActive ? FAST_RATE : NORMAL_RATE}
           repeat
           resizeMode="cover"
           posterUri={thumbnailUri}
+          onLoad={isActive ? handleVideoLoad : undefined}
+          onProgress={isActive ? handleVideoProgress : undefined}
           style={StyleSheet.absoluteFillObject}
         />
       ) : (
@@ -240,40 +303,33 @@ export const ReelItem = React.memo(function ReelItem({
         pointerEvents="none"
       />
 
-      {/* Double-tap gesture layer */}
-      <GestureDetector gesture={doubleTap}>
-        <View style={StyleSheet.absoluteFillObject} />
+      {/* Tap / double-tap / hold gesture layer */}
+      <GestureDetector gesture={controls}>
+        <View
+          style={StyleSheet.absoluteFillObject}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('video.playPause')}
+          onAccessibilityTap={handleTogglePause}
+        />
       </GestureDetector>
 
       {/* Heart pop overlay */}
       <HeartPopOverlay scale={heartScale} />
 
-      {/* Play badge in top-right corner */}
-      <View style={styles.playBadge} pointerEvents="none">
-        <Ionicons name="play-circle" size={28} color="rgba(255,255,255,0.85)" />
-      </View>
-
       {/* Only render interactive UI when active to save memory */}
       {isActive ? (
         <>
-          {/* Mute toggle — bottom-right overlay on the video */}
-          <Pressable
-            onPress={handleToggleMute}
-            hitSlop={hitSlop.md}
-            accessibilityRole="button"
-            accessibilityLabel={isMuted ? 'Unmute reel' : 'Mute reel'}
-            accessibilityState={{ selected: isMuted }}
-            style={[styles.muteButton, { backgroundColor: theme.colors.overlay }]}
-          >
-            <Ionicons
-              name={isMuted ? 'volume-mute' : 'volume-high'}
-              size={20}
-              color="#FFFFFF"
-            />
-          </Pressable>
+          <PlaybackIndicator paused={userPaused} fast={isFast} />
+
+          {/* Global mute toggle — top-right, opposite the "Reels" wordmark */}
+          <MuteButton style={[styles.muteButton, { top: insets.top + 8 }]} />
+
+          {/* Progress line just above the tab bar */}
+          <VideoProgressBar progress={progress} style={{ bottom: chromeBottom }} />
 
           {/* Right-side action column */}
-          <View style={styles.actionsColumn}>
+          <View style={[styles.actionsColumn, { bottom: chromeBottom + 24 }]}>
             <ReelActions
               reelId={reel.id}
               author={reel.author}
@@ -291,7 +347,7 @@ export const ReelItem = React.memo(function ReelItem({
           </View>
 
           {/* Bottom-left overlay */}
-          <View style={styles.overlayContainer}>
+          <View style={[styles.overlayContainer, { bottom: chromeBottom + 16 }]}>
             <ReelOverlay
               username={reel.author.username}
               isFollowedByMe={isFollowedByMe}
@@ -351,32 +407,19 @@ const styles = StyleSheet.create({
   actionsColumn: {
     position: 'absolute',
     right: 12,
-    bottom: 100,
     alignItems: 'center',
   },
   heartOverlay: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playBadge: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-  },
   muteButton: {
     position: 'absolute',
     right: 16,
-    bottom: 24,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   overlayContainer: {
     position: 'absolute',
     left: 16,
-    bottom: 100,
     right: 80, // leave space for action column
   },
 });

@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchPost, fetchComments, addComment, setPostLiked, setPostSaved } from '../../lib/posts';
+import { fetchPost, fetchComments, addComment, setPostSaved } from '../../lib/posts';
+import { toggleLike, useLikeState } from '../../lib/likeStore';
+import { SmartVideo } from '../../components/SmartVideo';
 import type { Comment, Post } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { ErrorState } from '../../components/StateViews';
@@ -41,16 +43,11 @@ export function PostDetail() {
     void load();
   }, [load]);
 
-  const toggleLike = async () => {
-    if (!post) return;
-    const next = !post.isLikedByMe;
-    setPost({ ...post, isLikedByMe: next, likeCount: post.likeCount + (next ? 1 : -1) });
-    try {
-      await setPostLiked(post.id, next);
-    } catch {
-      setPost({ ...post, isLikedByMe: !next, likeCount: post.likeCount });
-    }
-  };
+  const likeSeed = useMemo(
+    () => ({ liked: post?.isLikedByMe ?? false, count: post?.likeCount ?? 0 }),
+    [post?.isLikedByMe, post?.likeCount],
+  );
+  const like = useLikeState(id ?? '', likeSeed);
 
   const toggleSave = async () => {
     if (!post) return;
@@ -81,7 +78,12 @@ export function PostDetail() {
     <div className="mx-auto w-full max-w-4xl gap-6 px-4 md:grid md:grid-cols-2">
       <div className="relative">
         {media.type === 'video' ? (
-          <video src={media.uri} controls playsInline className="aspect-square w-full rounded-2xl bg-black object-contain" />
+          <SmartVideo
+            src={media.uri}
+            poster={media.thumbnailUri}
+            className="aspect-square w-full rounded-2xl"
+            onDoubleTap={() => toggleLike(post.id, likeSeed, true)}
+          />
         ) : (
           <MediaImage src={uri} alt={post.caption ?? ''} className="aspect-square w-full rounded-2xl object-cover" />
         )}
@@ -107,8 +109,13 @@ export function PostDetail() {
         </Link>
 
         <div className="mb-3 flex items-center gap-4">
-          <button type="button" onClick={() => void toggleLike()} className="text-sm font-semibold">
-            {post.isLikedByMe ? '♥' : '♡'} {post.likeCount.toLocaleString()}
+          <button
+            type="button"
+            onClick={() => toggleLike(post.id, likeSeed)}
+            aria-pressed={like.liked}
+            className="text-sm font-semibold"
+          >
+            {like.liked ? '♥' : '♡'} {like.count.toLocaleString()}
           </button>
           <button type="button" onClick={() => void toggleSave()} className="text-sm font-semibold text-text-muted">
             {post.isSavedByMe ? t('Saved') : t('Save')}

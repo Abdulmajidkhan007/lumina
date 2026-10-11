@@ -261,4 +261,8 @@ export const ru: Record<string, string> = {
   "Couldn't load viewers.": "Не удалось загрузить зрителей.",
   "Retry": "Повторить",
   "No views yet": "Пока нет просмотров",
+  "Video — tap to play or pause, double-tap to like": "Видео — нажмите для паузы, дважды — лайк",
+  "Mute": "Выключить звук",
+  "Unmute": "Включить звук",
+  "Couldn't load reels.": "Не удалось загрузить Reels.",
 };

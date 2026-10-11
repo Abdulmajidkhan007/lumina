@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { fetchFeedPage, setPostLiked, setPostSaved } from '../../lib/posts';
+import { fetchFeedPage, setPostSaved } from '../../lib/posts';
+import { toggleLike, useLikeState } from '../../lib/likeStore';
+import { SmartVideo } from '../../components/SmartVideo';
 import type { Post } from '../../types/models';
 import { formatRelativeTime } from '../../lib/time';
 import { Avatar } from '../../components/Avatar';
@@ -27,23 +29,13 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 function PostCard({ post }: { post: Post }) {
   const { t } = useI18n();
-  const [liked, setLiked] = useState(post.isLikedByMe);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const seed = useMemo(() => ({ liked: post.isLikedByMe, count: post.likeCount }), [post.isLikedByMe, post.likeCount]);
+  const { liked, count: likeCount } = useLikeState(post.id, seed);
   const [saved, setSaved] = useState(post.isSavedByMe);
   const media = post.media[0];
   const isVideo = media?.type === 'video';
 
-  const toggleLike = async () => {
-    const next = !liked;
-    setLiked(next);
-    setLikeCount((c) => c + (next ? 1 : -1));
-    try {
-      await setPostLiked(post.id, next);
-    } catch {
-      setLiked(!next);
-      setLikeCount((c) => c + (next ? -1 : 1));
-    }
-  };
+  const onLike = () => toggleLike(post.id, seed);
 
   const toggleSave = async () => {
     const next = !saved;
@@ -69,7 +61,12 @@ function PostCard({ post }: { post: Post }) {
         </time>
       </header>
       {isVideo && media ? (
-        <video src={media.uri} controls playsInline poster={media.thumbnailUri} className="aspect-square w-full bg-black object-contain" />
+        <SmartVideo
+          src={media.uri}
+          poster={media.thumbnailUri}
+          className="aspect-square w-full"
+          onDoubleTap={() => toggleLike(post.id, seed, true)}
+        />
       ) : imageUri ? (
         <Link to={`/app/p/${post.id}`}>
           <MediaImage
@@ -82,7 +79,7 @@ function PostCard({ post }: { post: Post }) {
       ) : null}
       <div className="space-y-2 px-4 py-3">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={toggleLike} aria-pressed={liked} aria-label={liked ? t('Unlike') : t('Like')} className="transition active:scale-90">
+          <button type="button" onClick={onLike} aria-pressed={liked} aria-label={liked ? t('Unlike') : t('Like')} className="transition active:scale-90">
             <HeartIcon filled={liked} />
           </button>
           <Link to={`/app/p/${post.id}`} aria-label={t('Comments')} className="text-sm font-semibold text-text-muted">
