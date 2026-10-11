@@ -265,4 +265,5 @@ export const ru: Record<string, string> = {
   "Mute": "Выключить звук",
   "Unmute": "Включить звук",
   "Couldn't load reels.": "Не удалось загрузить Reels.",
+  "View {name}’s story": "Смотреть историю {name}",
 };

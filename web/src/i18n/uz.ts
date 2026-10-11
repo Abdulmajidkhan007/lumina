@@ -265,4 +265,5 @@ export const uz: Record<string, string> = {
   "Mute": "Ovozni o'chirish",
   "Unmute": "Ovozni yoqish",
   "Couldn't load reels.": "Reels yuklanmadi.",
+  "View {name}’s story": "{name} story'sini ko'rish",
 };
