@@ -5,17 +5,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Signed in. A blocked user (userBans/{uid}) keeps read access but every
+    // write fails here — and every write rule goes through signedIn() or
+    // isOwner(). Reads skip the ban lookup, so they cost no extra document read.
     function signedIn() {
-      return request.auth != null;
+      return request.auth != null
+        && (request.method in ['get', 'list'] || isOwnerAccount() || notBanned());
     }
 
-    // Moderator. The email alone is not proof: an unverified email/password
+    // The owner. The email alone is not proof: an unverified email/password
     // account could claim any address. The owner signs in with Google, whose
-    // tokens always carry email_verified == true.
-    function isAdmin() {
-      return signedIn()
+    // tokens always carry email_verified == true. Never affected by bans/roles.
+    function isOwnerAccount() {
+      return request.auth != null
         && request.auth.token.email == 'santexnika.atoyo@gmail.com'
         && request.auth.token.email_verified == true;
+    }
+
+    // Admin: the owner, or a verified account the owner/an admin promoted via
+    // staffRoles/{uid}.role == 'admin'.
+    function isAdmin() {
+      return signedIn() && (isOwnerAccount() || hasStaffRole(['admin']));
     }
 
     function isOwner(uid) {
@@ -25,6 +35,36 @@ service cloud.firestore {
     // True when an update touches ONLY the listed fields (counter bumps).
     function onlyKeys(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---- admin panel helpers (roles, bans, moderation) ----
+    function notBanned() {
+      return !exists(/databases/$(database)/documents/userBans/$(request.auth.uid));
+    }
+
+    function hasStaffRole(roles) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/staffRoles/$(request.auth.uid))
+        && get(/databases/$(database)/documents/staffRoles/$(request.auth.uid)).data.role in roles;
+    }
+
+    // Moderator or admin: works the reports queue, hides posts, blocks users.
+    function isStaff() {
+      return signedIn() && (isOwnerAccount() || hasStaffRole(['admin', 'moderator']));
+    }
+
+    // Fields only staff may set on a post (an author must not unhide).
+    function moderationKeys() {
+      return ['hidden', 'hiddenAt', 'hiddenBy', 'hiddenReason'];
+    }
+
+    // "YYYY-MM-DD" of the request in UTC — daily-active buckets.
+    function pad2(n) {
+      return n < 10 ? '0' + string(n) : string(n);
+    }
+    function todayUtc() {
+      return string(request.time.year()) + '-' + pad2(request.time.month()) + '-' + pad2(request.time.day());
     }
 
     // ---------------- users ----------------
@@ -67,10 +107,13 @@ service cloud.firestore {
     // ---------------- posts ----------------
     match /posts/{postId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid
+                    && !request.resource.data.keys().hasAny(moderationKeys());
       allow update: if signedIn()
-                    && (resource.data.authorId == request.auth.uid
-                        || onlyKeys(['likeCount', 'commentCount']));
+                    && ((resource.data.authorId == request.auth.uid
+                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(moderationKeys()))
+                        || onlyKeys(['likeCount', 'commentCount'])
+                        || (isStaff() && onlyKeys(moderationKeys())));
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{uid} {
@@ -96,6 +139,8 @@ service cloud.firestore {
                     && (resource.data.authorId == request.auth.uid
                         || onlyKeys(['likeCount', 'commentCount', 'shareCount']));
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      // Hiding a reported video post also removes its reel copy (admin panel).
+      allow delete: if isStaff();
 
       match /likes/{uid} {
         allow read: if signedIn();
@@ -176,18 +221,40 @@ service cloud.firestore {
     }
   
     // ---------------- reports (moderation) ----------------
-    // Anyone signed-in can file a report; only admins read them.
+    // Anyone signed-in can file a report (always as 'open'); staff read them.
+    // The filing itself never changes — staff may only move its status along
+    // open -> reviewing -> resolved | dismissed (or reopen to reviewing).
+    // A report without `status` (filed before 2026-10-11) counts as open.
     match /reports/{reportId} {
-      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
-      allow read: if isAdmin();
-      allow update, delete: if false;
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid
+        && (!('status' in request.resource.data) || request.resource.data.status == 'open');
+      allow read: if isStaff();
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'updatedAt', 'updatedBy'])
+        && validReportTransition(resource.data.get('status', 'open'), request.resource.data.status)
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
 
-      // Moderator decisions. Reports stay append-only, so outcomes live here
-      // as an audit trail. Admin-only, and never edited once written.
+      // Audit trail: one entry per moderator step (status change, note,
+      // hide post, block user). Staff-only, never edited once written.
+      // Pre-2026-10-11 entries are { outcome, moderatorId, createdAt }.
       match /resolutions/{resolutionId} {
-        allow read, create: if isAdmin();
+        allow read: if isStaff();
+        allow create: if isStaff()
+          && request.resource.data.keys().hasOnly(
+               ['action', 'status', 'note', 'moderatorId', 'moderatorEmail', 'createdAt', 'outcome'])
+          && request.resource.data.moderatorId == request.auth.uid
+          && (!('note' in request.resource.data)
+              || (request.resource.data.note is string && request.resource.data.note.size() <= 1000));
         allow update, delete: if false;
       }
+    }
+
+    function validReportTransition(from, to) {
+      return (from in ['open', 'reviewing'] && to in ['open', 'reviewing', 'resolved', 'dismissed'] && from != to)
+        || (from in ['resolved', 'dismissed'] && to == 'reviewing');
     }
 
     // ---------------- contact form (landing page) ----------------
@@ -233,8 +300,110 @@ service cloud.firestore {
         && (!('meta' in request.resource.data)
             || (request.resource.data.meta is map && request.resource.data.meta.size() <= 5))
         && request.resource.data.createdAt is string && request.resource.data.createdAt.size() <= 40;
-      allow read: if isAdmin();
+      allow read: if isStaff();
       allow update, delete: if false;
+    }
+
+    // ======== admin panel (2026-10-11): roles, bans, audit, broadcasts ========
+
+    // Staff roles. No document = ordinary user. Only an admin assigns roles,
+    // and never their own (an admin cannot demote — or promote — themselves).
+    // The owner account is admin by email and needs no document.
+    match /staffRoles/{uid} {
+      allow get: if isOwner(uid) || isStaff();
+      allow list: if isStaff();
+      allow create, update: if isAdmin()
+        && uid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['role', 'updatedBy', 'updatedAt'])
+        && request.resource.data.role in ['moderator', 'admin']
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin() && uid != request.auth.uid;
+    }
+
+    // Blocked users. While a document exists, signedIn() rejects every write
+    // by that user. Staff block/unblock; a moderator cannot touch staff.
+    match /userBans/{uid} {
+      allow get: if isOwner(uid) || isStaff();
+      allow list: if isStaff();
+      allow create: if isStaff()
+        && uid != request.auth.uid
+        && (isAdmin() || !exists(/databases/$(database)/documents/staffRoles/$(uid)))
+        && request.resource.data.keys().hasOnly(['reason', 'bannedBy', 'createdAt', 'reportId'])
+        && request.resource.data.bannedBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 500;
+      allow update: if false;
+      allow delete: if isStaff()
+        && (isAdmin() || !exists(/databases/$(database)/documents/staffRoles/$(uid)));
+    }
+
+    // Admin action journal (Activity page). Append-only, staff only.
+    match /adminLogs/{logId} {
+      allow read: if isStaff();
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly(
+             ['action', 'actorId', 'actorEmail', 'targetType', 'targetId', 'note', 'createdAt'])
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.action is string && request.resource.data.action.size() <= 40
+        && (!('note' in request.resource.data)
+            || (request.resource.data.note is string && request.resource.data.note.size() <= 1000))
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // Announcements from the admin to every user (Notifications screen).
+    // No per-user fan-out: each client reads this collection; push goes
+    // through the optional Cloud Function (functions/) to the 'all' topic.
+    match /broadcasts/{broadcastId} {
+      allow read: if signedIn();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['title', 'body', 'link', 'createdAt', 'createdBy', 'createdByEmail'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 2000
+        && (!('link' in request.resource.data)
+            || (request.resource.data.link is string
+                && request.resource.data.link.size() <= 500
+                && request.resource.data.link.matches('https?://[^ ]+')))
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Per-user "seen announcements up to" watermark.
+    match /broadcastReads/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['readAt'])
+        && request.resource.data.readAt == request.time;
+      allow delete: if false;
+    }
+
+    // Daily active users: one doc per user per UTC day, written by the client
+    // on its first open of the day. Staff count them (count() aggregation).
+    match /activeDays/{day}/users/{uid} {
+      allow read: if isStaff();
+      allow create, update: if isOwner(uid)
+        && day == todayUtc()
+        && request.resource.data.keys().hasOnly(['at'])
+        && request.resource.data.at == request.time;
+      allow delete: if false;
+    }
+
+    // Sign-in email per user for admin search — kept out of the public
+    // users/{uid} profile. Written by the owner, only with their own email.
+    match /privateProfiles/{uid} {
+      allow read: if isOwner(uid) || isStaff();
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['email', 'emailLower', 'updatedAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.emailLower == request.auth.token.email.lower()
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
     }
 }
 }
