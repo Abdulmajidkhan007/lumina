@@ -52,7 +52,7 @@ export default function StoryComposerScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
-  const { uri } = useRoute<RouteProp<ProtectedStackParamList, 'StoryComposer'>>().params;
+  const { uri, width, height } = useRoute<RouteProp<ProtectedStackParamList, 'StoryComposer'>>().params;
 
   const createStory = useCreateStory();
   const isUploading = createStory.isPending;
@@ -81,14 +81,20 @@ export default function StoryComposerScreen(): React.JSX.Element {
   const handleShare = useCallback(() => {
     if (isUploading) return;
     createStory.mutate(
-      { uri, type: 'image', audience: closeFriendsOnly ? 'closeFriends' : 'all' },
+      {
+        uri,
+        type: 'image',
+        ...(width ? { width } : {}),
+        ...(height ? { height } : {}),
+        audience: closeFriendsOnly ? 'closeFriends' : 'all',
+      },
       {
         onSuccess: () => {
           navigation.navigate('Tabs');
         },
       },
     );
-  }, [createStory, isUploading, navigation, uri, closeFriendsOnly]);
+  }, [createStory, isUploading, navigation, uri, width, height, closeFriendsOnly]);
 
   const toggleAudience = useCallback(() => setCloseFriendsOnly((v) => !v), []);
 

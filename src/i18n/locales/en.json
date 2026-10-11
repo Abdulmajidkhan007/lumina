@@ -323,5 +323,19 @@
     "shareToStory": "Share to story",
     "uploading": "Uploading…",
     "shareError": "Couldn't share your story. Please try again."
+  },
+  "storyViewer": {
+    "seenBy": "Seen by {{count}}",
+    "viewersTitle": "Viewers",
+    "noViewers": "No views yet",
+    "noViewersHint": "People who view your story will appear here.",
+    "viewersError": "Couldn't load viewers.",
+    "openViewers": "Show who viewed this story",
+    "previous": "Previous story",
+    "next": "Next story",
+    "close": "Close story",
+    "notFound": "No stories found for this user.",
+    "loadError": "Couldn't load stories.",
+    "progress": "Story {{current}} of {{total}}"
   }
 }

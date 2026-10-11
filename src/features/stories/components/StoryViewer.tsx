@@ -1,46 +1,51 @@
 /**
  * Lumina — StoryViewer
  *
- * Fullscreen dark story viewer with:
- * - Segmented progress bars (Reanimated, auto-advance)
- * - Tap left/right to go prev/next
- * - Long-press to pause
- * - Swipe-down (PanGesture) to dismiss
- * - Author avatar + name + timestamp + close button
- * - expo-image for image stories; real video playback (VideoPlayer) for
- *   video stories, auto-advancing on video end instead of a fixed timer
- * - Marks stories seen via storiesApi
+ * Fullscreen story viewer, Instagram-style:
+ * - Segmented progress bars at the top (Reanimated, auto-advance)
+ * - Tap the left third → previous, anywhere else → next
+ * - Press and hold → pause (chrome fades out so the media is unobstructed)
+ * - Swipe down → dismiss
+ * - Media at full quality: portrait media fills the screen, landscape/square
+ *   media is shown whole on black (see `storyContentFit`). Only a light
+ *   gradient at the very top keeps the header legible — nothing dims the
+ *   picture itself.
+ * - Own stories: "Seen by N" pill at the bottom opens the viewers sheet.
+ *   Other people's stories: quick emoji reactions.
+ * - Marks stories seen (and records the view for the author) via storiesApi.
  */
 
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
+  type GestureResponderEvent,
+  type ImageLoadEventData,
+  type NativeSyntheticEvent,
 } from 'react-native';
-import { Image } from '@/components/Image';
-import { VideoPlayer } from '@/components/VideoPlayer';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withSpring,
   withTiming,
-  cancelAnimation,
 } from 'react-native-reanimated';
+import LinearGradient from 'react-native-linear-gradient';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { Image } from '@/components/Image';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import { useTheme } from '@/design-system/theme';
 import { useReducedMotion } from '@/design-system/hooks';
 import { Avatar } from '@/design-system/primitives/Avatar';
@@ -48,10 +53,27 @@ import { Text } from '@/design-system/primitives/Text';
 import { hitSlop } from '@/constants/layout';
 import { formatRelativeTime } from '@/utils/format';
 import { storiesApi } from '@/data/api/client';
+import { queryKeys } from '@/data/query/keys';
 import { useStoryReaction } from '@/data/query/hooks/useStoryReaction';
+import { useStoryViewers } from '@/data/query/hooks/useStoryViewers';
 import { useCurrentUser } from '@/stores/auth.store';
+import type { ProtectedStackParamList } from '@/navigation/types';
 import type { StoryReel } from '@/types/models';
 import { StoryProgressBar } from './StoryProgressBar';
+import { StoryViewersSheet } from './StoryViewersSheet';
+import { storyContentFit, storyTapAction } from '../utils/storyMedia';
+
+// ---------------------------------------------------------------------------
+// Constants — the viewer is always dark, independent of the app theme
+// ---------------------------------------------------------------------------
+
+const STORY_DURATION_MS = 5000;
+const SWIPE_DISMISS_THRESHOLD = 80;
+const LONG_PRESS_MS = 200;
+const ON_MEDIA = '#FFFFFF';
+const ON_MEDIA_MUTED = 'rgba(255,255,255,0.8)';
+const TOP_GRADIENT = ['rgba(0,0,0,0.45)', 'rgba(0,0,0,0)'];
+const PILL_BG = 'rgba(0,0,0,0.35)';
 
 // ---------------------------------------------------------------------------
 // Reaction bar — quick emoji reactions shown on other people's stories
@@ -61,20 +83,13 @@ const REACTION_EMOJIS = ['❤️', '😂', '😮', '😍', '🔥'] as const;
 
 interface ReactionButtonProps {
   emoji: string;
-  accessibilityLabel: string;
   onPressIn: () => void;
   onPressOut: () => void;
   onReact: (emoji: string) => void;
 }
 
 /** One emoji in the reaction bar — owns its own pop-scale animation. */
-function ReactionButton({
-  emoji,
-  accessibilityLabel,
-  onPressIn,
-  onPressOut,
-  onReact,
-}: ReactionButtonProps): React.JSX.Element {
+function ReactionButton({ emoji, onPressIn, onPressOut, onReact }: ReactionButtonProps): React.JSX.Element {
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
@@ -85,10 +100,7 @@ function ReactionButton({
   const handlePress = useCallback(() => {
     scale.value = reducedMotion
       ? 1
-      : withSequence(
-          withTiming(1.5, { duration: 120 }),
-          withSpring(1, { damping: 8, stiffness: 200 }),
-        );
+      : withSequence(withTiming(1.5, { duration: 120 }), withSpring(1, { damping: 8, stiffness: 200 }));
     onReact(emoji);
   }, [reducedMotion, scale, emoji, onReact]);
 
@@ -99,7 +111,7 @@ function ReactionButton({
       onPress={handlePress}
       hitSlop={hitSlop.sm}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={emoji}
     >
       <Animated.View style={animatedStyle}>
         <Text variant="title">{emoji}</Text>
@@ -115,138 +127,130 @@ function ReactionButton({
 export interface StoryViewerProps {
   reel: StoryReel;
   onDismiss: () => void;
+  /**
+   * Extra bottom action rendered on your own stories next to "Seen by"
+   * (e.g. "Add to highlight"). Receives the current story and a setter that
+   * pauses playback while its own UI is open.
+   */
+  renderOwnAction?: (args: {
+    storyIndex: number;
+    setPausedByAction: (paused: boolean) => void;
+  }) => React.ReactNode;
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const STORY_DURATION_MS = 5000;
-const SWIPE_DISMISS_THRESHOLD = 80;
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StoryViewer({
-  reel,
-  onDismiss,
-}: StoryViewerProps): React.JSX.Element {
+export function StoryViewer({ reel, onDismiss, renderOwnAction }: StoryViewerProps): React.JSX.Element {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
+  const queryClient = useQueryClient();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const currentUser = useCurrentUser();
   const { mutate: sendReaction } = useStoryReaction();
 
   const [storyIndex, setStoryIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [holdPaused, setHoldPaused] = useState(false);
+  const [interactionPaused, setInteractionPaused] = useState(false);
+  const [viewersOpen, setViewersOpen] = useState(false);
+  const [pausedByAction, setPausedByAction] = useState(false);
+  const isPaused = holdPaused || interactionPaused || viewersOpen || pausedByAction;
+
   const progress = useSharedValue(0);
-
-  // Duration (ms) of the current video story, reported by VideoPlayer's
-  // onLoad. Drives the progress bar via onProgress instead of a timer.
-  const [videoDurationMs, setVideoDurationMs] = useState(0);
-
-  // Track elapsed before pause to resume from correct position
-  const elapsedRef = useRef(0);
-  const startTimeRef = useRef<number | null>(null);
-
-  // Translated Y for swipe-down dismiss
   const translateY = useSharedValue(0);
+  const chromeOpacity = useSharedValue(1);
+
+  // Duration (ms) of the current video story, reported by VideoPlayer.
+  const [videoDurationMs, setVideoDurationMs] = useState(0);
+  // Natural size of the current image, once loaded — the stored dimensions of
+  // older stories are a 1080×1920 placeholder, so the real size wins.
+  const [loadedSize, setLoadedSize] = useState<{ width: number; height: number } | null>(null);
 
   const story = reel.stories[storyIndex];
+  const isOwnReel = currentUser != null && reel.author.id === currentUser.id;
 
-  // ---------------------------------------------------------------------------
-  // Mark seen
-  // ---------------------------------------------------------------------------
-
-  const markSeen = useCallback(
-    (idx: number) => {
-      const s = reel.stories[idx];
-      if (s != null && !s.seen) {
-        void storiesApi.markSeen(s.id);
-      }
+  // Refresh the tray's seen-rings once the viewer closes.
+  useEffect(
+    () => () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.storyReels() });
     },
-    [reel.stories],
+    [queryClient],
   );
+
+  // ---------------------------------------------------------------------------
+  // Seen + viewers
+  // ---------------------------------------------------------------------------
+
+  const markedRef = useRef(new Set<string>());
+  useEffect(() => {
+    if (story == null || markedRef.current.has(story.id)) return;
+    markedRef.current.add(story.id);
+    // Own stories still get a seen-marker (it's a no-op for the view count).
+    storiesApi.markSeen(story.id, reel.author.id).catch((e: unknown) => {
+      console.warn('[stories] markSeen failed', e);
+    });
+  }, [story, reel.author.id]);
+
+  const viewersQuery = useStoryViewers(story?.id ?? null, isOwnReel);
 
   // ---------------------------------------------------------------------------
   // Navigation helpers
   // ---------------------------------------------------------------------------
 
+  const resetForStory = useCallback(() => {
+    cancelAnimation(progress);
+    progress.value = 0;
+    setVideoDurationMs(0);
+    setLoadedSize(null);
+  }, [progress]);
+
   const goNext = useCallback(() => {
-    const nextIndex = storyIndex + 1;
-    if (nextIndex < reel.stories.length) {
-      elapsedRef.current = 0;
-      progress.value = 0;
-      setStoryIndex(nextIndex);
-      markSeen(nextIndex);
+    if (storyIndex + 1 < reel.stories.length) {
+      resetForStory();
+      setStoryIndex(storyIndex + 1);
     } else {
       onDismiss();
     }
-  }, [storyIndex, reel.stories.length, progress, markSeen, onDismiss]);
+  }, [storyIndex, reel.stories.length, resetForStory, onDismiss]);
 
   const goPrev = useCallback(() => {
-    const prevIndex = storyIndex - 1;
-    if (prevIndex >= 0) {
-      elapsedRef.current = 0;
-      progress.value = 0;
-      setStoryIndex(prevIndex);
-    }
-  }, [storyIndex, progress]);
+    resetForStory();
+    if (storyIndex > 0) setStoryIndex(storyIndex - 1);
+    // On the first story a back-tap restarts it (progress reset above).
+  }, [storyIndex, resetForStory]);
 
   // ---------------------------------------------------------------------------
-  // Auto-advance timer using Reanimated timing
+  // Auto-advance timer (images). Resumes from the current fill after a pause.
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (isPaused) return;
-    // Video stories auto-advance via VideoPlayer's onEnd + drive the
-    // progress bar from real playback position instead of a fixed timer.
-    if (story?.media.type === 'video') return;
+    if (isPaused || story == null) return;
+    if (story.media.type === 'video') return; // driven by playback position
 
-    const remaining = STORY_DURATION_MS * (1 - progress.value);
-    startTimeRef.current = Date.now();
-
+    const remaining = Math.max(STORY_DURATION_MS * (1 - progress.value), 0);
     progress.value = withTiming(1, { duration: remaining }, (finished) => {
-      if (finished) {
-        runOnJS(goNext)();
-      }
+      if (finished) runOnJS(goNext)();
     });
-
-    return () => {
-      // Capture elapsed time for pause resume
-      if (startTimeRef.current != null) {
-        elapsedRef.current += Date.now() - startTimeRef.current;
-      }
-      cancelAnimation(progress);
-    };
+    return () => cancelAnimation(progress);
   }, [storyIndex, isPaused, goNext, progress, story]);
 
-  // Mark current story seen on mount/index change
+  // Chrome hides while holding, like Instagram.
   useEffect(() => {
-    markSeen(storyIndex);
-  }, [markSeen, storyIndex]);
-
-  // Reset the known video duration whenever the story changes so a stale
-  // duration from the previous video can't be used to compute progress.
-  useEffect(() => {
-    setVideoDurationMs(0);
-  }, [storyIndex]);
+    chromeOpacity.value = withTiming(holdPaused ? 0 : 1, { duration: 150 });
+  }, [holdPaused, chromeOpacity]);
 
   // ---------------------------------------------------------------------------
-  // Video story callbacks — progress bar driven by real playback position
+  // Media callbacks
   // ---------------------------------------------------------------------------
 
-  const handleVideoLoad = useCallback((durationMs: number) => {
-    setVideoDurationMs(durationMs);
-  }, []);
+  const handleVideoLoad = useCallback((durationMs: number) => setVideoDurationMs(durationMs), []);
 
   const handleVideoProgress = useCallback(
     (positionMs: number) => {
-      if (videoDurationMs > 0) {
-        progress.value = Math.min(positionMs / videoDurationMs, 1);
-      }
+      if (videoDurationMs > 0) progress.value = Math.min(positionMs / videoDurationMs, 1);
     },
     [progress, videoDurationMs],
   );
@@ -256,26 +260,37 @@ export function StoryViewer({
     goNext();
   }, [goNext, progress]);
 
+  const handleImageLoad = useCallback((e: NativeSyntheticEvent<ImageLoadEventData>) => {
+    const { width, height } = e.nativeEvent.source;
+    if (width > 0 && height > 0) setLoadedSize({ width, height });
+  }, []);
+
+  const contentFit = useMemo(() => {
+    if (story == null) return 'cover' as const;
+    const w = loadedSize?.width ?? story.media.width;
+    const h = loadedSize?.height ?? story.media.height;
+    return storyContentFit(w, h, screenWidth, screenHeight);
+  }, [story, loadedSize, screenWidth, screenHeight]);
+
   // ---------------------------------------------------------------------------
-  // Gestures
+  // Gestures: tap zones + hold-to-pause on one Pressable, swipe-down via RNGH
   // ---------------------------------------------------------------------------
 
-  // Long press — pause
-  const longPress = Gesture.LongPress()
-    .minDuration(200)
-    .onStart(() => {
-      runOnJS(setIsPaused)(true);
-    })
-    .onFinalize(() => {
-      runOnJS(setIsPaused)(false);
-    });
+  const handleTap = useCallback(
+    (e: GestureResponderEvent) => {
+      if (storyTapAction(e.nativeEvent.locationX, screenWidth) === 'prev') goPrev();
+      else goNext();
+    },
+    [screenWidth, goPrev, goNext],
+  );
+  const handleLongPress = useCallback(() => setHoldPaused(true), []);
+  const handlePressOut = useCallback(() => setHoldPaused(false), []);
 
-  // Swipe down to dismiss
   const panGesture = Gesture.Pan()
+    .activeOffsetY(12)
+    .failOffsetX([-25, 25])
     .onUpdate((e) => {
-      if (e.translationY > 0) {
-        translateY.value = e.translationY;
-      }
+      if (e.translationY > 0) translateY.value = e.translationY;
     })
     .onEnd((e) => {
       if (e.translationY > SWIPE_DISMISS_THRESHOLD || e.velocityY > 800) {
@@ -285,39 +300,19 @@ export function StoryViewer({
       }
     });
 
-  const composed = Gesture.Simultaneous(longPress, panGesture);
-
   const containerStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
     opacity: 1 - translateY.value / (screenHeight * 0.5),
   }));
 
-  // ---------------------------------------------------------------------------
-  // Tap zones
-  // ---------------------------------------------------------------------------
-
-  const handleLeftTap = useCallback(() => {
-    cancelAnimation(progress);
-    elapsedRef.current = 0;
-    progress.value = 0;
-    goPrev();
-  }, [goPrev, progress]);
-
-  const handleRightTap = useCallback(() => {
-    cancelAnimation(progress);
-    elapsedRef.current = 0;
-    progress.value = 0;
-    goNext();
-  }, [goNext, progress]);
+  const chromeStyle = useAnimatedStyle(() => ({ opacity: chromeOpacity.value }));
 
   // ---------------------------------------------------------------------------
-  // Reaction bar — only on other people's stories, never your own
+  // Reactions / viewers
   // ---------------------------------------------------------------------------
 
-  const isOwnReel = currentUser != null && reel.author.id === currentUser.id;
-
-  const handleReactionPressIn = useCallback(() => setIsPaused(true), []);
-  const handleReactionPressOut = useCallback(() => setIsPaused(false), []);
+  const pauseForInteraction = useCallback(() => setInteractionPaused(true), []);
+  const resumeAfterInteraction = useCallback(() => setInteractionPaused(false), []);
 
   const handleReact = useCallback(
     (emoji: string) => {
@@ -331,13 +326,20 @@ export function StoryViewer({
     [story, sendReaction],
   );
 
-  const reactionAccessibilityLabels: Record<string, string> = {
-    '❤️': t('stories.reactions.heart'),
-    '😂': t('stories.reactions.laugh'),
-    '😮': t('stories.reactions.wow'),
-    '😍': t('stories.reactions.love'),
-    '🔥': t('stories.reactions.fire'),
-  };
+  const openViewers = useCallback(() => {
+    setViewersOpen(true);
+    void viewersQuery.refetch();
+  }, [viewersQuery]);
+
+  const closeViewers = useCallback(() => setViewersOpen(false), []);
+
+  const openViewerProfile = useCallback(
+    (userId: string) => {
+      setViewersOpen(false);
+      navigation.navigate('UserProfile', { id: userId });
+    },
+    [navigation],
+  );
 
   // ---------------------------------------------------------------------------
   // Render
@@ -345,16 +347,19 @@ export function StoryViewer({
 
   if (story == null) return <View style={styles.container} />;
 
+  const viewerCount = viewersQuery.data?.length ?? 0;
+
   return (
-    <GestureDetector gesture={composed}>
+    <GestureDetector gesture={panGesture}>
       <Animated.View style={[styles.container, containerStyle]}>
-        {/* Background media */}
+        {/* Media */}
         {story.media.type === 'video' ? (
           <VideoPlayer
+            key={story.id}
             uri={story.media.uri}
             paused={isPaused}
             repeat={false}
-            resizeMode="cover"
+            resizeMode={contentFit}
             posterUri={story.media.thumbnailUri}
             onLoad={handleVideoLoad}
             onProgress={handleVideoProgress}
@@ -363,132 +368,140 @@ export function StoryViewer({
           />
         ) : (
           <Image
+            key={story.id}
             source={{ uri: story.media.uri }}
             style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-            transition={100}
-            accessibilityLabel="Story image"
+            contentFit={contentFit}
+            onLoad={handleImageLoad}
+            accessibilityLabel={reel.author.username}
           />
         )}
 
-        {/* Dark gradient overlay at top/bottom */}
-        <View style={styles.topGradient} pointerEvents="none" />
-        <View style={styles.bottomGradient} pointerEvents="none" />
+        {/* Tap / hold surface — beneath the chrome so its buttons stay tappable */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={handleTap}
+          onLongPress={handleLongPress}
+          onPressOut={handlePressOut}
+          delayLongPress={LONG_PRESS_MS}
+          accessibilityRole="button"
+          accessibilityLabel={t('storyViewer.next')}
+        />
 
-        {/* Top chrome: progress bars + author header */}
-        <View
-          style={[
-            styles.topChrome,
-            { paddingTop: insets.top + theme.spacing.sm },
-          ]}
-        >
-          {/* Progress bars */}
-          <View
-            style={[
-              styles.progressRow,
-              { paddingHorizontal: theme.spacing.sm },
-            ]}
-          >
-            <StoryProgressBar
-              count={reel.stories.length}
-              activeIndex={storyIndex}
-              progress={progress}
-            />
-          </View>
-
-          {/* Author row */}
-          <View
-            style={[
-              styles.authorRow,
-              { paddingHorizontal: theme.spacing.md, marginTop: theme.spacing.sm },
-            ]}
-          >
-            <Avatar
-              uri={reel.author.avatarUrl ?? undefined}
-              displayName={reel.author.displayName}
-              size="sm"
-              accessibilityLabel={`${reel.author.displayName}'s avatar`}
-            />
-            <View style={styles.authorInfo}>
-              <Text variant="bodyStrong" color="inverse">
-                {reel.author.username}
-              </Text>
-              <Text variant="caption" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                {formatRelativeTime(story.createdAt)}
-              </Text>
-            </View>
-
-            {/* Pause indicator */}
-            {isPaused ? (
-              <Ionicons
-                name="pause"
-                size={20}
-                color="rgba(255,255,255,0.8)"
-                style={{ marginRight: theme.spacing.sm }}
-              />
-            ) : null}
-
-            {/* Video badge */}
-            {story.media.type === 'video' ? (
-              <Ionicons
-                name="play-circle-outline"
-                size={18}
-                color="rgba(255,255,255,0.8)"
-                style={{ marginRight: theme.spacing.sm }}
-              />
-            ) : null}
-
-            {/* Close button */}
-            <Pressable
-              onPress={onDismiss}
-              hitSlop={hitSlop.md}
-              accessibilityRole="button"
-              accessibilityLabel="Close story"
-            >
-              <Ionicons name="close" size={26} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Tap zones — left half goes back, right half goes forward */}
-        <View style={styles.tapZones} pointerEvents="box-none">
-          <Pressable
-            style={styles.tapLeft}
-            onPress={handleLeftTap}
-            accessibilityRole="button"
-            accessibilityLabel="Previous story"
+        {/* Top: light gradient + progress + author row */}
+        <Animated.View style={[styles.topChrome, chromeStyle]} pointerEvents="box-none">
+          <LinearGradient
+            colors={TOP_GRADIENT}
+            style={[StyleSheet.absoluteFillObject, { height: insets.top + 110 }]}
+            pointerEvents="none"
           />
-          <Pressable
-            style={styles.tapRight}
-            onPress={handleRightTap}
-            accessibilityRole="button"
-            accessibilityLabel="Next story"
-          />
-        </View>
-
-        {/* Reaction bar — only on other people's stories */}
-        {!isOwnReel ? (
           <View
-            style={[
-              styles.reactionBar,
-              {
-                paddingBottom: insets.bottom + theme.spacing.md,
-                paddingHorizontal: theme.spacing.lg,
-              },
-            ]}
+            style={{ paddingTop: insets.top + theme.spacing.sm, paddingHorizontal: theme.spacing.sm }}
             pointerEvents="box-none"
           >
-            {REACTION_EMOJIS.map((emoji) => (
-              <ReactionButton
-                key={emoji}
-                emoji={emoji}
-                accessibilityLabel={reactionAccessibilityLabels[emoji] ?? emoji}
-                onPressIn={handleReactionPressIn}
-                onPressOut={handleReactionPressOut}
-                onReact={handleReact}
+            <View
+              accessibilityLabel={t('storyViewer.progress', {
+                current: storyIndex + 1,
+                total: reel.stories.length,
+              })}
+            >
+              <StoryProgressBar count={reel.stories.length} activeIndex={storyIndex} progress={progress} />
+            </View>
+
+            <View
+              style={[styles.authorRow, { marginTop: theme.spacing.sm, paddingHorizontal: theme.spacing.xs }]}
+              pointerEvents="box-none"
+            >
+              <Avatar
+                uri={reel.author.avatarUrl ?? undefined}
+                displayName={reel.author.displayName}
+                size="sm"
               />
-            ))}
+              <View style={[styles.authorInfo, { marginLeft: theme.spacing.sm }]}>
+                <Text variant="bodyStrong" style={styles.onMedia} numberOfLines={1}>
+                  {reel.author.username}
+                </Text>
+                <Text variant="caption" style={styles.onMediaMuted}>
+                  {formatRelativeTime(story.createdAt)}
+                </Text>
+              </View>
+              {isPaused ? (
+                <Ionicons name="pause" size={20} color={ON_MEDIA_MUTED} style={{ marginRight: theme.spacing.md }} />
+              ) : null}
+              <Pressable
+                onPress={onDismiss}
+                hitSlop={hitSlop.md}
+                accessibilityRole="button"
+                accessibilityLabel={t('storyViewer.close')}
+              >
+                <Ionicons name="close" size={28} color={ON_MEDIA} />
+              </Pressable>
+            </View>
           </View>
+        </Animated.View>
+
+        {/* Bottom: viewers (own) or reactions (others) */}
+        <Animated.View
+          style={[
+            styles.bottomBar,
+            {
+              paddingBottom: insets.bottom + theme.spacing.md,
+              paddingHorizontal: theme.spacing.lg,
+            },
+            chromeStyle,
+          ]}
+          pointerEvents="box-none"
+        >
+          {isOwnReel ? (
+            <View style={[styles.ownActions, { gap: theme.spacing.sm }]} pointerEvents="box-none">
+              <Pressable
+                onPress={openViewers}
+                hitSlop={hitSlop.sm}
+                accessibilityRole="button"
+                accessibilityLabel={t('storyViewer.openViewers')}
+                style={[
+                  styles.pill,
+                  {
+                    backgroundColor: PILL_BG,
+                    paddingHorizontal: theme.spacing.md,
+                    paddingVertical: theme.spacing.sm,
+                    borderRadius: theme.radii.full,
+                    gap: theme.spacing.xs,
+                  },
+                ]}
+              >
+                <Ionicons name="eye-outline" size={18} color={ON_MEDIA} />
+                <Text variant="callout" style={styles.onMedia}>
+                  {t('storyViewer.seenBy', { count: viewerCount })}
+                </Text>
+              </Pressable>
+              {renderOwnAction?.({ storyIndex, setPausedByAction })}
+            </View>
+          ) : (
+            <View style={styles.reactionBar} pointerEvents="box-none">
+              {REACTION_EMOJIS.map((emoji) => (
+                <ReactionButton
+                  key={emoji}
+                  emoji={emoji}
+                  onPressIn={pauseForInteraction}
+                  onPressOut={resumeAfterInteraction}
+                  onReact={handleReact}
+                />
+              ))}
+            </View>
+          )}
+        </Animated.View>
+
+        {isOwnReel ? (
+          <StoryViewersSheet
+            visible={viewersOpen}
+            onDismiss={closeViewers}
+            viewers={viewersQuery.data}
+            isLoading={viewersQuery.isLoading}
+            isError={viewersQuery.isError}
+            onRetry={() => void viewersQuery.refetch()}
+            onViewerPress={openViewerProfile}
+          />
         ) : null}
       </Animated.View>
     </GestureDetector>
@@ -504,32 +517,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    // Simulate gradient with opacity layers via backgroundColor
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  bottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
   topChrome: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   authorRow: {
     flexDirection: 'row',
@@ -537,24 +529,29 @@ const styles = StyleSheet.create({
   },
   authorInfo: {
     flex: 1,
-    marginLeft: 10,
   },
-  tapZones: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-    top: 120, // below chrome
+  onMedia: {
+    color: ON_MEDIA,
   },
-  tapLeft: {
-    flex: 1,
+  onMediaMuted: {
+    color: ON_MEDIA_MUTED,
   },
-  tapRight: {
-    flex: 1,
-  },
-  reactionBar: {
+  bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  ownActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reactionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

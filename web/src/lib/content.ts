@@ -12,6 +12,7 @@ import {
   limit,
   orderBy,
   query,
+  setDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -65,19 +66,84 @@ export interface Story {
   media: MediaItem;
   createdAt: string;
   expiresAt: string;
+  seen: boolean;
 }
 
 export interface StoryReel {
   author: UserSummary;
   stories: Story[];
+  hasUnseen: boolean;
+}
+
+/** Ids of stories the current user saw in the last 24 h (`users/{uid}/seenStories`). */
+async function fetchSeenStoryIds(): Promise<Set<string>> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return new Set();
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const snap = await getDocs(query(collection(db, 'users', uid, 'seenStories'), where('seenAt', '>', since)));
+    return new Set(snap.docs.map((d) => d.id));
+  } catch {
+    return new Set();
+  }
+}
+
+export interface StoryView {
+  viewer: UserSummary;
+  viewedAt: string;
+}
+
+/**
+ * Marks a story seen (private `users/{uid}/seenStories` marker) and, unless
+ * it is the viewer's own story, records them in the author-only
+ * `stories/{id}/views/{uid}` list — same schema as the mobile app.
+ */
+export async function markStorySeen(storyId: string, authorId: string): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const now = new Date().toISOString();
+  const writes: Promise<void>[] = [
+    setDoc(doc(db, 'users', uid, 'seenStories', storyId), { storyId, seenAt: now }),
+  ];
+  if (authorId !== uid) {
+    const me = await getDoc(doc(db, 'users', uid));
+    const data = me.data() as Partial<UserSummary> | undefined;
+    if (data?.username) {
+      const viewer: UserSummary = {
+        id: uid,
+        username: data.username,
+        displayName: data.displayName ?? data.username,
+        avatarUrl: data.avatarUrl ?? null,
+        isVerified: data.isVerified ?? false,
+      };
+      writes.push(setDoc(doc(db, 'stories', storyId, 'views', uid), { uid, viewer, viewedAt: now }));
+    }
+  }
+  await Promise.all(writes);
+}
+
+/** Viewers of one of the current user's stories, newest first (author-only). */
+export async function fetchStoryViewers(storyId: string): Promise<StoryView[]> {
+  const snap = await getDocs(collection(db, 'stories', storyId, 'views'));
+  return snap.docs
+    .map((d): StoryView | null => {
+      const data = d.data() as { viewer?: UserSummary; viewedAt?: string };
+      return data.viewer && typeof data.viewedAt === 'string'
+        ? { viewer: data.viewer, viewedAt: data.viewedAt }
+        : null;
+    })
+    .filter((v): v is StoryView => v !== null)
+    .sort((a, b) => b.viewedAt.localeCompare(a.viewedAt));
 }
 
 /** Active (non-expired) stories grouped by author. Close-Friends items are skipped. */
 export async function fetchStoryReels(): Promise<StoryReel[]> {
   const nowIso = new Date().toISOString();
-  const snap = await getDocs(
-    query(collection(db, 'stories'), where('expiresAt', '>', nowIso), limit(100)),
-  );
+  const uid = auth.currentUser?.uid;
+  const [snap, seenIds] = await Promise.all([
+    getDocs(query(collection(db, 'stories'), where('expiresAt', '>', nowIso), limit(100))),
+    fetchSeenStoryIds(),
+  ]);
   const byAuthor = new Map<string, StoryReel>();
   for (const d of snap.docs) {
     const data = d.data() as Record<string, unknown>;
@@ -92,15 +158,18 @@ export async function fetchStoryReels(): Promise<StoryReel[]> {
       media,
       createdAt: data.createdAt,
       expiresAt: (data.expiresAt as string) ?? '',
+      seen: author.id === uid || seenIds.has(d.id),
     };
     const existing = byAuthor.get(author.id);
     if (existing) existing.stories.push(story);
-    else byAuthor.set(author.id, { author, stories: [story] });
+    else byAuthor.set(author.id, { author, stories: [story], hasUnseen: false });
   }
   for (const reel of byAuthor.values()) {
     reel.stories.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    reel.hasUnseen = reel.stories.some((s) => !s.seen);
   }
-  return [...byAuthor.values()];
+  // Unseen reels first, like the app's tray.
+  return [...byAuthor.values()].sort((a, b) => Number(b.hasUnseen) - Number(a.hasUnseen));
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { Story, StoryReel, Highlight, StoryId, UserId } from '@/types/models';
+import type { Story, StoryReel, StoryView, Highlight, StoryId, UserId } from '@/types/models';
 
 // ---------------------------------------------------------------------------
 // Request types scoped to stories
@@ -35,7 +35,14 @@ export type CreateHighlightInput = {
 
 export interface IStoriesApi {
   getStoryReels(): Promise<StoryReel[]>;
-  markSeen(storyId: StoryId): Promise<void>;
+  /**
+   * Marks a story seen by the current user and, when the viewer is not the
+   * author, records them in the author-only viewer list. Viewing your own
+   * story never counts as a view.
+   */
+  markSeen(storyId: StoryId, authorId: UserId): Promise<void>;
+  /** Who has viewed one of the current user's stories, most recent first. Author-only. */
+  getStoryViewers(storyId: StoryId): Promise<StoryView[]>;
   createStory(input: CreateStoryInput): Promise<Story>;
   /** Records a quick emoji reaction from the current user to a story. */
   reactToStory(storyId: StoryId, emoji: string): Promise<void>;

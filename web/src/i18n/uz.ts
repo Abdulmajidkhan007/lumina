@@ -255,4 +255,10 @@ export const uz: Record<string, string> = {
   "{count} comments": "{count} ta izoh",
   "{count} likes": "{count} ta yoqtirish",
   "{email} doesn't have access to the Lumina admin panel.": "{email} ning Lumina admin paneliga ruxsati yo'q.",
+  "Story {current} of {total}": "{total} tadan {current}-story",
+  "Seen by {count}": "Ko'rganlar: {count}",
+  "Viewers": "Ko'rganlar",
+  "Couldn't load viewers.": "Ko'rganlar ro'yxati yuklanmadi.",
+  "Retry": "Qayta urinish",
+  "No views yet": "Hali hech kim ko'rmagan",
 };

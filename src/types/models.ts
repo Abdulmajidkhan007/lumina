@@ -24,7 +24,7 @@ export type { UserSummary, User } from '@/schemas';
 export type { ImageMedia, VideoMedia, Media, Post, Comment } from '@/schemas';
 
 // Story
-export type { Story, StoryReel } from '@/schemas';
+export type { Story, StoryReel, StoryView } from '@/schemas';
 
 // Highlight
 export type { Highlight } from '@/schemas';

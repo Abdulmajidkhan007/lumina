@@ -36,3 +36,14 @@ export const storyReelSchema = z.object({
 });
 
 export type StoryReel = z.infer<typeof storyReelSchema>;
+
+// ---------------------------------------------------------------------------
+// StoryView — one viewer of a story, visible only to the story's author
+// ---------------------------------------------------------------------------
+
+export const storyViewSchema = z.object({
+  viewer: userSummarySchema,
+  viewedAt: isoTimestampSchema,
+});
+
+export type StoryView = z.infer<typeof storyViewSchema>;

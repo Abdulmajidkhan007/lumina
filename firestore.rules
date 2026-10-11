@@ -117,6 +117,22 @@ service cloud.firestore {
         allow read: if signedIn();
         allow write: if isOwner(uid);
       }
+
+      // "Seen by" list. A viewer records only themselves, never on their own
+      // story (the author's view doesn't count); only the author reads it.
+      match /views/{viewerUid} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/stories/$(storyId)).data.authorId == request.auth.uid;
+        allow create, update: if isOwner(viewerUid)
+          && get(/databases/$(database)/documents/stories/$(storyId)).data.authorId != viewerUid
+          && request.resource.data.keys().hasOnly(['uid', 'viewer', 'viewedAt'])
+          && request.resource.data.uid == viewerUid
+          && request.resource.data.viewer is map
+          && request.resource.data.viewer.id == viewerUid
+          && request.resource.data.viewedAt is string
+          && request.resource.data.viewedAt.size() <= 40;
+        allow delete: if false;
+      }
     }
 
     // ---------------- highlights ----------------

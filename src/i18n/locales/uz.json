@@ -323,5 +323,19 @@
     "shareToStory": "Tarixga ulashish",
     "uploading": "Yuklanmoqda…",
     "shareError": "Tarixni ulashib bo'lmadi. Qaytadan urinib ko'ring."
+  },
+  "storyViewer": {
+    "seenBy": "Ko'rganlar: {{count}}",
+    "viewersTitle": "Ko'rganlar",
+    "noViewers": "Hali hech kim ko'rmagan",
+    "noViewersHint": "Story'ingizni ko'rganlar shu yerda chiqadi.",
+    "viewersError": "Ko'rganlar ro'yxati yuklanmadi.",
+    "openViewers": "Story'ni kim ko'rganini ko'rsatish",
+    "previous": "Oldingi story",
+    "next": "Keyingi story",
+    "close": "Story'ni yopish",
+    "notFound": "Bu foydalanuvchida story yo'q.",
+    "loadError": "Story'lar yuklanmadi.",
+    "progress": "{{total}} tadan {{current}}-story"
   }
 }

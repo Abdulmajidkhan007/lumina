@@ -255,4 +255,10 @@ export const ru: Record<string, string> = {
   "{count} comments": "Комментариев: {count}",
   "{count} likes": "Нравится: {count}",
   "{email} doesn't have access to the Lumina admin panel.": "У {email} нет доступа к админ-панели Lumina.",
+  "Story {current} of {total}": "История {current} из {total}",
+  "Seen by {count}": "Просмотры: {count}",
+  "Viewers": "Зрители",
+  "Couldn't load viewers.": "Не удалось загрузить зрителей.",
+  "Retry": "Повторить",
+  "No views yet": "Пока нет просмотров",
 };

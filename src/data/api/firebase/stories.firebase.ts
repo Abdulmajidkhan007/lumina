@@ -4,11 +4,15 @@
  * Firestore schema:
  *  - `stories/{storyId}` — authorId, author (UserSummary embed), media,
  *    createdAt (ISO string), expiresAt (ISO string, typically createdAt + 24h),
- *    seenByUids: string[] — viewer uids that have seen this story, updated via
- *    FieldValue.arrayUnion on `markSeen`. Storing the seen-list as an array on
- *    the story doc (rather than a `seenBy/{uid}` subcollection) avoids an
- *    extra per-story read for every viewer on every tray render — stories are
- *    short-lived and the array stays small.
+ *    seenByUids?: string[] — legacy; rules only let the author update the story
+ *    doc, so viewers' arrayUnion writes were always denied. Still read for
+ *    old data.
+ *  - `stories/{storyId}/views/{viewerUid}` — { uid, viewer (UserSummary),
+ *    viewedAt }. Written by the viewer (never the author — your own view is
+ *    not counted), readable only by the story's author ("Seen by" list).
+ *  - `users/{uid}/seenStories/{storyId}` — { storyId, seenAt }. The viewer's
+ *    private seen-marker that drives the tray's unseen ring. One range query
+ *    on `seenAt` (last 24 h covers every still-active story) per tray load.
  *
  * `getStoryReels()` fetches all non-expired stories in one query and groups
  * them by author client-side into the `StoryReel` shape the contract expects
@@ -27,11 +31,10 @@
  * intentionally does not fan out a notification to the author — wiring that
  * up is a schema change for a separate change.
  */
-import firestore from '@react-native-firebase/firestore';
 import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
-import type { Story, StoryReel, Highlight, StoryId, UserId } from '@/types/models';
+import type { Story, StoryReel, StoryView, Highlight, StoryId, UserId } from '@/types/models';
 import type { UserSummary, Media } from '@/schemas';
-import { highlightSchema, storyReelSchema, storySchema } from '@/schemas';
+import { highlightSchema, storyReelSchema, storySchema, storyViewSchema } from '@/schemas';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import { logActivity } from '@/data/services/activityLog';
 import { fetchUserSummary, getCurrentUid, requireCurrentUid } from './helpers';
@@ -49,6 +52,35 @@ interface StoryDocFields {
 
 function storiesCollection() {
   return getFirebaseFirestore().collection('stories');
+}
+
+function seenStoriesCollection(uid: string) {
+  return getFirebaseFirestore().collection('users').doc(uid).collection('seenStories');
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Story ids the viewer marked seen within the last 24 h (= every active story they saw). */
+async function fetchSeenStoryIds(viewerUid: string): Promise<Set<string>> {
+  try {
+    const since = new Date(Date.now() - DAY_MS).toISOString();
+    const snap = await seenStoriesCollection(viewerUid).where('seenAt', '>', since).get();
+    return new Set(snap.docs.map((d) => d.id));
+  } catch (error) {
+    // The ring falls back to "unseen" — never block the tray on this.
+    console.warn('[stories] seen markers unavailable', error);
+    return new Set();
+  }
+}
+
+/** The viewer's own summary, cached per uid — written into every view doc. */
+let viewerSummaryCache: { uid: string; summary: UserSummary } | null = null;
+
+async function getViewerSummary(uid: string): Promise<UserSummary | null> {
+  if (viewerSummaryCache?.uid === uid) return viewerSummaryCache.summary;
+  const summary = await fetchUserSummary(uid);
+  if (summary) viewerSummaryCache = { uid, summary };
+  return summary;
 }
 
 function highlightsCollection() {
@@ -83,6 +115,7 @@ export class FirebaseStoriesApi implements IStoriesApi {
       .orderBy('expiresAt', 'asc')
       .get();
     const viewerUid = getCurrentUid();
+    const seenIds = viewerUid ? await fetchSeenStoryIds(viewerUid) : new Set<string>();
 
     type Accumulator = { author: UserSummary; stories: unknown[] };
     const byAuthor = new Map<string, Accumulator>();
@@ -98,7 +131,11 @@ export class FirebaseStoriesApi implements IStoriesApi {
         }
       }
 
-      const seen = viewerUid ? (data.seenByUids ?? []).includes(viewerUid) : false;
+      const seen = viewerUid
+        ? data.authorId === viewerUid ||
+          seenIds.has(docSnap.id) ||
+          (data.seenByUids ?? []).includes(viewerUid)
+        : false;
       const storyCandidate = {
         id: docSnap.id,
         author: data.author,
@@ -136,11 +173,37 @@ export class FirebaseStoriesApi implements IStoriesApi {
     return reels;
   }
 
-  async markSeen(storyId: StoryId): Promise<void> {
+  async markSeen(storyId: StoryId, authorId: UserId): Promise<void> {
     const uid = requireCurrentUid();
-    await storiesCollection().doc(storyId).update({
-      seenByUids: firestore.FieldValue.arrayUnion(uid),
-    });
+    const now = new Date().toISOString();
+    const writes: Promise<void>[] = [
+      seenStoriesCollection(uid).doc(storyId).set({ storyId, seenAt: now }),
+    ];
+    // Your own view never counts.
+    if (authorId !== uid) {
+      const viewer = await getViewerSummary(uid);
+      if (viewer) {
+        writes.push(
+          storiesCollection()
+            .doc(storyId)
+            .collection('views')
+            .doc(uid)
+            .set({ uid, viewer, viewedAt: now }),
+        );
+      }
+    }
+    await Promise.all(writes);
+  }
+
+  async getStoryViewers(storyId: StoryId): Promise<StoryView[]> {
+    const snap = await storiesCollection().doc(storyId).collection('views').get();
+    const views: StoryView[] = [];
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data() as { viewer?: unknown; viewedAt?: unknown };
+      const parsed = storyViewSchema.safeParse({ viewer: data.viewer, viewedAt: data.viewedAt });
+      if (parsed.success) views.push(parsed.data);
+    }
+    return views.sort((a, b) => b.viewedAt.localeCompare(a.viewedAt));
   }
 
   async createStory(input: CreateStoryInput): Promise<Story> {

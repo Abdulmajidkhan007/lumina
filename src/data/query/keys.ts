@@ -5,7 +5,7 @@
  * invalidation, and prefetching all benefit from type safety.
  */
 
-import type { PostId, UserId, ConversationId } from '@/types/models';
+import type { PostId, UserId, ConversationId, StoryId } from '@/types/models';
 
 export const queryKeys = {
   // Feed
@@ -23,6 +23,7 @@ export const queryKeys = {
 
   // Stories
   storyReels: () => ['storyReels'] as const,
+  storyViewers: (storyId: StoryId) => ['storyViewers', storyId] as const,
   highlights: (userId: UserId) => ['highlights', userId] as const,
 
   // Reels
