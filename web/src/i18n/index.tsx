@@ -9,13 +9,19 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { uz } from './uz';
 import { ru } from './ru';
+import { adminUz } from './admin.uz';
+import { adminRu } from './admin.ru';
 
 export const LANGUAGES = ['uz', 'en', 'ru'] as const;
 export type Lang = (typeof LANGUAGES)[number];
 
 export const LANGUAGE_LABELS: Record<Lang, string> = { uz: "O'zbek", en: 'English', ru: 'Русский' };
 
-const DICTIONARIES: Record<Lang, Record<string, string>> = { uz, en: {}, ru };
+const DICTIONARIES: Record<Lang, Record<string, string>> = {
+  uz: { ...adminUz, ...uz },
+  en: {},
+  ru: { ...adminRu, ...ru },
+};
 const STORAGE_KEY = 'lumina.lang';
 
 function initialLang(): Lang {

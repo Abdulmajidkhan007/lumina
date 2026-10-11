@@ -2,6 +2,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { auth, db } from '../lib/firebase';
+import { recordDailyPresence } from '../lib/presence';
 import type { UserProfile } from '../types/models';
 
 interface UserProfileDocFields {
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
+    void recordDailyPresence(firebaseUser);
     const ref = doc(db, 'users', firebaseUser.uid);
     const unsubscribe = onSnapshot(
       ref,

@@ -2,7 +2,8 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState, type ComponentType, type SVGProps } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOutUser } from '../../lib/auth';
-import { ADMIN_EMAIL } from '../../lib/constants';
+import { useOwnRole } from '../../contexts/StaffContext';
+import { useAccountNotices } from '../../hooks/useAccountNotices';
 import { Avatar } from '../../components/Avatar';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import {
@@ -46,7 +47,9 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const displayName = profile?.displayName ?? firebaseUser?.displayName ?? t('User');
-  const isAdmin = firebaseUser?.email === ADMIN_EMAIL && firebaseUser.emailVerified;
+  const role = useOwnRole(firebaseUser);
+  const isAdmin = role === 'admin' || role === 'moderator';
+  const { banned, unreadBroadcast } = useAccountNotices();
 
   const handleSignOut = async () => {
     await signOutUser();
@@ -84,8 +87,15 @@ export function AppLayout() {
           </nav>
           <div className="flex items-center gap-1">
             {/* Like the app's feed header: activity + direct messages */}
-            <Link to="/app/notifications" aria-label={t('Notifications')} className={headerIcon}>
+            <Link
+              to="/app/notifications"
+              aria-label={unreadBroadcast ? t('Notifications (new announcement)') : t('Notifications')}
+              className={`relative ${headerIcon}`}
+            >
               <HeartIcon className="h-6 w-6" />
+              {unreadBroadcast ? (
+                <span aria-hidden="true" className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-coral" />
+              ) : null}
             </Link>
             <Link to="/app/messages" aria-label={t('Messages')} className={headerIcon}>
               <SendIcon className="h-6 w-6" />
@@ -148,6 +158,11 @@ export function AppLayout() {
           </div>
         </div>
       </header>
+      {banned ? (
+        <div role="alert" className="border-b border-brand-coral/40 bg-brand-coral/10 px-4 py-2 text-center text-sm text-text">
+          {t('Your account is blocked by a moderator. You can browse, but posting, comments, likes and messages are disabled.')}
+        </div>
+      ) : null}
       <main className="mx-auto w-full max-w-5xl px-0 py-6 pb-24 sm:px-4 sm:pb-6">
         <Outlet />
       </main>

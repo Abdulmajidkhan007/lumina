@@ -16,6 +16,13 @@
   --color-brand-magenta: #c44fe8;
   --color-brand-violet: #6b5bff;
 
+  /* Status + chart tokens (admin panel); light values in .admin-shell below. */
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #60a5fa;
+  --color-chart: #c44fe8;
+
   --font-sans:
     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
@@ -79,5 +86,45 @@ body {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+}
+
+/* ---- Admin panel light theme ----
+   The public site is dark-only; the admin shell can follow the system or a
+   saved choice (data-theme on .admin-shell). Tailwind utilities read these
+   variables, so overriding them here re-themes every token class inside. */
+.admin-shell[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: #f6f5fa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-elevated-2: #f0eef6;
+  --color-surface: #ffffff;
+  --color-border: #e2deec;
+  --color-text: #17121f;
+  --color-text-muted: #5b5370;
+  --color-text-faint: #8a829e;
+  --color-ok: #047857;
+  --color-warn: #a16207;
+  --color-danger: #b91c1c;
+  --color-info: #1d4ed8;
+  --color-chart: #9b3cc4;
+}
+
+@media (prefers-color-scheme: light) {
+  .admin-shell[data-theme='system'] {
+    color-scheme: light;
+    --color-bg: #f6f5fa;
+    --color-bg-elevated: #ffffff;
+    --color-bg-elevated-2: #f0eef6;
+    --color-surface: #ffffff;
+    --color-border: #e2deec;
+    --color-text: #17121f;
+    --color-text-muted: #5b5370;
+    --color-text-faint: #8a829e;
+    --color-ok: #047857;
+    --color-warn: #a16207;
+    --color-danger: #b91c1c;
+    --color-info: #1d4ed8;
+    --color-chart: #9b3cc4;
   }
 }

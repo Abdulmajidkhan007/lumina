@@ -1,27 +1,32 @@
 import type { ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ADMIN_EMAIL } from '../lib/constants';
+import { StaffProvider, toAccess, useOwnRole, useStaff } from '../contexts/StaffContext';
 import { AccessDenied } from '../pages/admin/AccessDenied';
 import { LoadingState } from './StateViews';
 import { useI18n } from '../i18n';
 
 /**
- * Gates `/admin`: signed-in AND `firebaseUser.email === ADMIN_EMAIL`.
- * Anyone else (signed out, or signed in as a different account) sees the
- * "Access denied" page in place of the admin shell — no redirect.
+ * Gates `/admin`: the owner account (verified email) or a verified account
+ * with a staff role (staffRoles/{uid}: moderator | admin). Anyone else sees
+ * "Access denied" in place of the admin shell — no redirect. Firestore rules
+ * enforce the same split server-side; this only decides what to render.
  */
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { firebaseUser, initializing } = useAuth();
+  const role = useOwnRole(firebaseUser);
 
-  if (initializing) {
+  if (initializing || role === null) {
     return <LoadingState label={t('Checking access…')} />;
   }
-
-  const isAdmin = firebaseUser?.email === ADMIN_EMAIL;
-  if (!isAdmin) {
+  if (!firebaseUser || role === 'user') {
     return <AccessDenied />;
   }
+  return <StaffProvider access={toAccess(role)}>{children}</StaffProvider>;
+}
 
-  return <>{children}</>;
+/** Admin-only sections (roles, broadcasts, messages, landing). */
+export function RequireAdminRole({ children }: { children: ReactNode }) {
+  const { isAdmin } = useStaff();
+  return isAdmin ? <>{children}</> : <AccessDenied />;
 }
