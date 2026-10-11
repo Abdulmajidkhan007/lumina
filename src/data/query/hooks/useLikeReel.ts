@@ -1,84 +1,24 @@
-import {
-  useMutation,
-  useQueryClient,
-  type InfiniteData,
-} from '@tanstack/react-query';
-import type { Reel , ReelId } from '@/types/models';
-import type { Paginated } from '@/types/api';
-import { reelsApi } from '@/data/api/client';
-import { queryKeys } from '../keys';
+import type { PostId, ReelId } from '@/types/models';
+import { postsApi, reelsApi } from '@/data/api/client';
+import { useOptimisticLike } from '../cache/useOptimisticLike';
 
-type LikeReelVariables = { reelId: ReelId; liked: boolean };
-
-type LikeReelSnapshot = {
-  reelPages: InfiniteData<Paginated<Reel>> | undefined;
+type LikeReelVariables = {
+  reelId: ReelId;
+  /** Set when the reel mirrors a feed post — the like is stored on the post. */
+  postId?: PostId;
+  liked: boolean;
 };
 
-function patchReelInFeed(
-  data: InfiniteData<Paginated<Reel>>,
-  reelId: ReelId,
-  patch: Partial<Reel>,
-): InfiniteData<Paginated<Reel>> {
-  return {
-    ...data,
-    pages: data.pages.map((page) => ({
-      ...page,
-      items: page.items.map((r) =>
-        r.id === reelId ? { ...r, ...patch } : r,
-      ),
-    })),
-  };
-}
-
+/**
+ * Likes/unlikes a reel. A reel twin of a post likes the post itself, so the
+ * feed and post detail show the same heart and count (shared cache patch).
+ */
 export function useLikeReel() {
-  const qc = useQueryClient();
-
-  return useMutation<void, Error, LikeReelVariables, LikeReelSnapshot>({
-    mutationFn: ({ reelId, liked }) =>
-      liked ? reelsApi.likeReel(reelId) : reelsApi.unlikeReel(reelId),
-
-    onMutate: async ({ reelId, liked }) => {
-      await qc.cancelQueries({ queryKey: queryKeys.reels() });
-
-      const reelPages =
-        qc.getQueryData<InfiniteData<Paginated<Reel>>>(queryKeys.reels());
-
-      if (reelPages) {
-        // Find current likeCount to compute delta
-        let currentLikeCount = 0;
-        for (const page of reelPages.pages) {
-          const found = page.items.find((r) => r.id === reelId);
-          if (found) {
-            currentLikeCount = found.likeCount;
-            break;
-          }
-        }
-
-        const patch: Partial<Reel> = {
-          isLikedByMe: liked,
-          likeCount: Math.max(0, currentLikeCount + (liked ? 1 : -1)),
-        };
-
-        qc.setQueryData<InfiniteData<Paginated<Reel>>>(
-          queryKeys.reels(),
-          patchReelInFeed(reelPages, reelId, patch),
-        );
-      }
-
-      return { reelPages };
+  return useOptimisticLike<LikeReelVariables>(
+    ({ reelId, postId, liked }) => {
+      if (postId) return liked ? postsApi.likePost(postId) : postsApi.unlikePost(postId);
+      return liked ? reelsApi.likeReel(reelId) : reelsApi.unlikeReel(reelId);
     },
-
-    onError: (_err, _vars, snapshot) => {
-      if (snapshot?.reelPages !== undefined) {
-        qc.setQueryData<InfiniteData<Paginated<Reel>>>(
-          queryKeys.reels(),
-          snapshot.reelPages,
-        );
-      }
-    },
-
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.reels() });
-    },
-  });
+    (vars) => vars.postId ?? vars.reelId,
+  );
 }

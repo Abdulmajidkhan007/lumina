@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { reelIdSchema, isoTimestampSchema } from './common.schema';
+import { reelIdSchema, postIdSchema, isoTimestampSchema } from './common.schema';
 import { userSummarySchema } from './user.schema';
 import { videoMediaSchema } from './post.schema';
 
@@ -21,6 +21,12 @@ export const reelSchema = z.object({
   /** Original audio track or song title shown in the UI */
   audioTitle: z.string().optional(),
   createdAt: isoTimestampSchema,
+  /**
+   * The feed post this reel mirrors (`reels/{postId}` is written alongside a
+   * single-video post). When present, likes/comments live on the post so the
+   * Reels tab, the feed and post detail all show the same state.
+   */
+  postId: postIdSchema.optional(),
 });
 
 export type Reel = z.infer<typeof reelSchema>;
