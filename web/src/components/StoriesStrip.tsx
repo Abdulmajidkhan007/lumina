@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { fetchStoryReels, type StoryReel } from '../lib/content';
 import { Avatar } from './Avatar';
+import { useI18n } from '../i18n';
 
 /**
  * Horizontal story rail shown above the web feed. Clicking a ring opens a
  * lightweight lightbox that steps through that author's active stories.
  */
 export function StoriesStrip() {
+  const { t } = useI18n();
   const [reels, setReels] = useState<StoryReel[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
@@ -62,7 +64,7 @@ export function StoriesStrip() {
           role="dialog"
           aria-label={`Stories by ${active.author.username}`}
         >
-          <button type="button" onClick={close} aria-label="Close" className="absolute right-4 top-4 text-2xl text-white">
+          <button type="button" onClick={close} aria-label={t('Close')} className="absolute right-4 top-4 text-2xl text-white">
             ×
           </button>
           <button type="button" onClick={next} className="max-h-full max-w-lg">

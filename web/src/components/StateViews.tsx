@@ -4,17 +4,20 @@
  * spinners and text.
  */
 import type { ReactNode } from 'react';
+import { useI18n } from '../i18n';
 
-export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-16">
       <span className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-brand-magenta" />
-      <span className="text-sm text-text-muted">{label}</span>
+      <span className="text-sm text-text-muted">{label ?? t('Loading…')}</span>
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { t } = useI18n();
   return (
     <div role="alert" className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <p className="max-w-sm text-sm text-text-muted">{message}</p>
@@ -24,7 +27,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
           onClick={onRetry}
           className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-white/5"
         >
-          Try again
+          {t('Try again')}
         </button>
       ) : null}
     </div>

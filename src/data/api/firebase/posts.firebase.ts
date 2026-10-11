@@ -131,7 +131,11 @@ async function buildCommentCandidate(
   viewerUid: string | null,
 ): Promise<unknown> {
   const data = raw.data as Partial<CommentDocFields>;
-  const [isLikedByMe] = await getMembershipFlags(commentDocRef(postId, raw.id), ['likes'], viewerUid);
+  const [isLikedByMe] = await getMembershipFlags(
+    commentDocRef(postId, raw.id),
+    ['likes'],
+    viewerUid,
+  );
   return {
     id: raw.id,
     postId: data.postId,
@@ -244,9 +248,27 @@ export class FirebasePostsApi implements IPostsApi {
       ...(collaborators ? { collaborators } : {}),
     };
     await newRef.set(postDoc);
-    await getFirebaseFirestore().collection('users').doc(uid).update({
-      postCount: firestore.FieldValue.increment(1),
-    });
+    // A post that is one video is also a reel — the Reels tab reads `reels/`,
+    // which nothing used to write. Same id, so deleting the post removes it.
+    const [onlyMedia] = media;
+    if (media.length === 1 && onlyMedia?.type === 'video') {
+      await getFirebaseFirestore().collection('reels').doc(newRef.id).set({
+        authorId: uid,
+        author,
+        video: onlyMedia,
+        caption: postDoc.caption,
+        likeCount: 0,
+        commentCount: 0,
+        shareCount: 0,
+        createdAt,
+      });
+    }
+    await getFirebaseFirestore()
+      .collection('users')
+      .doc(uid)
+      .update({
+        postCount: firestore.FieldValue.increment(1),
+      });
     void logActivity('post_create', { postId: newRef.id });
 
     return postSchema.parse({
@@ -270,7 +292,10 @@ export class FirebasePostsApi implements IPostsApi {
     if (!snap.exists()) {
       throw new Error(`Post ${id} not found`);
     }
-    const candidate = await buildPostCandidate({ id: snap.id, data: snap.data() ?? {} }, getCurrentUid());
+    const candidate = await buildPostCandidate(
+      { id: snap.id, data: snap.data() ?? {} },
+      getCurrentUid(),
+    );
     return postSchema.parse(candidate);
   }
 
@@ -383,7 +408,11 @@ export class FirebasePostsApi implements IPostsApi {
     await this.setCommentLike(postId, commentId, false);
   }
 
-  private async setCommentLike(postId: PostId, commentId: CommentId, liked: boolean): Promise<void> {
+  private async setCommentLike(
+    postId: PostId,
+    commentId: CommentId,
+    liked: boolean,
+  ): Promise<void> {
     await setMembershipFlag({
       parentRef: commentDocRef(postId, commentId),
       subcollection: 'likes',
@@ -406,9 +435,21 @@ export class FirebasePostsApi implements IPostsApi {
       throw new Error('You can only delete your own posts.');
     }
     await ref.delete();
-    await getFirebaseFirestore().collection('users').doc(uid).update({
-      postCount: firestore.FieldValue.increment(-1),
-    });
+    // Its reel twin. Only for single-video posts: rules read the doc's
+    // authorId, so deleting a reel that never existed is denied.
+    if (data.media?.length === 1 && data.media[0]?.type === 'video') {
+      await getFirebaseFirestore()
+        .collection('reels')
+        .doc(id)
+        .delete()
+        .catch((e: unknown) => console.warn('[posts] reel twin not deleted', e));
+    }
+    await getFirebaseFirestore()
+      .collection('users')
+      .doc(uid)
+      .update({
+        postCount: firestore.FieldValue.increment(-1),
+      });
   }
 
   async getSavedPosts(params: FeedParams): Promise<Paginated<Post>> {

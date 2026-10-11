@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { sendMessage, subscribeToMessages, type Message } from '../../lib/messages';
+import { useI18n } from '../../i18n';
 
 export function Thread() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const { firebaseUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -46,9 +48,9 @@ export function Thread() {
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto py-2">
         {loading ? (
-          <p className="text-center text-sm text-text-muted">Loading…</p>
+          <p className="text-center text-sm text-text-muted">{t('Loading…')}</p>
         ) : messages.length === 0 ? (
-          <p className="text-center text-sm text-text-muted">Say hello 👋</p>
+          <p className="text-center text-sm text-text-muted">{t('Say hello')} 👋</p>
         ) : (
           messages.map((m) => {
             const mine = m.senderId === firebaseUser?.uid;
@@ -74,7 +76,7 @@ export function Thread() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') void onSend();
           }}
-          placeholder="Message…"
+          placeholder={t('Message…')}
           className="flex-1 rounded-full border border-border bg-surface px-4 py-2 text-sm outline-none focus:border-brand-magenta"
         />
         <button
@@ -83,7 +85,7 @@ export function Thread() {
           disabled={text.trim().length === 0 || sending}
           className="rounded-full bg-gradient-brand px-5 text-sm font-semibold text-white disabled:opacity-50"
         >
-          Send
+          {t('Send')}
         </button>
       </div>
     </div>

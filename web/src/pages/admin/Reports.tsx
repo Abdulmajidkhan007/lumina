@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { fetchReports, fetchResolvedReportIds, resolveReport, type Report } from '../../lib/reports';
 import { formatRelativeTime } from '../../lib/time';
 import { EmptyState, ErrorState, TableRowSkeleton } from '../../components/StateViews';
+import { useI18n } from '../../i18n';
 
 export function Reports() {
+  const { t } = useI18n();
   const [reports, setReports] = useState<Report[] | null>(null);
   const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
@@ -18,9 +20,9 @@ export function Reports() {
       setReports(list);
       setResolved(await fetchResolvedReportIds(list.map((r) => r.id)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load reports.');
+      setError(err instanceof Error ? err.message : t('Failed to load reports.'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -43,26 +45,34 @@ export function Reports() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">Reports</h1>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold">{t('Reports')}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-semibold transition hover:bg-white/5"
         >
-          Refresh
+          {t('Refresh')}
         </button>
       </div>
+      <p className="mb-4 text-sm text-text-muted">
+        {t('Complaints users file with "Report" on a post, profile or comment in the app. Contact form messages are under Messages.')}
+      </p>
+      {reports !== null && reports.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-surface">
+          <EmptyState title={t('No reports')} description={t('Reported content will appear here.')} />
+        </div>
+      ) : (
 
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="sticky top-0 bg-surface">
             <tr className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Target</th>
-              <th className="px-4 py-3">Reason</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
+              <th className="px-4 py-3">{t('Time')}</th>
+              <th className="px-4 py-3">{t('Target')}</th>
+              <th className="px-4 py-3">{t('Reason')}</th>
+              <th className="px-4 py-3">{t('Status')}</th>
+              <th className="px-4 py-3">{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -71,12 +81,6 @@ export function Reports() {
                 <TableRowSkeleton columns={5} />
                 <TableRowSkeleton columns={5} />
               </>
-            ) : reports.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10">
-                  <EmptyState title="No reports" description="Reported content will appear here." />
-                </td>
-              </tr>
             ) : (
               reports.map((r) => {
                 const isResolved = resolved.has(r.id);
@@ -85,7 +89,7 @@ export function Reports() {
                     <td className="px-4 py-3 text-text-muted">{formatRelativeTime(r.createdAt)}</td>
                     <td className="px-4 py-3">
                       <Link to={targetHref(r)} className="font-semibold text-brand-magenta">
-                        {r.targetType}
+                        {t(r.targetType)}
                       </Link>
                       <span className="block truncate text-xs text-text-muted">{r.targetId}</span>
                     </td>
@@ -98,7 +102,7 @@ export function Reports() {
                             : 'border-amber-500/30 bg-amber-500/15 text-amber-400'
                         }`}
                       >
-                        {isResolved ? 'resolved' : 'open'}
+                        {isResolved ? t('resolved') : t('open')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -112,7 +116,7 @@ export function Reports() {
                             onClick={() => void decide(r.id, 'actioned')}
                             className="rounded-lg border border-red-500/30 px-3 py-1 text-xs font-semibold text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
                           >
-                            Action
+                            {t('Action')}
                           </button>
                           <button
                             type="button"
@@ -120,7 +124,7 @@ export function Reports() {
                             onClick={() => void decide(r.id, 'dismissed')}
                             className="rounded-lg border border-border px-3 py-1 text-xs font-semibold transition hover:bg-white/5 disabled:opacity-50"
                           >
-                            Dismiss
+                            {t('Dismiss')}
                           </button>
                         </div>
                       )}
@@ -132,6 +136,7 @@ export function Reports() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

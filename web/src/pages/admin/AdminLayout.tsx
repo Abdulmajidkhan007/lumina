@@ -1,13 +1,18 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher';
+import { useI18n } from '../../i18n';
 
 const links = [
   { to: '/admin', label: 'Overview', end: true },
   { to: '/admin/users', label: 'Users', end: false },
   { to: '/admin/activity', label: 'Activity', end: false },
   { to: '/admin/reports', label: 'Reports', end: false },
+  { to: '/admin/messages', label: 'Messages', end: false },
+  { to: '/admin/landing', label: 'Landing', end: false },
 ];
 
 export function AdminLayout() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-bg text-text">
       <header className="border-b border-border bg-surface/60 backdrop-blur">
@@ -16,13 +21,14 @@ export function AdminLayout() {
             Lumina
           </span>
           <span className="rounded-md border border-border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Admin
+            {t('Admin')}
           </span>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 md:flex-row">
         <nav
-          aria-label="Admin sections"
+          aria-label={t('Admin sections')}
           className="flex shrink-0 gap-2 overflow-x-auto md:w-44 md:flex-col"
         >
           {links.map((l) => (
@@ -36,7 +42,7 @@ export function AdminLayout() {
                 }`
               }
             >
-              {l.label}
+              {t(l.label)}
             </NavLink>
           ))}
         </nav>

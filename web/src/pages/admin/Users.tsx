@@ -4,8 +4,10 @@ import type { UserProfile } from '../../types/models';
 import { formatDate } from '../../lib/time';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState, ErrorState, TableRowSkeleton } from '../../components/StateViews';
+import { useI18n } from '../../i18n';
 
 export function Users() {
+  const { t } = useI18n();
   const [users, setUsers] = useState<UserProfile[] | null>(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -16,9 +18,9 @@ export function Users() {
     try {
       setUsers(await fetchRecentUsers());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load users.');
+      setError(err instanceof Error ? err.message : t('Failed to load users.'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -38,11 +40,11 @@ export function Users() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">Users</h1>
+        <h1 className="text-xl font-bold">{t('Users')}</h1>
         <input
           type="search"
-          placeholder="Search users…"
-          aria-label="Search users"
+          placeholder={t('Search users…')}
+          aria-label={t('Search users')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full max-w-xs rounded-xl border border-border bg-surface px-4 py-2 text-sm outline-none transition focus:border-brand-magenta"
@@ -52,10 +54,10 @@ export function Users() {
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="sticky top-0 bg-surface">
             <tr className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Joined</th>
-              <th className="px-4 py-3 text-right">Followers</th>
-              <th className="px-4 py-3 text-right">Posts</th>
+              <th className="px-4 py-3">{t('User')}</th>
+              <th className="px-4 py-3">{t('Joined')}</th>
+              <th className="px-4 py-3 text-right">{t('Followers')}</th>
+              <th className="px-4 py-3 text-right">{t('Posts')}</th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +70,7 @@ export function Users() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-10">
-                  <EmptyState title="No users found" />
+                  <div className="sticky left-0 max-w-[85vw]"><EmptyState title={t('No users found')} /></div>
                 </td>
               </tr>
             ) : (

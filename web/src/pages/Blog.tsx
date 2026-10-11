@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Container } from '../components/Container';
 import { Reveal } from '../components/Reveal';
+import { useI18n } from '../i18n';
 
 interface BlogPost {
   title: string;
@@ -29,15 +30,15 @@ const POSTS: readonly BlogPost[] = [
 ];
 
 export function Blog() {
+  const { t } = useI18n();
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <Container className="py-20 sm:py-28">
       <Reveal as="div" className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Blog</h1>
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t('Blog')}</h1>
         <p className="mt-6 text-lg text-text-muted">
-          Stories from the team behind Lumina — design decisions, engineering notes, and product
-          updates. Posts are on their way.
+          {t('Stories from the team behind Lumina — design decisions, engineering notes, and product updates. Posts are on their way.')}
         </p>
       </Reveal>
 
@@ -48,13 +49,13 @@ export function Blog() {
               type="button"
               onClick={() => setModalOpen(true)}
               className="flex h-full w-full flex-col rounded-2xl border border-border bg-bg-elevated/60 p-6 text-left transition-colors hover:border-border/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-magenta"
-              aria-label={`${post.title} — coming soon`}
+              aria-label={`${t(post.title)} — ${t('Coming soon')}`}
             >
               <span className="text-xs font-medium uppercase tracking-wide text-brand-magenta">
-                {post.date}
+                {t(post.date)}
               </span>
-              <h2 className="mt-3 text-lg font-semibold text-text">{post.title}</h2>
-              <p className="mt-2 flex-1 text-sm text-text-muted">{post.excerpt}</p>
+              <h2 className="mt-3 text-lg font-semibold text-text">{t(post.title)}</h2>
+              <p className="mt-2 flex-1 text-sm text-text-muted">{t(post.excerpt)}</p>
             </button>
           </Reveal>
         ))}
@@ -73,17 +74,17 @@ export function Blog() {
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id="blog-modal-heading" className="text-lg font-semibold text-text">
-              Coming soon
+              {t('Coming soon')}
             </h2>
             <p className="mt-2 text-sm text-text-muted">
-              This post is still being written. Check back soon!
+              {t('This post is still being written. Check back soon!')}
             </p>
             <button
               type="button"
               onClick={() => setModalOpen(false)}
               className="mt-6 rounded-full bg-gradient-brand px-5 py-2 text-sm font-semibold text-white"
             >
-              Got it
+              {t('Got it')}
             </button>
           </div>
         </div>

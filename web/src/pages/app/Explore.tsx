@@ -4,6 +4,7 @@ import { searchUsers, fetchSuggestedUsers } from '../../lib/users';
 import type { UserSummary } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState } from '../../components/StateViews';
+import { useI18n } from '../../i18n';
 
 function UserRow({ user }: { user: UserSummary }) {
   return (
@@ -21,6 +22,7 @@ function UserRow({ user }: { user: UserSummary }) {
 }
 
 export function Explore() {
+  const { t } = useI18n();
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<UserSummary[]>([]);
   const [suggested, setSuggested] = useState<UserSummary[]>([]);
@@ -61,16 +63,16 @@ export function Explore() {
         type="search"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
-        placeholder="Search people"
+        placeholder={t('Search people')}
         className="mb-4 w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-brand-magenta"
       />
       <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">
-        {term.trim().length > 0 ? 'Results' : 'Suggested'}
+        {term.trim().length > 0 ? t('Results') : t('Suggested')}
       </p>
       {loading ? (
-        <p className="px-3 py-6 text-sm text-text-muted">Searching…</p>
+        <p className="px-3 py-6 text-sm text-text-muted">{t('Searching…')}</p>
       ) : showing.length === 0 ? (
-        <EmptyState title="No people found" description="Try a different name." />
+        <EmptyState title={t('No people found')} description={t('Try a different name.')} />
       ) : (
         <div className="space-y-1">
           {showing.map((u) => (

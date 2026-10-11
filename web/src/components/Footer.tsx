@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { GitHubIcon } from './icons';
+import { useI18n } from '../i18n';
 
 const PRIVACY_POLICY_URL = 'https://abdulmajidkhan007.github.io/lumina/privacy-policy.html';
 const GITHUB_URL = 'https://github.com/abdulmajidkhan007/lumina';
@@ -30,6 +31,7 @@ const COLUMNS: readonly FooterColumn[] = [
 ];
 
 export function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-border/60 bg-bg-elevated/40">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -37,15 +39,14 @@ export function Footer() {
           <div className="col-span-2 sm:col-span-2">
             <span className="text-lg font-bold tracking-tight text-gradient-brand">Lumina</span>
             <p className="mt-3 max-w-xs text-sm text-text-muted">
-              Share your brightest moments — stories, reels, and messages in one beautifully
-              crafted app.
+              {t('Share your brightest moments — stories, reels, and messages in one beautifully crafted app.')}
             </p>
             <a
               href={`https://github.com/abdulmajidkhan007`}
               target="_blank"
               rel="noreferrer noopener"
               className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text"
-              aria-label="Lumina on GitHub"
+              aria-label={t('Lumina on GitHub')}
             >
               <GitHubIcon className="h-5 w-5" />
               GitHub
@@ -54,13 +55,13 @@ export function Footer() {
 
           {COLUMNS.map((column) => (
             <div key={column.title}>
-              <h3 className="text-sm font-semibold text-text">{column.title}</h3>
+              <h3 className="text-sm font-semibold text-text">{t(column.title)}</h3>
               <ul className="mt-3 flex flex-col gap-2">
                 {column.links.map((link) => (
                   <li key={link.label}>
                     {'to' in link ? (
                       <Link to={link.to} className="text-sm text-text-muted hover:text-text">
-                        {link.label}
+                        {t(link.label)}
                       </Link>
                     ) : (
                       <a
@@ -69,7 +70,7 @@ export function Footer() {
                         rel="noreferrer noopener"
                         className="text-sm text-text-muted hover:text-text"
                       >
-                        {link.label}
+                        {t(link.label)}
                       </a>
                     )}
                   </li>
@@ -80,7 +81,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-text-faint sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} Lumina. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Lumina. {t('All rights reserved.')}</p>
           <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-text-muted">
             {CONTACT_EMAIL}
           </a>

@@ -3,6 +3,7 @@ import { fetchRecentActivity } from '../../lib/activity';
 import type { ActivityLog, ActivityType } from '../../types/models';
 import { formatRelativeTime } from '../../lib/time';
 import { EmptyState, ErrorState, TableRowSkeleton } from '../../components/StateViews';
+import { useI18n } from '../../i18n';
 
 const BADGE: Record<ActivityType, string> = {
   signup: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
@@ -37,6 +38,7 @@ function TypeBadge({ type }: { type: ActivityType }) {
 }
 
 export function Activity() {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<ActivityLog[] | null>(null);
   const [error, setError] = useState('');
 
@@ -46,9 +48,9 @@ export function Activity() {
     try {
       setLogs(await fetchRecentActivity());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load activity.');
+      setError(err instanceof Error ? err.message : t('Failed to load activity.'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -59,23 +61,23 @@ export function Activity() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">Activity</h1>
+        <h1 className="text-xl font-bold">{t('Activity')}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-semibold transition hover:bg-white/5"
         >
-          Refresh
+          {t('Refresh')}
         </button>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="sticky top-0 bg-surface">
             <tr className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Event</th>
-              <th className="px-4 py-3">Who</th>
-              <th className="px-4 py-3">Platform</th>
+              <th className="px-4 py-3">{t('Time')}</th>
+              <th className="px-4 py-3">{t('Event')}</th>
+              <th className="px-4 py-3">{t('Who')}</th>
+              <th className="px-4 py-3">{t('Platform')}</th>
             </tr>
           </thead>
           <tbody>
@@ -88,10 +90,12 @@ export function Activity() {
             ) : logs.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-10">
-                  <EmptyState
-                    title="No activity yet"
-                    description="Sign-ups, logins and other auth events will appear here."
-                  />
+                  <div className="sticky left-0 max-w-[85vw]">
+                    <EmptyState
+                      title={t('No activity yet')}
+                      description={t('Sign-ups, logins and other auth events will appear here.')}
+                    />
+                  </div>
                 </td>
               </tr>
             ) : (

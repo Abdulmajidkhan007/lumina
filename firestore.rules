@@ -190,6 +190,37 @@ service cloud.firestore {
       }
     }
 
+    // ---------------- contact form (landing page) ----------------
+    // Visitors are usually signed out, so create is open — but only in this
+    // exact, size-capped shape, stamped with the server time. Admin reads it.
+    match /contactMessages/{messageId} {
+      allow create: if request.resource.data.keys().hasOnly(
+            ['name', 'email', 'message', 'status', 'uid', 'lang', 'createdAt'])
+        && request.resource.data.status == 'new'
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 80
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 3 && request.resource.data.email.size() <= 120
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 2000
+        && (!('uid' in request.resource.data)
+            || (signedIn() && request.resource.data.uid == request.auth.uid))
+        && (!('lang' in request.resource.data)
+            || (request.resource.data.lang is string && request.resource.data.lang.size() <= 5))
+        && request.resource.data.createdAt == request.time;
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['new', 'read'];
+    }
+
+    // ---------------- landing content (admin-managed) ----------------
+    // Screenshot URLs for the public landing page.
+    match /siteContent/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ---------------- activity logs (admin) ----------------
     // Only a signed-in user may log, only about themselves, and only in the
     // shape src/data/services/activityLog.ts writes — this used to be

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { CloseIcon, MenuIcon } from './icons';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useI18n } from '../i18n';
 
 interface NavItem {
   label: string;
@@ -16,6 +18,7 @@ const NAV_ITEMS: readonly NavItem[] = [
 ];
 
 export function Nav() {
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -44,10 +47,10 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-bg/80 backdrop-blur-md">
       <nav
-        aria-label="Main navigation"
+        aria-label={t('Main navigation')}
         className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8"
       >
-        <NavLink to="/" className="text-lg font-bold tracking-tight text-gradient-brand" aria-label="Lumina home">
+        <NavLink to="/" className="text-lg font-bold tracking-tight text-gradient-brand" aria-label={t('Lumina home')}>
           Lumina
         </NavLink>
 
@@ -55,31 +58,35 @@ export function Nav() {
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
               <NavLink to={item.to} className={linkClassName} end={item.to === '/'}>
-                {item.label}
+                {t(item.label)}
               </NavLink>
             </li>
           ))}
         </ul>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <LanguageSwitcher />
           <NavLink
             to="/app"
             className="rounded-full bg-gradient-brand px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-magenta/20 transition-transform hover:scale-105"
           >
-            Sign in
+            {t('Sign in')}
           </NavLink>
         </div>
 
+        <div className="flex items-center gap-2 md:hidden">
+        <LanguageSwitcher />
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-md p-2 text-text md:hidden"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={menuOpen ? t('Close menu') : t('Open menu')}
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
           onClick={() => setMenuOpen((open) => !open)}
         >
           {menuOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
         </button>
+        </div>
       </nav>
 
       {menuOpen ? (
@@ -96,7 +103,7 @@ export function Nav() {
                     }`
                   }
                 >
-                  {item.label}
+                  {t(item.label)}
                 </NavLink>
               </li>
             ))}
@@ -105,7 +112,7 @@ export function Nav() {
                 to="/app"
                 className="block rounded-full bg-gradient-brand px-4 py-3 text-center text-base font-semibold text-white"
               >
-                Sign in
+                {t('Sign in')}
               </NavLink>
             </li>
           </ul>

@@ -3,17 +3,19 @@ import { Link } from 'react-router-dom';
 import { fetchReels, type Reel } from '../../lib/content';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState } from '../../components/StateViews';
+import { useI18n } from '../../i18n';
 
 export function Reels() {
+  const { t } = useI18n();
   const [reels, setReels] = useState<Reel[] | null>(null);
 
   useEffect(() => {
     void fetchReels().then(setReels).catch(() => setReels([]));
   }, []);
 
-  if (reels === null) return <p className="px-4 py-10 text-center text-sm text-text-muted">Loading…</p>;
+  if (reels === null) return <p className="px-4 py-10 text-center text-sm text-text-muted">{t('Loading…')}</p>;
   if (reels.length === 0) {
-    return <EmptyState title="No reels yet" description="Short videos will appear here." />;
+    return <EmptyState title={t('No reels yet')} description={t('Short videos will appear here. Post a video from Create to start.')} />;
   }
 
   return (
@@ -35,7 +37,8 @@ export function Reels() {
             </Link>
             {reel.caption ? <p className="text-sm">{reel.caption}</p> : null}
             <p className="text-xs text-text-muted">
-              {reel.likeCount.toLocaleString()} likes · {reel.commentCount.toLocaleString()} comments
+              {t('{count} likes', { count: reel.likeCount.toLocaleString() })} ·{' '}
+              {t('{count} comments', { count: reel.commentCount.toLocaleString() })}
               {reel.audioTitle ? ` · ♪ ${reel.audioTitle}` : ''}
             </p>
           </div>

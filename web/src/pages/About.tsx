@@ -1,6 +1,7 @@
 import { Container } from '../components/Container';
 import { Reveal } from '../components/Reveal';
 import { GitHubIcon } from '../components/icons';
+import { useI18n } from '../i18n';
 
 interface TechItem {
   name: string;
@@ -24,32 +25,28 @@ const TEAM: readonly TeamMember[] = [
 ];
 
 export function About() {
+  const { t } = useI18n();
   return (
     <Container className="py-20 sm:py-28">
       <Reveal as="div" className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">About Lumina</h1>
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t('About Lumina')}</h1>
         <p className="mt-6 text-lg text-text-muted">
-          Lumina is an independent, Instagram-inspired social app built from scratch as a modern
-          showcase of what a small, focused team can ship with React Native. It is not affiliated
-          with or endorsed by any existing platform — it is its own product, its own design
-          language, and its own roadmap.
+          {t('Lumina is an independent, Instagram-inspired social app built from scratch as a modern showcase of what a small, focused team can ship with React Native. It is not affiliated with or endorsed by any existing platform — it is its own product, its own design language, and its own roadmap.')}
         </p>
       </Reveal>
 
       <Reveal as="section" className="mt-16" aria-labelledby="why-heading">
         <h2 id="why-heading" className="text-2xl font-bold tracking-tight">
-          Why Lumina
+          {t('Why Lumina')}
         </h2>
         <p className="mt-4 max-w-2xl text-text-muted">
-          Sharing a photo, a story, or a quick reel should feel instant and joyful. Lumina strips
-          away the noise and focuses on four things people actually use every day — Stories,
-          Reels, Messages, and Explore — built with careful attention to performance and feel.
+          {t('Sharing a photo, a story, or a quick reel should feel instant and joyful. Lumina strips away the noise and focuses on four things people actually use every day — Stories, Reels, Messages, and Explore — built with careful attention to performance and feel.')}
         </p>
       </Reveal>
 
       <section className="mt-16" aria-labelledby="tech-heading">
         <h2 id="tech-heading" className="text-2xl font-bold tracking-tight">
-          Technology
+          {t('Technology')}
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {TECH_STACK.map((tech, index) => (
@@ -60,7 +57,7 @@ export function About() {
               className="rounded-2xl border border-border bg-bg-elevated/60 p-6"
             >
               <h3 className="font-semibold text-text">{tech.name}</h3>
-              <p className="mt-2 text-sm text-text-muted">{tech.detail}</p>
+              <p className="mt-2 text-sm text-text-muted">{t(tech.detail)}</p>
             </Reveal>
           ))}
         </div>
@@ -68,7 +65,7 @@ export function About() {
 
       <section className="mt-16" aria-labelledby="team-heading">
         <h2 id="team-heading" className="text-2xl font-bold tracking-tight">
-          Team
+          {t('Team')}
         </h2>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
           {TEAM.map((member) => (
@@ -82,7 +79,7 @@ export function About() {
               </div>
               <div>
                 <p className="font-semibold text-text">{member.name}</p>
-                <p className="text-sm text-text-muted">{member.role}</p>
+                <p className="text-sm text-text-muted">{t(member.role)}</p>
               </div>
             </Reveal>
           ))}
@@ -97,7 +94,7 @@ export function About() {
           rel="noreferrer noopener"
           className="hover:text-text"
         >
-          Follow the project on GitHub
+          {t('Follow the project on GitHub')}
         </a>
       </Reveal>
     </Container>

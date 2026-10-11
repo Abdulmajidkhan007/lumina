@@ -4,6 +4,7 @@ import { fetchNotifications, markAllNotificationsRead, type AppNotification } fr
 import { Avatar } from '../../components/Avatar';
 import { EmptyState } from '../../components/StateViews';
 import { formatRelativeTime } from '../../lib/time';
+import { useI18n } from '../../i18n';
 
 const VERB: Record<AppNotification['type'], string> = {
   like: 'liked your post',
@@ -13,6 +14,7 @@ const VERB: Record<AppNotification['type'], string> = {
 };
 
 export function Notifications() {
+  const { t } = useI18n();
   const [items, setItems] = useState<AppNotification[] | null>(null);
 
   const load = useCallback(async () => {
@@ -35,20 +37,20 @@ export function Notifications() {
   return (
     <div className="mx-auto w-full max-w-xl px-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold">Notifications</h1>
+        <h1 className="text-lg font-bold">{t('Notifications')}</h1>
         <button
           type="button"
           onClick={() => void markRead()}
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold transition hover:bg-white/5"
         >
-          Mark all read
+          {t('Mark all read')}
         </button>
       </div>
 
       {items === null ? (
-        <p className="px-3 py-6 text-sm text-text-muted">Loading…</p>
+        <p className="px-3 py-6 text-sm text-text-muted">{t('Loading…')}</p>
       ) : items.length === 0 ? (
-        <EmptyState title="No notifications" description="Likes, comments and follows appear here." />
+        <EmptyState title={t('No notifications')} description={t('Likes, comments and follows appear here.')} />
       ) : (
         <div className="space-y-1">
           {items.map((n) => (
@@ -63,7 +65,7 @@ export function Notifications() {
                 <Link to={`/app/u/${n.actor.id}`} className="font-semibold">
                   {n.actor.username}
                 </Link>{' '}
-                {VERB[n.type]}
+                {t(VERB[n.type])}
                 {n.commentText ? <span className="text-text-muted">: {n.commentText}</span> : null}
               </p>
               {n.postPreview ? (

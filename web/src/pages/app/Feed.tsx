@@ -8,6 +8,7 @@ import { Avatar } from '../../components/Avatar';
 import { StoriesStrip } from '../../components/StoriesStrip';
 import { EmptyState, ErrorState, PostCardSkeleton } from '../../components/StateViews';
 import { MediaImage } from '../../components/MediaImage';
+import { useI18n } from '../../i18n';
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -25,6 +26,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 }
 
 function PostCard({ post }: { post: Post }) {
+  const { t } = useI18n();
   const [liked, setLiked] = useState(post.isLikedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [saved, setSaved] = useState(post.isSavedByMe);
@@ -72,7 +74,7 @@ function PostCard({ post }: { post: Post }) {
         <Link to={`/app/p/${post.id}`}>
           <MediaImage
             src={imageUri}
-            alt={post.caption ?? `Post by ${post.author.username}`}
+            alt={post.caption ?? t('Post by {name}', { name: post.author.username })}
             loading="lazy"
             className="aspect-square w-full object-cover"
           />
@@ -80,29 +82,30 @@ function PostCard({ post }: { post: Post }) {
       ) : null}
       <div className="space-y-2 px-4 py-3">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={toggleLike} aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} className="transition active:scale-90">
+          <button type="button" onClick={toggleLike} aria-pressed={liked} aria-label={liked ? t('Unlike') : t('Like')} className="transition active:scale-90">
             <HeartIcon filled={liked} />
           </button>
-          <Link to={`/app/p/${post.id}`} aria-label="Comments" className="text-sm font-semibold text-text-muted">
+          <Link to={`/app/p/${post.id}`} aria-label={t('Comments')} className="text-sm font-semibold text-text-muted">
             💬 {post.commentCount.toLocaleString()}
           </Link>
           <button type="button" onClick={toggleSave} className="ml-auto text-sm font-semibold text-text-muted">
-            {saved ? 'Saved' : 'Save'}
+            {saved ? t('Saved') : t('Save')}
           </button>
         </div>
-        <span className="text-sm font-semibold">{likeCount.toLocaleString()} likes</span>
+        <span className="text-sm font-semibold">{t('{count} likes', { count: likeCount.toLocaleString() })}</span>
         {post.caption ? (
           <p className="text-sm leading-relaxed">
             <Link to={`/app/u/${post.author.id}`} className="font-semibold">{post.author.username}</Link> {post.caption}
           </p>
         ) : null}
-        <Link to={`/app/p/${post.id}`} className="block text-xs text-text-muted">View post</Link>
+        <Link to={`/app/p/${post.id}`} className="block text-xs text-text-muted">{t('View post')}</Link>
       </div>
     </article>
   );
 }
 
 export function Feed() {
+  const { t } = useI18n();
   const [posts, setPosts] = useState<Post[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -153,9 +156,9 @@ export function Feed() {
           <PostCardSkeleton />
         </>
       ) : error ? (
-        <ErrorState message={error} onRetry={() => void loadFirst()} />
+        <ErrorState message={t(error)} onRetry={() => void loadFirst()} />
       ) : posts.length === 0 ? (
-        <EmptyState title="No posts yet" description="Posts from the Lumina community will appear here." />
+        <EmptyState title={t('No posts yet')} description={t('Posts from the Lumina community will appear here.')} />
       ) : (
         <>
           {posts.map((post) => (
@@ -168,7 +171,7 @@ export function Feed() {
               disabled={loadingMore}
               className="mx-auto block rounded-xl border border-border bg-surface px-6 py-2.5 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-60"
             >
-              {loadingMore ? 'Loading…' : 'Load more'}
+              {loadingMore ? t('Loading…') : t('Load more')}
             </button>
           ) : null}
         </>

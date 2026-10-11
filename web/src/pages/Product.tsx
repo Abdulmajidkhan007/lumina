@@ -3,6 +3,9 @@ import { Reveal } from '../components/Reveal';
 import { Button } from '../components/Button';
 import { AndroidIcon, AppleIcon, ExploreIcon, MessagesIcon, ReelsIcon, StoriesIcon } from '../components/icons';
 import { APK_DOWNLOAD_URL } from '../lib/constants';
+import { ScreensGallery } from '../components/ScreensGallery';
+import { useLandingScreens } from '../hooks/useLandingScreens';
+import { useI18n } from '../i18n';
 
 interface Capability {
   title: string;
@@ -36,15 +39,15 @@ const CAPABILITIES: readonly Capability[] = [
   },
 ];
 
-const SCREENSHOT_LABELS = ['Feed', 'Stories', 'Reels', 'Profile'] as const;
-
 export function Product() {
+  const { t } = useI18n();
+  const screens = useLandingScreens();
   return (
     <Container className="py-20 sm:py-28">
       <Reveal as="div" className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">The product</h1>
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t('The product')}</h1>
         <p className="mt-6 text-lg text-text-muted">
-          A closer look at what Lumina does today, and where it&apos;s headed next.
+          {t("A closer look at what Lumina does today, and where it's headed next.")}
         </p>
       </Reveal>
 
@@ -61,8 +64,8 @@ export function Product() {
               <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-brand">
                 <Icon className="h-6 w-6 text-white" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">{capability.title}</h3>
-              <p className="mt-2 text-sm text-text-muted">{capability.description}</p>
+              <h3 className="mt-4 text-lg font-semibold">{t(capability.title)}</h3>
+              <p className="mt-2 text-sm text-text-muted">{t(capability.description)}</p>
             </Reveal>
           );
         })}
@@ -70,43 +73,27 @@ export function Product() {
 
       <section className="mt-20" aria-labelledby="screens-heading">
         <h2 id="screens-heading" className="text-2xl font-bold tracking-tight">
-          Screens
+          {t('Screens')}
         </h2>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {SCREENSHOT_LABELS.map((label, index) => (
-            <Reveal
-              key={label}
-              as="div"
-              delayMs={index * 60}
-              className="aspect-[9/19] rounded-2xl border border-border bg-gradient-to-br from-brand-coral/10 via-brand-magenta/10 to-brand-violet/10 p-3"
-            >
-              <div className="flex h-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 text-center">
-                <span className="text-xs font-medium uppercase tracking-wide text-text-faint">
-                  Screenshot
-                </span>
-                <span className="text-sm font-semibold text-text-muted">{label}</span>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        <ScreensGallery screens={screens} />
       </section>
 
       <Reveal
         as="section"
         className="mt-20 flex flex-col items-center gap-6 rounded-3xl border border-border bg-bg-elevated/60 p-10 text-center sm:p-14"
       >
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Get Lumina on Android</h2>
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('Get Lumina on Android')}</h2>
         <p className="max-w-md text-text-muted">
-          Download the latest build straight from GitHub releases. iOS is coming soon.
+          {t('Download the latest build straight from GitHub releases. iOS is coming soon.')}
         </p>
         <div className="flex flex-col gap-4 sm:flex-row">
           <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
             <AndroidIcon className="h-5 w-5" />
-            Download for Android
+            {t('Download for Android')}
           </Button>
           <Button kind="button" variant="secondary" disabled aria-disabled="true">
             <AppleIcon className="h-5 w-5" />
-            iOS coming soon
+            {t('iOS coming soon')}
           </Button>
         </div>
       </Reveal>

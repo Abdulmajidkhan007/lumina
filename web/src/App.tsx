@@ -26,6 +26,8 @@ import { Overview } from './pages/admin/Overview';
 import { Users } from './pages/admin/Users';
 import { Activity } from './pages/admin/Activity';
 import { Reports } from './pages/admin/Reports';
+import { Messages as AdminMessages } from './pages/admin/Messages';
+import { Landing } from './pages/admin/Landing';
 
 function App() {
   return (
@@ -74,6 +76,8 @@ function App() {
         <Route path="users" element={<Users />} />
         <Route path="activity" element={<Activity />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="messages" element={<AdminMessages />} />
+        <Route path="landing" element={<Landing />} />
       </Route>
     </Routes>
   );

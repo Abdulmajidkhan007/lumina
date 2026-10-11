@@ -27,6 +27,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { uploadMedia } from './storage';
+import { MAX_VIDEO_BYTES, readVideoInfo } from './video';
 import type { Comment, MediaItem, Post, UserSummary } from '../types/models';
 
 export const FEED_PAGE_SIZE = 20;
@@ -249,7 +250,7 @@ function extractHashtags(caption: string): string[] {
 }
 
 export interface CreatePostParams {
-  files: Blob[];
+  files: File[];
   caption: string;
   location?: string;
 }
@@ -268,23 +269,54 @@ export async function createPost({ files, caption, location }: CreatePostParams)
     isVerified: (a?.isVerified as boolean) ?? false,
   };
   const media: MediaItem[] = await Promise.all(
-    files.map(async (file) => {
+    files.map(async (file): Promise<MediaItem> => {
+      if (file.type.startsWith('video/')) {
+        if (file.size >= MAX_VIDEO_BYTES) throw new Error('Video must be under 50 MB.');
+        const info = await readVideoInfo(file);
+        const [uri, thumbnailUri] = await Promise.all([
+          uploadMedia(file, 'posts'),
+          info.thumbnail ? uploadMedia(info.thumbnail, 'posts') : Promise.resolve(undefined),
+        ]);
+        return {
+          type: 'video',
+          uri,
+          width: info.width,
+          height: info.height,
+          durationMs: info.durationMs,
+          ...(thumbnailUri ? { thumbnailUri } : {}),
+        };
+      }
       const uri = await uploadMedia(file, 'posts');
-      return { type: 'image', uri, width: 1080, height: 1080 } satisfies MediaItem;
+      return { type: 'image', uri, width: 1080, height: 1080 };
     }),
   );
   const createdAt = new Date().toISOString();
+  const postCaption = caption.length > 0 ? caption : null;
   const ref = await addDoc(postsCollection(), {
     authorId: uid,
     author,
     media,
-    caption: caption.length > 0 ? caption : null,
+    caption: postCaption,
     hashtags: extractHashtags(caption),
     likeCount: 0,
     commentCount: 0,
     createdAt,
     ...(location ? { location } : {}),
   });
+  // One video = also a reel (same id), exactly as the mobile app writes it.
+  const [onlyMedia] = media;
+  if (media.length === 1 && onlyMedia?.type === 'video') {
+    await setDoc(doc(db, 'reels', ref.id), {
+      authorId: uid,
+      author,
+      video: onlyMedia,
+      caption: postCaption,
+      likeCount: 0,
+      commentCount: 0,
+      shareCount: 0,
+      createdAt,
+    });
+  }
   await runTransaction(db, async (tx) => {
     const u = await tx.get(doc(db, 'users', uid));
     if (u.exists()) tx.update(doc(db, 'users', uid), { postCount: increment(1) });

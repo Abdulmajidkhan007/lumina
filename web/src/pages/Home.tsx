@@ -4,6 +4,8 @@ import { Reveal } from '../components/Reveal';
 import { PhoneMockup } from '../components/PhoneMockup';
 import { ExploreIcon, MessagesIcon, ReelsIcon, StoriesIcon } from '../components/icons';
 import { APK_DOWNLOAD_URL } from '../lib/constants';
+import { useI18n } from '../i18n';
+import { useLandingScreens } from '../hooks/useLandingScreens';
 
 interface Feature {
   title: string;
@@ -47,6 +49,8 @@ const STATS: readonly Stat[] = [
 ];
 
 export function Home() {
+  const { t } = useI18n();
+  const screens = useLandingScreens();
   return (
     <>
       {/* Hero */}
@@ -61,21 +65,20 @@ export function Home() {
               <span className="text-gradient-brand">Lumina</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg text-text-muted sm:text-xl">
-              Share your brightest moments. Stories, Reels, and Messages — one fast, beautifully
-              crafted app for the things worth showing off.
+              {t('Share your brightest moments. Stories, Reels, and Messages — one fast, beautifully crafted app for the things worth showing off.')}
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
-                Get the app
+                {t('Get the app')}
               </Button>
               <Button kind="link" to="/app" variant="secondary">
-                Open Web App
+                {t('Open Web App')}
               </Button>
             </div>
           </div>
 
           <Reveal className="flex justify-center lg:justify-end" as="div">
-            <PhoneMockup />
+            <PhoneMockup screenshotUrl={screens.feed} />
           </Reveal>
         </Container>
       </section>
@@ -85,10 +88,10 @@ export function Home() {
         <Container>
           <Reveal as="div" className="max-w-2xl">
             <h2 id="features-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need to share
+              {t('Everything you need to share')}
             </h2>
             <p className="mt-4 text-text-muted">
-              Four core experiences, designed to feel instant and get out of your way.
+              {t('Four core experiences, designed to feel instant and get out of your way.')}
             </p>
           </Reveal>
 
@@ -105,8 +108,8 @@ export function Home() {
                   <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-brand">
                     <Icon className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-sm text-text-muted">{feature.description}</p>
+                  <h3 className="mt-4 text-lg font-semibold">{t(feature.title)}</h3>
+                  <p className="mt-2 text-sm text-text-muted">{t(feature.description)}</p>
                 </Reveal>
               );
             })}
@@ -123,7 +126,7 @@ export function Home() {
                 <p className="text-3xl font-extrabold text-gradient-brand sm:text-4xl">
                   {stat.value}
                 </p>
-                <p className="mt-2 text-sm text-text-muted">{stat.label}</p>
+                <p className="mt-2 text-sm text-text-muted">{t(stat.label)}</p>
               </Reveal>
             ))}
           </div>
@@ -135,17 +138,17 @@ export function Home() {
         <Container className="text-center">
           <Reveal as="div">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to start sharing?
+              {t('Ready to start sharing?')}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-text-muted">
-              Lumina is free, open source, and built to grow with its community.
+              {t('Lumina is free, open source, and built to grow with its community.')}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button kind="anchor" href={APK_DOWNLOAD_URL} variant="primary">
-                Get the app
+                {t('Get the app')}
               </Button>
               <Button kind="link" to="/product" variant="ghost">
-                Explore features &rarr;
+                {t('Explore features')} &rarr;
               </Button>
             </div>
           </Reveal>

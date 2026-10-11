@@ -7,6 +7,7 @@ import type { Post, UserProfile } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState, ErrorState } from '../../components/StateViews';
 import { MediaImage } from '../../components/MediaImage';
+import { useI18n } from '../../i18n';
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
@@ -18,6 +19,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 export function Profile() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const { firebaseUser } = useAuth();
   const targetId = id ?? firebaseUser?.uid ?? '';
@@ -40,14 +42,14 @@ export function Profile() {
         isMe ? Promise.resolve(false) : isFollowing(targetId),
       ]);
       if (!p) {
-        setError('User not found.');
+        setError(t('User not found.'));
         return;
       }
       setProfile(p);
       setPosts(ps);
       setFollowingState(f);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load profile.');
+      setError(err instanceof Error ? err.message : t('Failed to load profile.'));
     } finally {
       setLoading(false);
     }
@@ -67,8 +69,8 @@ export function Profile() {
     }
   };
 
-  if (loading) return <p className="px-4 py-10 text-center text-sm text-text-muted">Loading…</p>;
-  if (error || !profile) return <ErrorState message={error || 'Not found'} onRetry={() => void load()} />;
+  if (loading) return <p className="px-4 py-10 text-center text-sm text-text-muted">{t('Loading…')}</p>;
+  if (error || !profile) return <ErrorState message={error || t('Not found')} onRetry={() => void load()} />;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4">
@@ -85,14 +87,14 @@ export function Profile() {
                   following ? 'border border-border bg-surface' : 'bg-gradient-brand text-white'
                 }`}
               >
-                {following ? 'Following' : 'Follow'}
+                {following ? t('Following') : t('Follow')}
               </button>
             ) : null}
           </div>
           <div className="flex gap-6">
-            <Stat value={profile.postCount} label="posts" />
-            <Stat value={profile.followerCount} label="followers" />
-            <Stat value={profile.followingCount} label="following" />
+            <Stat value={profile.postCount} label={t('posts')} />
+            <Stat value={profile.followerCount} label={t('followers')} />
+            <Stat value={profile.followingCount} label={t('following')} />
           </div>
         </div>
       </header>
@@ -103,7 +105,7 @@ export function Profile() {
       </div>
 
       {posts.length === 0 ? (
-        <EmptyState title="No posts yet" description={isMe ? 'Share your first post.' : ''} />
+        <EmptyState title={t('No posts yet')} description={isMe ? t('Share your first post.') : ''} />
       ) : (
         <div className="grid grid-cols-3 gap-1">
           {posts.map((post) => {

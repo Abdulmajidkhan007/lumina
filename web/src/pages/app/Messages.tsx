@@ -6,8 +6,10 @@ import { fetchSuggestedUsers } from '../../lib/users';
 import type { UserSummary } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { formatRelativeTime } from '../../lib/time';
+import { useI18n } from '../../i18n';
 
 export function Messages() {
+  const { t } = useI18n();
   const { firebaseUser } = useAuth();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
@@ -28,12 +30,12 @@ export function Messages() {
 
   return (
     <div className="mx-auto w-full max-w-xl px-4">
-      <h1 className="mb-4 text-lg font-bold">Messages</h1>
+      <h1 className="mb-4 text-lg font-bold">{t('Messages')}</h1>
       {conversations === null ? (
-        <p className="px-3 py-6 text-sm text-text-muted">Loading…</p>
+        <p className="px-3 py-6 text-sm text-text-muted">{t('Loading…')}</p>
       ) : conversations.length === 0 ? (
         <>
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">Suggested</p>
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{t('Suggested')}</p>
           <div className="space-y-1">
             {suggested.map((u) => (
               <button
@@ -46,7 +48,7 @@ export function Messages() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{u.username}</p>
                 </div>
-                <span className="text-xs font-semibold text-brand-magenta">Message</span>
+                <span className="text-xs font-semibold text-brand-magenta">{t('Message')}</span>
               </button>
             ))}
           </div>
@@ -64,7 +66,7 @@ export function Messages() {
                 <Avatar name={o?.displayName ?? ''} avatarUrl={o?.avatarUrl ?? null} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{o?.username}</p>
-                  <p className="truncate text-xs text-text-muted">{c.lastMessage?.text ?? 'Start chatting'}</p>
+                  <p className="truncate text-xs text-text-muted">{c.lastMessage?.text ?? t('Start chatting')}</p>
                 </div>
                 {c.updatedAt ? (
                   <time className="shrink-0 text-xs text-text-muted">{formatRelativeTime(c.updatedAt)}</time>

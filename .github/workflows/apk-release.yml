@@ -68,6 +68,39 @@ jobs:
             echo "SIGNED_WITH=debug keystore (sideload only)" >> "$GITHUB_ENV"
           fi
 
+      # Google Sign-In checks the APK's signing certificate. Firebase only knew
+      # the debug key's SHA-1, so the upload-key-signed APK got DEVELOPER_ERROR.
+      # Register whatever key signs this build (idempotent; duplicates are
+      # rejected by the API and ignored here).
+      - name: Imzo kalitini Firebase'ga ro'yxatlash
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT yo'q — SHA ro'yxatga qo'shilmadi; Google bilan kirish DEVELOPER_ERROR berishi mumkin."
+            exit 0
+          fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          FB="npx --yes firebase-tools@15"
+          PROJECT=lumina-007app
+          if [ -n "${LUMINA_UPLOAD_STORE_FILE:-}" ]; then
+            CERT=$(keytool -list -v -keystore "$LUMINA_UPLOAD_STORE_FILE" -storepass "$LUMINA_UPLOAD_STORE_PASSWORD" -alias "$LUMINA_UPLOAD_KEY_ALIAS")
+          else
+            CERT=$(keytool -list -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey)
+          fi
+          SHA1=$(awk '/SHA1:/ {print $2}' <<< "$CERT")
+          SHA256=$(awk '/SHA256:/ {print $2}' <<< "$CERT")
+          APP_ID=$(jq -r '.client[] | select(.client_info.android_client_info.package_name=="com.lumina") | .client_info.mobilesdk_app_id' android/app/google-services.json)
+          KNOWN=$($FB apps:android:sha:list "$APP_ID" --project "$PROJECT" | tr -d ':' | tr 'A-F' 'a-f')
+          for H in "$SHA1" "$SHA256"; do
+            if grep -q "$(tr -d ':' <<< "$H" | tr 'A-F' 'a-f')" <<< "$KNOWN"; then
+              echo "✓ ro'yxatda bor: ${H:0:8}…"
+            else
+              $FB apps:android:sha:create "$APP_ID" "$H" --project "$PROJECT" || echo "::warning::SHA qo'shilmadi: ${H:0:8}…"
+            fi
+          done
+
       - name: Build release APK
         env:
           APP_VERSION_CODE: ${{ github.run_number }}
@@ -92,4 +125,4 @@ jobs:
 
       - name: Remove key
         if: always()
-        run: rm -f "$RUNNER_TEMP/upload.keystore"
+        run: rm -f "$RUNNER_TEMP/upload.keystore" "$RUNNER_TEMP/sa.json"

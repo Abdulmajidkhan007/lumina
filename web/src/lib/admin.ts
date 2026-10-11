@@ -68,6 +68,7 @@ export interface OverviewStats {
   totalUsers: number;
   totalPosts: number;
   activityToday: number;
+  newMessages: number;
 }
 
 /** Start of "today" in the browser's local time, as an ISO string. */
@@ -79,14 +80,16 @@ function startOfTodayIso(): string {
 
 export async function fetchOverviewStats(): Promise<OverviewStats> {
   const activityLogsCollection = collection(db, 'activityLogs');
-  const [usersCount, postsCount, activityCount] = await Promise.all([
+  const [usersCount, postsCount, activityCount, newMessagesCount] = await Promise.all([
     getCountFromServer(usersCollection()),
     getCountFromServer(collection(db, 'posts')),
     getCountFromServer(query(activityLogsCollection, where('createdAt', '>=', startOfTodayIso()))),
+    getCountFromServer(query(collection(db, 'contactMessages'), where('status', '==', 'new'))),
   ]);
   return {
     totalUsers: usersCount.data().count,
     totalPosts: postsCount.data().count,
     activityToday: activityCount.data().count,
+    newMessages: newMessagesCount.data().count,
   };
 }

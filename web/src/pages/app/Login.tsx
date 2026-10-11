@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmail, signInWithGoogle } from '../../lib/auth';
 import { FormField } from '../../components/FormField';
+import { useI18n } from '../../i18n';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
 function errorMessage(err: unknown): string {
   if (err instanceof Error) {
@@ -16,6 +18,7 @@ function errorMessage(err: unknown): string {
 }
 
 export function Login() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,6 +53,9 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-sm">
+        <div className="mb-4 flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <Link
           to="/"
           className="mb-8 block text-center bg-gradient-brand bg-clip-text text-4xl font-extrabold tracking-tight text-transparent"
@@ -57,10 +63,10 @@ export function Login() {
           Lumina
         </Link>
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-xl">
-          <h1 className="mb-6 text-center text-xl font-bold">Welcome back</h1>
+          <h1 className="mb-6 text-center text-xl font-bold">{t('Welcome back')}</h1>
           <form onSubmit={submit} className="space-y-4" noValidate>
             <FormField
-              label="Email"
+              label={t('Email')}
               id="email"
               type="email"
               autoComplete="email"
@@ -69,7 +75,7 @@ export function Login() {
               onChange={(e) => setEmail(e.target.value)}
             />
             <FormField
-              label="Password"
+              label={t('Password')}
               id="password"
               type="password"
               autoComplete="current-password"
@@ -79,7 +85,7 @@ export function Login() {
             />
             {error ? (
               <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-                {error}
+                {t(error)}
               </p>
             ) : null}
             <button
@@ -87,12 +93,12 @@ export function Login() {
               disabled={pending}
               className="w-full rounded-xl bg-gradient-brand py-2.5 font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             >
-              {pending ? 'Signing in…' : 'Sign in'}
+              {pending ? t('Signing in…') : t('Sign in')}
             </button>
           </form>
           <div className="my-4 flex items-center gap-3 text-xs text-text-muted">
             <span className="h-px flex-1 bg-border" />
-            or
+            {t('or')}
             <span className="h-px flex-1 bg-border" />
           </div>
           <button
@@ -100,13 +106,13 @@ export function Login() {
             onClick={google}
             className="w-full rounded-xl border border-border bg-bg py-2.5 text-sm font-semibold transition hover:bg-white/5"
           >
-            Continue with Google
+            {t('Continue with Google')}
           </button>
         </div>
         <p className="mt-4 text-center text-sm text-text-muted">
-          No account?{' '}
+          {t('No account?')}{' '}
           <Link to="/app/signup" className="font-semibold text-brand-magenta hover:underline">
-            Sign up
+            {t('Sign up')}
           </Link>
         </p>
       </div>

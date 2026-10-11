@@ -6,8 +6,10 @@ import { Avatar } from '../../components/Avatar';
 import { ErrorState } from '../../components/StateViews';
 import { formatRelativeTime } from '../../lib/time';
 import { MediaImage } from '../../components/MediaImage';
+import { useI18n } from '../../i18n';
 
 export function PostDetail() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -23,13 +25,13 @@ export function PostDetail() {
     try {
       const [p, c] = await Promise.all([fetchPost(id), fetchComments(id)]);
       if (!p) {
-        setError('Post not found.');
+        setError(t('Post not found.'));
         return;
       }
       setPost(p);
       setComments(c);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load post.');
+      setError(err instanceof Error ? err.message : t('Failed to load post.'));
     } finally {
       setLoading(false);
     }
@@ -69,8 +71,8 @@ export function PostDetail() {
     await load();
   };
 
-  if (loading) return <p className="px-4 py-10 text-center text-sm text-text-muted">Loading…</p>;
-  if (error || !post) return <ErrorState message={error || 'Not found'} onRetry={() => void load()} />;
+  if (loading) return <p className="px-4 py-10 text-center text-sm text-text-muted">{t('Loading…')}</p>;
+  if (error || !post) return <ErrorState message={error || t('Not found')} onRetry={() => void load()} />;
 
   const media = post.media[index] ?? post.media[0];
   const uri = media.type === 'video' ? media.thumbnailUri ?? media.uri : media.uri;
@@ -109,7 +111,7 @@ export function PostDetail() {
             {post.isLikedByMe ? '♥' : '♡'} {post.likeCount.toLocaleString()}
           </button>
           <button type="button" onClick={() => void toggleSave()} className="text-sm font-semibold text-text-muted">
-            {post.isSavedByMe ? 'Saved' : 'Save'}
+            {post.isSavedByMe ? t('Saved') : t('Save')}
           </button>
           <span className="text-xs text-text-muted">{formatRelativeTime(post.createdAt)}</span>
         </div>
@@ -122,7 +124,7 @@ export function PostDetail() {
 
         <div className="space-y-3 border-t border-border pt-3">
           {comments.length === 0 ? (
-            <p className="text-sm text-text-muted">No comments yet.</p>
+            <p className="text-sm text-text-muted">{t('No comments yet.')}</p>
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex gap-2 text-sm">
@@ -139,7 +141,7 @@ export function PostDetail() {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Add a comment…"
+            placeholder={t('Add a comment…')}
             className="flex-1 rounded-xl border border-border bg-surface px-4 py-2 text-sm outline-none focus:border-brand-magenta"
           />
           <button
@@ -148,7 +150,7 @@ export function PostDetail() {
             disabled={text.trim().length === 0}
             className="rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Post
+            {t('Post')}
           </button>
         </div>
       </div>
