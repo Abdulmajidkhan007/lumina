@@ -1,14 +1,14 @@
 /**
  * Landing-page screenshots, managed by the admin from the phone.
  *
- * Images live in Storage `landing/` and their URLs in Firestore
- * `siteContent/landing` → `screens.{slot}`. Both are publicly readable (the
- * landing page is for signed-out visitors) and writable only by the admin
- * (see firestore.rules / storage.rules).
+ * Each screenshot is downscaled in the browser to a JPEG data URL and stored
+ * in Firestore `siteContent/screen-{slot}` — publicly readable, admin-only
+ * writes (firestore.rules). Not Cloud Storage: CI cannot deploy storage.rules
+ * (the service account lacks the permission), so a public `landing/` Storage
+ * path would never go live; Firestore rules do deploy.
  */
-import { deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { deleteObject, getStorage, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { app, db } from './firebase';
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 export const SCREEN_SLOTS = ['feed', 'stories', 'reels', 'profile', 'messages'] as const;
 export type ScreenSlot = (typeof SCREEN_SLOTS)[number];
@@ -24,50 +24,64 @@ export const SCREEN_LABELS: Record<ScreenSlot, string> = {
 
 export type LandingScreens = Partial<Record<ScreenSlot, string>>;
 
-/** Same cap as storage.rules for `landing/`. */
-export const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
+/** Phone screenshots are shown at most ~300 px wide; 720 px keeps them sharp on retina. */
+const MAX_WIDTH = 720;
+/** Firestore documents are capped at 1 MiB; stay well under it. */
+const MAX_DATA_URL_CHARS = 900_000;
 
-const landingDoc = () => doc(db, 'siteContent', 'landing');
+const screenDoc = (slot: ScreenSlot) => doc(db, 'siteContent', `screen-${slot}`);
 
 export async function fetchLandingScreens(): Promise<LandingScreens> {
-  const snap = await getDoc(landingDoc());
-  const screens = snap.data()?.screens as Record<string, unknown> | undefined;
+  const snaps = await Promise.all(SCREEN_SLOTS.map((slot) => getDoc(screenDoc(slot))));
   const out: LandingScreens = {};
-  for (const slot of SCREEN_SLOTS) {
-    const url = screens?.[slot];
-    if (typeof url === 'string' && url.startsWith('https://')) out[slot] = url;
-  }
+  snaps.forEach((snap, i) => {
+    const url = snap.data()?.dataUrl;
+    const slot = SCREEN_SLOTS[i];
+    if (slot && typeof url === 'string' && url.startsWith('data:image/')) out[slot] = url;
+  });
   return out;
 }
 
-/** Deletes a replaced/removed screenshot file; a leftover file is harmless, so failures only warn. */
-async function deleteStoredScreen(url: string | undefined): Promise<void> {
-  if (!url) return;
-  try {
-    await deleteObject(ref(getStorage(app), url));
-  } catch (error) {
-    console.warn('[landing] old screenshot not deleted', error);
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('This image format cannot be read. Use a PNG or JPEG screenshot.'));
+    };
+    img.src = url;
+  });
+}
+
+/** Downscales to MAX_WIDTH and re-encodes as JPEG, lowering quality until it fits. */
+async function toCompactDataUrl(file: File): Promise<string> {
+  const img = await loadImage(file);
+  const scale = Math.min(1, MAX_WIDTH / img.naturalWidth);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser cannot process images.');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  for (const quality of [0.82, 0.7, 0.55, 0.4]) {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    if (dataUrl.length <= MAX_DATA_URL_CHARS) return dataUrl;
   }
+  throw new Error('Image is too large even after compression. Use a smaller screenshot.');
 }
 
 export async function uploadLandingScreen(slot: ScreenSlot, file: File): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('Choose an image file.');
-  if (file.size >= MAX_SCREENSHOT_BYTES) throw new Error('Image must be under 5 MB.');
-  const previous = (await fetchLandingScreens())[slot];
-  const objectRef = ref(getStorage(app), `landing/${slot}_${Date.now()}`);
-  await uploadBytes(objectRef, file, { contentType: file.type });
-  const url = await getDownloadURL(objectRef);
-  await setDoc(landingDoc(), { screens: { [slot]: url }, updatedAt: serverTimestamp() }, { merge: true });
-  await deleteStoredScreen(previous);
-  return url;
+  const dataUrl = await toCompactDataUrl(file);
+  await setDoc(screenDoc(slot), { dataUrl, updatedAt: serverTimestamp() });
+  return dataUrl;
 }
 
 export async function removeLandingScreen(slot: ScreenSlot): Promise<void> {
-  const previous = (await fetchLandingScreens())[slot];
-  await setDoc(
-    landingDoc(),
-    { screens: { [slot]: deleteField() }, updatedAt: serverTimestamp() },
-    { merge: true },
-  );
-  await deleteStoredScreen(previous);
+  await deleteDoc(screenDoc(slot));
 }

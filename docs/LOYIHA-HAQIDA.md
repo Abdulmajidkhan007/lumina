@@ -24,7 +24,7 @@ versiyada odamlar allaqachon post joylayapti.
 | Shikoyat qilish | ✅ | ✅ | |
 | Aloqa formasi (landing) | — | ✅ | `contactMessages`; admin → Messages. Avval `mailto:` edi — admin panelga hech narsa kelmasdi |
 | Uch til (uz/en/ru) | ✅ | ✅ | Vebda butun sayt (landing, ilova, admin); tanlov qurilmada saqlanadi |
-| Landing skrinshotlari | — | ✅ | Admin → Landing'dan yuklanadi (Storage `landing/`, ochiq o'qish); "Feed" bosh sahifadagi telefonda chiqadi |
+| Landing skrinshotlari | — | ✅ | Admin → Landing'dan yuklanadi; brauzerda 720 px JPEG'ga siqilib Firestore `siteContent/screen-*` ga yoziladi (Storage emas — CI storage.rules'ni deploy qila olmaydi); "Feed" bosh sahifadagi telefonda chiqadi |
 | Admin: umumiy, shikoyatlar (moderatsiya), foydalanuvchilar, faollik | ✅ | ✅ (+ xabarlar, landing) | Ilovada Sozlamalar → Admin; vebda `/admin`; faqat egasi (Google, tasdiqlangan email) |
 | "Ma'lumotlarimni yuklab olish" | ✅ | — | |
 | APK yuklab olish | ✅ | — | Har `main` push'da GitHub Release (`apk-release.yml`); versionCode = run raqami, yangilanish sifatida o'rnatiladi |
@@ -78,6 +78,9 @@ versiyada odamlar allaqachon post joylayapti.
 - **Shikoyatlar (Reports)** — foydalanuvchilar ilovada "Shikoyat qilish" bilan
   yuborgan narsalar; aloqa formasi bilan aloqasi yo'q. Admin sahifasida shu
   izoh yozildi.
-- Qoidalar emulyatorda sinaldi: `contactMessages`, `siteContent`, Storage
-  `landing/`, reel yaratish/o'chirish — 26 holat.
+- Qoidalar emulyatorda sinaldi: `contactMessages`, `siteContent`, reel
+  yaratish/o'chirish.
+- Ma'lum muammo: CI'dagi service account Storage qoidalari va Firestore
+  indekslarini deploy qila olmaydi (ogohlantirish beradi). `FIREBASE_TOKEN`
+  secret qo'shilsa yoki SA'ga "Firebase Rules Admin" roli berilsa hal bo'ladi.
 
