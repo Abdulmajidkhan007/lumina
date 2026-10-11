@@ -1,6 +1,8 @@
 /**
- * Lumina — story media helpers (pure, unit-tested).
+ * Lumina — story helpers (pure, unit-tested).
  */
+
+import type { StoryReel } from '@/types/models';
 
 export type StoryContentFit = 'cover' | 'contain';
 
@@ -31,4 +33,19 @@ export type StoryTapAction = 'prev' | 'next';
 /** Instagram-style tap zones: the left third goes back, the rest goes forward. */
 export function storyTapAction(x: number, screenWidth: number): StoryTapAction {
   return x < screenWidth / 3 ? 'prev' : 'next';
+}
+
+/**
+ * The user's reel if it still has a story inside its 24 h window. The tray
+ * query already filters on `expiresAt`, but a cached tray can outlive that
+ * — never show a ring that would open an empty viewer.
+ */
+export function findActiveStoryReel(
+  reels: readonly StoryReel[] | undefined,
+  userId: string,
+  now: number = Date.now(),
+): StoryReel | null {
+  const reel = reels?.find((r) => r.author.id === userId);
+  if (!reel) return null;
+  return reel.stories.some((s) => Date.parse(s.expiresAt) > now) ? reel : null;
 }

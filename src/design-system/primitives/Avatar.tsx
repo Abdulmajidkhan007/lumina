@@ -27,6 +27,8 @@ export interface AvatarProps {
   size?: AvatarSize;
   /** Show luminous gradient ring (story border) */
   hasStoryRing?: boolean;
+  /** Story already seen — the ring turns muted instead of the accent gradient. */
+  ringSeen?: boolean;
   /** Override container style */
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -89,6 +91,7 @@ export function Avatar({
   displayName,
   size = 'md',
   hasStoryRing = false,
+  ringSeen = false,
   style,
   accessibilityLabel,
 }: AvatarProps): React.JSX.Element {
@@ -149,7 +152,7 @@ export function Avatar({
   if (hasStoryRing) {
     return (
       <LinearGradient
-        colors={[...theme.colors.accentGradient]}
+        colors={ringSeen ? [theme.colors.border, theme.colors.border] : [...theme.colors.accentGradient]}
         start={{ x: 0, y: 1 }}
         end={{ x: 1, y: 0 }}
         style={[
