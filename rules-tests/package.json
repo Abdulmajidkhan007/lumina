@@ -2,15 +2,15 @@
   "name": "lumina-rules-tests",
   "private": true,
   "type": "module",
-  "description": "Firestore security rules tests (run against the local emulator).",
+  "description": "Firestore security-rules tests against the local emulator (vitest, run serially).",
   "scripts": {
     "test": "firebase emulators:exec --only firestore --project demo-lumina \"vitest run\"",
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.2",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@types/node": "^24.19.2",
-    "firebase": "^12.19.0",
+    "firebase": "^13.0.0",
     "firebase-tools": "^15.33.0",
     "vitest": "^5.0.3"
   }

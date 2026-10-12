@@ -323,5 +323,66 @@
     "shareToStory": "Share to story",
     "uploading": "Uploading…",
     "shareError": "Couldn't share your story. Please try again."
+  },
+  "storyViewer": {
+    "seenBy": "Seen by {{count}}",
+    "viewersTitle": "Viewers",
+    "noViewers": "No views yet",
+    "noViewersHint": "People who view your story will appear here.",
+    "viewersError": "Couldn't load viewers.",
+    "openViewers": "Show who viewed this story",
+    "previous": "Previous story",
+    "next": "Next story",
+    "close": "Close story",
+    "notFound": "No stories found for this user.",
+    "loadError": "Couldn't load stories.",
+    "progress": "Story {{current}} of {{total}}"
+  },
+  "video": {
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "playPause": "Video — tap to play or pause, double-tap to like"
+  },
+  "profile": {
+    "openStory": "View {{username}}'s story"
+  },
+  "highlights": {
+    "new": "New",
+    "newTitle": "New highlight",
+    "pickStories": "Choose stories",
+    "name": "Name",
+    "namePlaceholder": "Highlight name",
+    "cover": "Cover",
+    "coverHint": "Tap a story to use it as the cover.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "archiveEmpty": "No stories yet",
+    "archiveEmptyHint": "Stories you share are kept here, even after 24 hours.",
+    "archiveError": "Couldn't load your stories.",
+    "saveError": "Couldn't save the highlight. Try again.",
+    "needStories": "Choose at least one story.",
+    "needName": "Give the highlight a name.",
+    "selectedCount": "{{count}} selected",
+    "addToHighlight": "Highlight",
+    "addToHighlightTitle": "Add to highlight",
+    "createWithStory": "New highlight with this story",
+    "added": "Added to “{{title}}”",
+    "alreadyIn": "Already in this highlight",
+    "deleteTitle": "Delete highlight",
+    "deleteBody": "This highlight will be removed from your profile.",
+    "delete": "Delete",
+    "open": "Highlight: {{title}}"
+  },
+  "collab": {
+    "invited": " invited you to collaborate on a post.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "Accepted — the post now shows on your profile.",
+    "declined": "Declined",
+    "error": "Couldn't answer the invite.",
+    "and": " and {{username}}",
+    "inviteRow": "Invite collaborator",
+    "inviteTitle": "Invite a collaborator",
+    "pendingHint": "Collab with {{username}} — shows once they accept"
   }
 }

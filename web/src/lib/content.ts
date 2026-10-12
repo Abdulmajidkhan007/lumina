@@ -9,9 +9,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
+  runTransaction,
+  setDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -24,35 +27,71 @@ import type { MediaItem, Post, UserSummary, VideoMedia } from '../types/models';
 
 export interface Reel {
   id: string;
+  /** Set when the reel mirrors a feed post — likes then live on the post. */
+  postId?: string;
   author: UserSummary;
   video: VideoMedia;
   caption: string | null;
   likeCount: number;
   commentCount: number;
+  isLikedByMe: boolean;
   audioTitle?: string;
   createdAt: string;
 }
 
+/**
+ * Newest reels. A reel at `reels/{postId}` is the twin of a single-video post:
+ * its like state and counts are read from the post, so the feed and Reels
+ * always agree (same as the app).
+ */
 export async function fetchReels(): Promise<Reel[]> {
+  const uid = auth.currentUser?.uid;
   const snap = await getDocs(query(collection(db, 'reels'), orderBy('createdAt', 'desc'), limit(30)));
-  return snap.docs
-    .map((d): Reel | null => {
+  const reels = await Promise.all(
+    snap.docs.map(async (d): Promise<Reel | null> => {
       const data = d.data() as Record<string, unknown>;
       const video = data.video as VideoMedia | undefined;
       const author = data.author as UserSummary | undefined;
       if (!video || !author || typeof data.createdAt !== 'string') return null;
+      const postSnap = await getDoc(doc(db, 'posts', d.id));
+      const twin = postSnap.exists() ? (postSnap.data() as { likeCount?: number; commentCount?: number }) : null;
+      const likeParent = twin ? doc(db, 'posts', d.id) : doc(db, 'reels', d.id);
+      const isLikedByMe = uid ? (await getDoc(doc(likeParent, 'likes', uid))).exists() : false;
       return {
         id: d.id,
+        ...(twin ? { postId: d.id } : {}),
         author,
         video,
         caption: (data.caption as string | null) ?? null,
-        likeCount: (data.likeCount as number) ?? 0,
-        commentCount: (data.commentCount as number) ?? 0,
+        likeCount: (twin ? twin.likeCount : (data.likeCount as number | undefined)) ?? 0,
+        commentCount: (twin ? twin.commentCount : (data.commentCount as number | undefined)) ?? 0,
+        isLikedByMe,
         audioTitle: data.audioTitle as string | undefined,
         createdAt: data.createdAt,
       };
-    })
-    .filter((r): r is Reel => r !== null);
+    }),
+  );
+  return reels.filter((r): r is Reel => r !== null);
+}
+
+/** Like for a reel without a post twin — `reels/{id}/likes/{uid}` + likeCount. */
+export async function setReelLiked(reelId: string, liked: boolean): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('You must be signed in to like reels.');
+  const parentRef = doc(db, 'reels', reelId);
+  const memberRef = doc(parentRef, 'likes', uid);
+  await runTransaction(db, async (tx) => {
+    const parent = await tx.get(parentRef);
+    if (!parent.exists()) return;
+    const member = await tx.get(memberRef);
+    if (liked && !member.exists()) {
+      tx.set(memberRef, { uid, createdAt: new Date().toISOString() });
+      tx.update(parentRef, { likeCount: increment(1) });
+    } else if (!liked && member.exists()) {
+      tx.delete(memberRef);
+      tx.update(parentRef, { likeCount: increment(-1) });
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -65,19 +104,84 @@ export interface Story {
   media: MediaItem;
   createdAt: string;
   expiresAt: string;
+  seen: boolean;
 }
 
 export interface StoryReel {
   author: UserSummary;
   stories: Story[];
+  hasUnseen: boolean;
+}
+
+/** Ids of stories the current user saw in the last 24 h (`users/{uid}/seenStories`). */
+async function fetchSeenStoryIds(): Promise<Set<string>> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return new Set();
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const snap = await getDocs(query(collection(db, 'users', uid, 'seenStories'), where('seenAt', '>', since)));
+    return new Set(snap.docs.map((d) => d.id));
+  } catch {
+    return new Set();
+  }
+}
+
+export interface StoryView {
+  viewer: UserSummary;
+  viewedAt: string;
+}
+
+/**
+ * Marks a story seen (private `users/{uid}/seenStories` marker) and, unless
+ * it is the viewer's own story, records them in the author-only
+ * `stories/{id}/views/{uid}` list — same schema as the mobile app.
+ */
+export async function markStorySeen(storyId: string, authorId: string): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const now = new Date().toISOString();
+  const writes: Promise<void>[] = [
+    setDoc(doc(db, 'users', uid, 'seenStories', storyId), { storyId, seenAt: now }),
+  ];
+  if (authorId !== uid) {
+    const me = await getDoc(doc(db, 'users', uid));
+    const data = me.data() as Partial<UserSummary> | undefined;
+    if (data?.username) {
+      const viewer: UserSummary = {
+        id: uid,
+        username: data.username,
+        displayName: data.displayName ?? data.username,
+        avatarUrl: data.avatarUrl ?? null,
+        isVerified: data.isVerified ?? false,
+      };
+      writes.push(setDoc(doc(db, 'stories', storyId, 'views', uid), { uid, viewer, viewedAt: now }));
+    }
+  }
+  await Promise.all(writes);
+}
+
+/** Viewers of one of the current user's stories, newest first (author-only). */
+export async function fetchStoryViewers(storyId: string): Promise<StoryView[]> {
+  const snap = await getDocs(collection(db, 'stories', storyId, 'views'));
+  return snap.docs
+    .map((d): StoryView | null => {
+      const data = d.data() as { viewer?: UserSummary; viewedAt?: string };
+      return data.viewer && typeof data.viewedAt === 'string'
+        ? { viewer: data.viewer, viewedAt: data.viewedAt }
+        : null;
+    })
+    .filter((v): v is StoryView => v !== null)
+    .sort((a, b) => b.viewedAt.localeCompare(a.viewedAt));
 }
 
 /** Active (non-expired) stories grouped by author. Close-Friends items are skipped. */
 export async function fetchStoryReels(): Promise<StoryReel[]> {
   const nowIso = new Date().toISOString();
-  const snap = await getDocs(
-    query(collection(db, 'stories'), where('expiresAt', '>', nowIso), limit(100)),
-  );
+  const uid = auth.currentUser?.uid;
+  const [snap, seenIds] = await Promise.all([
+    getDocs(query(collection(db, 'stories'), where('expiresAt', '>', nowIso), limit(100))),
+    fetchSeenStoryIds(),
+  ]);
   const byAuthor = new Map<string, StoryReel>();
   for (const d of snap.docs) {
     const data = d.data() as Record<string, unknown>;
@@ -92,15 +196,18 @@ export async function fetchStoryReels(): Promise<StoryReel[]> {
       media,
       createdAt: data.createdAt,
       expiresAt: (data.expiresAt as string) ?? '',
+      seen: author.id === uid || seenIds.has(d.id),
     };
     const existing = byAuthor.get(author.id);
     if (existing) existing.stories.push(story);
-    else byAuthor.set(author.id, { author, stories: [story] });
+    else byAuthor.set(author.id, { author, stories: [story], hasUnseen: false });
   }
   for (const reel of byAuthor.values()) {
     reel.stories.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    reel.hasUnseen = reel.stories.some((s) => !s.seen);
   }
-  return [...byAuthor.values()];
+  // Unseen reels first, like the app's tray.
+  return [...byAuthor.values()].sort((a, b) => Number(b.hasUnseen) - Number(a.hasUnseen));
 }
 
 // ---------------------------------------------------------------------------
@@ -109,8 +216,10 @@ export async function fetchStoryReels(): Promise<StoryReel[]> {
 
 export interface AppNotification {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'mention';
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'collab_invite';
   actor: UserSummary;
+  /** Collab invites: the recorded answer, once given. */
+  response?: 'accepted' | 'declined';
   postPreview?: { postId: string; thumbnailUri: string };
   commentText?: string;
   createdAt: string;
@@ -135,6 +244,7 @@ export async function fetchNotifications(): Promise<AppNotification[]> {
         actor,
         postPreview: data.postPreview as AppNotification['postPreview'],
         commentText: data.commentText as string | undefined,
+        ...(data.response === 'accepted' || data.response === 'declined' ? { response: data.response } : {}),
         createdAt: data.createdAt,
         read: (data.read as boolean) ?? false,
       };

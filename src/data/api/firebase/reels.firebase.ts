@@ -10,7 +10,11 @@
  *    - `reels/{reelId}/saves/{uid}` — membership marker; existence = saved.
  *
  * Mirrors posts.firebase.ts's pagination + like/save patterns. Reels are not
- * created through IReelsApi (no `createReel` method on the contract).
+ * created through IReelsApi (no `createReel` method on the contract) — a
+ * single-video post writes its twin at `reels/{postId}`. For such a twin the
+ * like state and counts are read from the POST (`posts/{id}` + its likes),
+ * and the client likes the post, so Reels / feed / post detail always agree.
+ * Pre-twin reels (no matching post) keep their own likes subcollection.
  */
 import type { IReelsApi } from '@/data/api/contracts';
 import type { Reel, ReelId } from '@/types/models';
@@ -49,20 +53,28 @@ function reelDocRef(id: string) {
   return getFirebaseFirestore().collection('reels').doc(id);
 }
 
+interface PostCounters {
+  likeCount?: number;
+  commentCount?: number;
+}
+
 async function buildReelCandidate(raw: RawDoc, viewerUid: string | null): Promise<unknown> {
   const data = raw.data as Partial<ReelDocFields>;
-  const [isLikedByMe, isSavedByMe] = await getMembershipFlags(
-    reelDocRef(raw.id),
-    ['likes', 'saves'],
-    viewerUid,
-  );
+  const postRef = getFirebaseFirestore().collection('posts').doc(raw.id);
+  const postSnap = await postRef.get();
+  const twin = postSnap.exists() ? (postSnap.data() as PostCounters) : null;
+  const [[isLikedByMe], [isSavedByMe]] = await Promise.all([
+    getMembershipFlags(twin ? postRef : reelDocRef(raw.id), ['likes'], viewerUid),
+    getMembershipFlags(reelDocRef(raw.id), ['saves'], viewerUid),
+  ]);
   return {
     id: raw.id,
+    ...(twin ? { postId: raw.id } : {}),
     author: data.author,
     video: data.video,
     caption: data.caption ?? null,
-    likeCount: data.likeCount ?? 0,
-    commentCount: data.commentCount ?? 0,
+    likeCount: (twin ? twin.likeCount : data.likeCount) ?? 0,
+    commentCount: (twin ? twin.commentCount : data.commentCount) ?? 0,
     shareCount: data.shareCount ?? 0,
     isLikedByMe,
     isSavedByMe,

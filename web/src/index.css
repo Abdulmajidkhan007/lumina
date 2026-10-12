@@ -89,6 +89,13 @@ body {
   }
 }
 
+@keyframes heart-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  25% { transform: scale(1.15); opacity: 1; }
+  60% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
 /* ---- Admin panel light theme ----
    The public site is dark-only; the admin shell can follow the system or a
    saved choice (data-theme on .admin-shell). Tailwind utilities read these

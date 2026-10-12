@@ -56,6 +56,8 @@ export interface Post {
   isSavedByMe: boolean;
   location?: string;
   taggedUsers?: UserSummary[];
+  /** Co-author, present only once they accepted the collab invite. */
+  collaborator?: UserSummary;
   /** ISO 8601 timestamp. */
   createdAt: string;
 }

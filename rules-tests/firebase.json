@@ -1,0 +1,4 @@
+{
+  "firestore": {},
+  "emulators": { "firestore": { "host": "127.0.0.1", "port": 8080 }, "hub": { "host": "127.0.0.1" }, "logging": { "host": "127.0.0.1" }, "ui": { "enabled": false } }
+}

@@ -1,5 +1,10 @@
-import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
-import type { Story, StoryReel, Highlight, Media, StoryId, UserId } from '@/types/models';
+import type {
+  IStoriesApi,
+  CreateStoryInput,
+  CreateHighlightInput,
+  HighlightMediaInput,
+} from '@/data/api/contracts';
+import type { Story, StoryReel, StoryView, Highlight, Media, StoryId, UserId } from '@/types/models';
 import { storyIdSchema } from '@/schemas';
 import { mutableStoryReels } from './fixtures/stories.fixture';
 import { currentUser, toUserSummary } from './fixtures/users.fixture';
@@ -7,6 +12,9 @@ import { mockDelay } from './latency';
 
 /** In-memory reaction store: storyId -> uid -> { emoji, createdAt }. */
 const mutableStoryReactions = new Map<string, Map<string, { emoji: string; createdAt: string }>>();
+
+/** In-memory viewer lists: storyId -> viewer uid -> view. */
+const mutableStoryViews = new Map<string, Map<string, StoryView>>();
 
 /** In-memory highlights keyed by owner id. */
 const mutableHighlights = new Map<string, Highlight[]>();
@@ -29,8 +37,16 @@ export class MockStoriesApi implements IStoriesApi {
     return mutableStoryReels;
   }
 
-  async markSeen(storyId: StoryId): Promise<void> {
+  async markSeen(storyId: StoryId, authorId: UserId): Promise<void> {
     await mockDelay();
+    if (authorId !== currentUser.id) {
+      const views = mutableStoryViews.get(storyId) ?? new Map<string, StoryView>();
+      views.set(currentUser.id, {
+        viewer: toUserSummary(currentUser),
+        viewedAt: new Date().toISOString(),
+      });
+      mutableStoryViews.set(storyId, views);
+    }
     for (const reel of mutableStoryReels) {
       for (const story of reel.stories) {
         if (story.id === storyId) {
@@ -43,6 +59,13 @@ export class MockStoriesApi implements IStoriesApi {
       // plain objects — cast to mutable to update the flag.
       (reel as { hasUnseen: boolean }).hasUnseen = hasUnseen;
     }
+  }
+
+  async getStoryViewers(storyId: StoryId): Promise<StoryView[]> {
+    await mockDelay();
+    return [...(mutableStoryViews.get(storyId)?.values() ?? [])].sort((a, b) =>
+      b.viewedAt.localeCompare(a.viewedAt),
+    );
   }
 
   async createStory(input: CreateStoryInput): Promise<Story> {
@@ -119,6 +142,31 @@ export class MockStoriesApi implements IStoriesApi {
     const existing = mutableHighlights.get(currentUser.id) ?? [];
     mutableHighlights.set(currentUser.id, [highlight, ...existing]);
     return highlight;
+  }
+
+  async getStoryArchive(): Promise<Story[]> {
+    await mockDelay();
+    return mutableStoryReels
+      .filter((r) => r.author.id === currentUser.id)
+      .flatMap((r) => r.stories)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async addToHighlight(highlightId: string, input: HighlightMediaInput[]): Promise<Highlight> {
+    await mockDelay();
+    const existing = mutableHighlights.get(currentUser.id) ?? [];
+    const target = existing.find((h) => h.id === highlightId);
+    if (!target) throw new Error('Highlight not found');
+    const known = new Set(target.media.map((m) => m.uri));
+    const updated: Highlight = {
+      ...target,
+      media: [...target.media, ...input.filter((m) => !known.has(m.uri)).map(toMedia)],
+    };
+    mutableHighlights.set(
+      currentUser.id,
+      existing.map((h) => (h.id === highlightId ? updated : h)),
+    );
+    return updated;
   }
 
   async deleteHighlight(id: string): Promise<void> {

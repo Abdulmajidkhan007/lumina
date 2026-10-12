@@ -25,7 +25,10 @@ export type CreatePostInput = {
   location?: string;
   /** Ids of people tagged in the post. */
   taggedUserIds?: UserId[];
-  /** Ids of invited co-authors ("collab"). */
+  /**
+   * Invited co-author ("collab"). Only the first id is used: the post goes
+   * out under the author alone and becomes "A and B" only after B accepts.
+   */
   collaboratorIds?: UserId[];
 };
 
@@ -60,6 +63,11 @@ export interface IPostsApi {
   unarchivePost(id: PostId): Promise<void>;
   /** Pages the current user's archived posts, most recently archived first. */
   getArchivedPosts(params: FeedParams): Promise<Paginated<Post>>;
+  /**
+   * Answers a collab invite on `id`. Only the invited user, only while the
+   * invite is pending. Declining leaves a plain post by the author.
+   */
+  respondToCollab(id: PostId, accept: boolean): Promise<void>;
   /** Pages through the current user's saved posts, most recently saved first. */
   getSavedPosts(params: FeedParams): Promise<Paginated<Post>>;
 }

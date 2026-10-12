@@ -82,7 +82,9 @@ export function StoryRail(): React.JSX.Element {
   const pickAndOpenComposer = useCallback(() => {
     setPickerBusy(true);
     launchImageLibrary(
-      { mediaType: 'photo', selectionLimit: 1, quality: 0.9 },
+      // Full quality, capped at 1920 px on the long edge — a story fills the
+      // screen, so anything blurrier shows.
+      { mediaType: 'photo', selectionLimit: 1, quality: 0.9, maxWidth: 1920, maxHeight: 1920 },
       (response) => {
         setPickerBusy(false);
         if (response.didCancel === true) return;
@@ -96,7 +98,11 @@ export function StoryRail(): React.JSX.Element {
         const asset = response.assets?.[0];
         if (asset?.uri === undefined) return;
 
-        navigation.navigate('StoryComposer', { uri: asset.uri });
+        navigation.navigate('StoryComposer', {
+          uri: asset.uri,
+          ...(asset.width ? { width: asset.width } : {}),
+          ...(asset.height ? { height: asset.height } : {}),
+        });
       },
     );
   }, [navigation]);

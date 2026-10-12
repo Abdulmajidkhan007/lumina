@@ -46,15 +46,25 @@ export const mentionNotificationSchema = notificationBaseSchema.extend({
   mentionContext: z.string().optional(),
 });
 
+/** "A invited you to collaborate on a post" — answered with Accept / Decline. */
+export const collabInviteNotificationSchema = notificationBaseSchema.extend({
+  type: z.literal('collab_invite'),
+  postPreview: notificationPostPreviewSchema,
+  /** Set once the invitee answered (from this or another device). */
+  response: z.enum(['accepted', 'declined']).optional(),
+});
+
 export const notificationSchema = z.discriminatedUnion('type', [
   likeNotificationSchema,
   commentNotificationSchema,
   followNotificationSchema,
   mentionNotificationSchema,
+  collabInviteNotificationSchema,
 ]);
 
 export type LikeNotification = z.infer<typeof likeNotificationSchema>;
 export type CommentNotification = z.infer<typeof commentNotificationSchema>;
 export type FollowNotification = z.infer<typeof followNotificationSchema>;
 export type MentionNotification = z.infer<typeof mentionNotificationSchema>;
+export type CollabInviteNotification = z.infer<typeof collabInviteNotificationSchema>;
 export type Notification = z.infer<typeof notificationSchema>;

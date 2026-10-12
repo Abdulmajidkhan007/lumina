@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { fetchUser, isFollowing, setFollowing } from '../../lib/users';
 import { fetchUserPosts } from '../../lib/posts';
+import { fetchStoryReels, type StoryReel } from '../../lib/content';
+import { StoryViewer } from '../../components/StoryViewer';
 import type { Post, UserProfile } from '../../types/models';
 import { Avatar } from '../../components/Avatar';
 import { EmptyState, ErrorState } from '../../components/StateViews';
@@ -28,6 +30,8 @@ export function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [following, setFollowingState] = useState(false);
+  const [storyReel, setStoryReel] = useState<StoryReel | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -59,6 +63,16 @@ export function Profile() {
     void load();
   }, [load]);
 
+  // Active (24 h) story → ring on the avatar; click opens the viewer.
+  const loadStory = useCallback(() => {
+    if (!targetId) return;
+    fetchStoryReels()
+      .then((reels) => setStoryReel(reels.find((r) => r.author.id === targetId) ?? null))
+      .catch(() => setStoryReel(null));
+  }, [targetId]);
+
+  useEffect(loadStory, [loadStory]);
+
   const toggleFollow = async () => {
     const next = !following;
     setFollowingState(next);
@@ -75,7 +89,20 @@ export function Profile() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4">
       <header className="mb-6 flex items-center gap-5">
-        <Avatar name={profile.displayName} avatarUrl={profile.avatarUrl} size="lg" />
+        {storyReel ? (
+          <button
+            type="button"
+            onClick={() => setStoryOpen(true)}
+            aria-label={t('View {name}’s story', { name: profile.username })}
+            className={`shrink-0 rounded-full p-[3px] ${storyReel.hasUnseen || isMe ? 'bg-gradient-brand' : 'bg-border'}`}
+          >
+            <span className="block rounded-full bg-bg p-[2px]">
+              <Avatar name={profile.displayName} avatarUrl={profile.avatarUrl} size="lg" />
+            </span>
+          </button>
+        ) : (
+          <Avatar name={profile.displayName} avatarUrl={profile.avatarUrl} size="lg" />
+        )}
         <div className="flex-1">
           <div className="mb-3 flex items-center gap-3">
             <h1 className="text-lg font-bold">{profile.username}</h1>
@@ -119,6 +146,24 @@ export function Profile() {
           })}
         </div>
       )}
+      {storyOpen && storyReel ? (
+        <StoryViewer
+          reel={storyReel}
+          onClose={() => {
+            setStoryOpen(false);
+            loadStory();
+          }}
+        />
+      ) : null}
+      {storyOpen && storyReel ? (
+        <StoryViewer
+          reel={storyReel}
+          onClose={() => {
+            setStoryOpen(false);
+            loadStory();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

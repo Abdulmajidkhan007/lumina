@@ -27,6 +27,10 @@ export interface UserMultiSelectModalProps {
   initialSelected: UserSummary[];
   onClose: () => void;
   onDone: (selected: UserSummary[]) => void;
+  /** Cap on selections; with 1, picking someone replaces the previous pick. */
+  maxSelected?: number;
+  /** Users that can't be picked (e.g. yourself as your own collaborator). */
+  excludeIds?: readonly string[];
 }
 
 export function UserMultiSelectModal({
@@ -35,6 +39,8 @@ export function UserMultiSelectModal({
   initialSelected,
   onClose,
   onDone,
+  maxSelected,
+  excludeIds,
 }: UserMultiSelectModalProps): React.JSX.Element {
   const theme = useTheme();
   const [term, setTerm] = useState('');
@@ -42,15 +48,22 @@ export function UserMultiSelectModal({
   const debounced = useDebounce(term, 300);
   const { data, isLoading } = useSearchUsers(debounced);
 
-  const results = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+  const results = useMemo(
+    () => (data?.pages.flatMap((p) => p.items) ?? []).filter((u) => !excludeIds?.includes(u.id)),
+    [data, excludeIds],
+  );
 
-  const toggle = useCallback((user: UserSummary) => {
-    setSelected((prev) =>
-      prev.some((u) => u.id === user.id)
-        ? prev.filter((u) => u.id !== user.id)
-        : [...prev, user],
-    );
-  }, []);
+  const toggle = useCallback(
+    (user: UserSummary) => {
+      setSelected((prev) => {
+        if (prev.some((u) => u.id === user.id)) return prev.filter((u) => u.id !== user.id);
+        if (maxSelected === 1) return [user];
+        if (maxSelected !== undefined && prev.length >= maxSelected) return prev;
+        return [...prev, user];
+      });
+    },
+    [maxSelected],
+  );
 
   const handleDone = useCallback(() => {
     onDone(selected);

@@ -29,6 +29,7 @@ import { auth, db } from './firebase';
 import { uploadMedia } from './storage';
 import { MAX_VIDEO_BYTES, readVideoInfo } from './video';
 import type { Comment, MediaItem, Post, UserSummary } from '../types/models';
+import { acceptedCollaborator } from './collab';
 
 export const FEED_PAGE_SIZE = 20;
 
@@ -44,6 +45,7 @@ interface PostDocFields {
   taggedUsers?: UserSummary[];
   archivedAt?: string;
   hashtags?: string[];
+  collab?: unknown;
 }
 
 function postsCollection() {
@@ -72,6 +74,7 @@ function toPost(
   }
   // Hidden by a moderator (admin → Reports); the post stays in Firestore.
   if ((data as { hidden?: unknown }).hidden === true) return null;
+  const collaborator = acceptedCollaborator(data);
   return {
     id: snap.id,
     authorId: data.authorId ?? data.author.id,
@@ -84,6 +87,7 @@ function toPost(
     isSavedByMe,
     ...(data.location ? { location: data.location } : {}),
     ...(data.taggedUsers ? { taggedUsers: data.taggedUsers } : {}),
+    ...(collaborator ? { collaborator } : {}),
     createdAt: data.createdAt,
   };
 }
@@ -170,10 +174,19 @@ export async function fetchPost(id: string): Promise<Post | null> {
   return toPost(snap as QueryDocumentSnapshot<DocumentData>, liked, saved);
 }
 
-/** A user's own posts (index-free — filter by authorId, sort client-side). */
+/**
+ * A profile grid: the user's own posts plus collabs they accepted
+ * (index-free — equality filters only, sort client-side).
+ */
 export async function fetchUserPosts(userId: string): Promise<Post[]> {
-  const snap = await getDocs(query(postsCollection(), where('authorId', '==', userId), limit(60)));
-  const docs = snap.docs.sort((a, b) =>
+  const [own, collabs] = await Promise.all([
+    getDocs(query(postsCollection(), where('authorId', '==', userId), limit(60))),
+    getDocs(
+      query(postsCollection(), where('collab.uid', '==', userId), where('collab.status', '==', 'accepted'), limit(60)),
+    ).catch(() => null),
+  ]);
+  const byId = new Map([...own.docs, ...(collabs?.docs ?? [])].map((d) => [d.id, d]));
+  const docs = [...byId.values()].sort((a, b) =>
     String((b.data() as Partial<PostDocFields>).createdAt ?? '').localeCompare(
       String((a.data() as Partial<PostDocFields>).createdAt ?? ''),
     ),

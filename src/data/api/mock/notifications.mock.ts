@@ -11,6 +11,14 @@ export class MockNotificationsApi implements INotificationsApi {
     return paginateArray(mutableNotifications, params?.cursor, params?.limit);
   }
 
+  async setCollabResponse(notificationId: string, response: 'accepted' | 'declined'): Promise<void> {
+    await mockDelay();
+    const notif = mutableNotifications.find((n) => n.id === notificationId);
+    if (notif?.type === 'collab_invite') {
+      Object.assign(notif, { response, read: true });
+    }
+  }
+
   async markAllRead(): Promise<void> {
     await mockDelay();
     for (const notif of mutableNotifications) {

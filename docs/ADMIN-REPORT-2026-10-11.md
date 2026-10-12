@@ -85,3 +85,16 @@ Admin paneli mavzusi: Avto / Yorug' / Qorong'i (veb sayt qolgan qismi avvalgidek
   (`signedIn()`, posts bloki), `web/src/pages/app/Notifications.tsx`,
   `src/features/notifications/components/NotificationList.tsx`. Yangi kolleksiyalar faylning
   oxirida alohida blokda; tarjimalar alohida fayllarda (`admin.*.json`, `web/src/i18n/admin.*.ts`).
+
+## 2026-10-12 — `main` (PR #3, UX) bilan birlashtirish
+
+`origin/main` shoxchaga merge qilindi (rebase/force-push yo'q). 10 ta konflikt hal qilindi:
+- `firestore.rules` posts: create = muallif + `validNewCollab` + moderatsiya maydonlarisiz;
+  update = muallif (collab va moderatsiya maydonlariga tegmasdan) || like/comment soni ||
+  `collabAnswer()` || staff moderatsiyasi.
+- `rules-tests`: bitta freymvork — vitest (ketma-ket). main'dagi `collab`/`stories` testlari
+  (node:test) vitest importlariga o'tkazildi; versiyalar main'dagi kabi (rules-unit-testing 6,
+  firebase 13), lock `npm install` bilan qayta yaratildi. Jami 47 test (33 admin + 14 UX).
+- `ci.yml`: main'dagi tuzilma; `web` job'iga `npm test`, `functions` job saqlandi.
+- Veb Notifications: collab taklifi (Qabul/Rad) va e'lonlar birga.
+- Tekshiruv: typecheck 0, lint 0, jest 113, veb build + vitest 17, functions build, Metro bundle, rules 47/47.

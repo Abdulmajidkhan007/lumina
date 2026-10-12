@@ -84,3 +84,19 @@ versiyada odamlar allaqachon post joylayapti.
   indekslarini deploy qila olmaydi (ogohlantirish beradi). `FIREBASE_TOKEN`
   secret qo'shilsa yoki SA'ga "Firebase Rules Admin" roli berilsa hal bo'ladi.
 
+
+## 2026-10-11 — UX to'lqini (`claude/lumina-ux-2026-10-11`)
+
+Batafsil: `docs/WORKER-REPORT-2026-10-11.md`.
+
+- Story: "Ko'rganlar" ro'yxati (`stories/{id}/views/{uid}`, faqat egasi o'qiydi),
+  Instagram uslubidagi viewer; ko'rilganlik `users/{uid}/seenStories` da (eski
+  `seenByUids` qoidalar tufayli hech qachon yozilmagan).
+- Reels/feed video: bosish-pauza, ushlab 2x (Reels), ikki marta bosish-like,
+  global ovoz tugmasi, progress, fokus/fon rejimida pauza.
+- Like: reel egizagi (`reels/{postId}`) like'ni post'ga yozadi; kesh postId
+  bo'yicha yagona.
+- Profil avatarida faol story halqasi; Highlights — arxivdan bitta ekranda;
+  viewer'dan "Highlight'ga qo'shish".
+- Collab faqat tasdiqlangandan keyin ko'rinadi (`post.collab.status`).
+- `rules-tests/` — Firestore qoidalari emulyator testlari; CI'da ham.

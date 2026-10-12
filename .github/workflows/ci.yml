@@ -33,6 +33,9 @@ jobs:
   firestore-rules:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rules-tests
     steps:
       - uses: actions/checkout@v4
 
@@ -47,15 +50,17 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Rules tests (Firestore emulator)
-        working-directory: rules-tests
-        run: |
-          npm ci
-          npm test
+      - run: npm ci
+
+      # Starts the Firestore emulator and runs the rules tests against it.
+      - run: npm test
 
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
@@ -65,12 +70,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
-      - name: Build and test web
-        working-directory: web
-        run: |
-          npm ci
-          npm run build
-          npm test
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm test
 
   functions:
     runs-on: ubuntu-latest

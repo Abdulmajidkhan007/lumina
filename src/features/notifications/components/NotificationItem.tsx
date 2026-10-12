@@ -32,6 +32,8 @@ import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Button } from '@/design-system/primitives/Button';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
+import { useRespondToCollab } from '@/data/query/hooks/useRespondToCollab';
+import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/utils/format';
 import { hitSlop } from '@/constants/layout';
 import type {
@@ -40,7 +42,9 @@ import type {
   CommentNotification,
   FollowNotification,
   MentionNotification,
+  CollabInviteNotification,
   NotificationPostPreview,
+  PostId,
 } from '@/types/models';
 
 // ---------------------------------------------------------------------------
@@ -237,6 +241,67 @@ function renderFollow(
   );
 }
 
+/** Collab invite: Accept / Decline, or the recorded answer. */
+function CollabInvite({
+  n,
+  time,
+  onAvatarPress,
+  onThumbPress,
+}: {
+  n: CollabInviteNotification;
+  time: string;
+  onAvatarPress: () => void;
+  onThumbPress: () => void;
+}): React.JSX.Element {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const respond = useRespondToCollab();
+  const answer = (accept: boolean) =>
+    respond.mutate({ notificationId: n.id, postId: n.postPreview.postId as PostId, accept });
+
+  return (
+    <View style={styles.collabBlock}>
+      <View style={styles.collabTop}>
+        <RichText username={n.actor.username} time={time} onUserPress={onAvatarPress}>
+          {t('collab.invited')}
+        </RichText>
+        <PostThumb preview={n.postPreview} onPress={onThumbPress} />
+      </View>
+      {n.response ? (
+        <Text variant="caption" color={n.response === 'accepted' ? 'accent' : 'secondary'}>
+          {n.response === 'accepted' ? t('collab.accepted') : t('collab.declined')}
+        </Text>
+      ) : (
+        <View style={[styles.collabActions, { gap: theme.spacing.sm }]}>
+          <Button
+            label={t('collab.accept')}
+            variant="primary"
+            size="sm"
+            style={styles.collabButton}
+            loading={respond.isPending && respond.variables?.accept === true}
+            disabled={respond.isPending}
+            onPress={() => answer(true)}
+          />
+          <Button
+            label={t('collab.decline')}
+            variant="secondary"
+            size="sm"
+            style={styles.collabButton}
+            loading={respond.isPending && respond.variables?.accept === false}
+            disabled={respond.isPending}
+            onPress={() => answer(false)}
+          />
+        </View>
+      )}
+      {respond.isError ? (
+        <Text variant="caption" color="danger">
+          {t('collab.error')}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // NotificationItem
 // ---------------------------------------------------------------------------
@@ -319,6 +384,16 @@ export const NotificationItem = React.memo(
           isFollowPending,
         );
         break;
+      case 'collab_invite':
+        rightContent = (
+          <CollabInvite
+            n={notification}
+            time={time}
+            onAvatarPress={onAvatarPress}
+            onThumbPress={onThumbPress(notification.postPreview.postId)}
+          />
+        );
+        break;
     }
 
     return (
@@ -381,6 +456,21 @@ const styles = StyleSheet.create({
   },
   body: {
     flexWrap: 'wrap',
+  },
+  collabBlock: {
+    flex: 1,
+    gap: 8,
+  },
+  collabTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  collabActions: {
+    flexDirection: 'row',
+  },
+  collabButton: {
+    flex: 1,
   },
   thumb: {
     width: THUMB_SIZE,
