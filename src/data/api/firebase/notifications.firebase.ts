@@ -2,7 +2,8 @@
  * Firebase-backed INotificationsApi.
  *
  * Firestore schema:
- *  - `users/{uid}/notifications/{id}` — type ('like'|'comment'|'follow'|'mention'),
+ *  - `users/{uid}/notifications/{id}` — type ('like'|'comment'|'follow'|'mention'|'collab_invite'),
+ *    response? ('accepted'|'declined', collab invites only),
  *    actor (UserSummary embed), postPreview? ({ postId, thumbnailUri }),
  *    commentText? (comment), mentionContext? (mention), createdAt, read.
  */
@@ -34,6 +35,11 @@ export class FirebaseNotificationsApi implements INotificationsApi {
       notificationSchema,
     );
     return { items, nextCursor };
+  }
+
+  async setCollabResponse(notificationId: string, response: 'accepted' | 'declined'): Promise<void> {
+    const uid = requireCurrentUid();
+    await notificationsCollection(uid).doc(notificationId).update({ response, read: true });
   }
 
   async markAllRead(): Promise<void> {

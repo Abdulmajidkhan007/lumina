@@ -216,8 +216,10 @@ export async function fetchStoryReels(): Promise<StoryReel[]> {
 
 export interface AppNotification {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'mention';
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'collab_invite';
   actor: UserSummary;
+  /** Collab invites: the recorded answer, once given. */
+  response?: 'accepted' | 'declined';
   postPreview?: { postId: string; thumbnailUri: string };
   commentText?: string;
   createdAt: string;
@@ -242,6 +244,7 @@ export async function fetchNotifications(): Promise<AppNotification[]> {
         actor,
         postPreview: data.postPreview as AppNotification['postPreview'],
         commentText: data.commentText as string | undefined,
+        ...(data.response === 'accepted' || data.response === 'declined' ? { response: data.response } : {}),
         createdAt: data.createdAt,
         read: (data.read as boolean) ?? false,
       };

@@ -266,4 +266,11 @@ export const uz: Record<string, string> = {
   "Unmute": "Ovozni yoqish",
   "Couldn't load reels.": "Reels yuklanmadi.",
   "View {name}’s story": "{name} story'sini ko'rish",
+  " and {name}": " va {name}",
+  "invited you to collaborate on a post": "sizni postga hammuallif bo'lishga taklif qildi",
+  "Accept": "Qabul qilish",
+  "Decline": "Rad etish",
+  "Accepted — the post now shows on your profile.": "Qabul qilindi — post profilingizda ko'rinadi.",
+  "Declined": "Rad etildi",
+  "Couldn't answer the invite.": "Taklifga javob berilmadi.",
 };

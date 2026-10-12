@@ -372,5 +372,17 @@
     "deleteBody": "This highlight will be removed from your profile.",
     "delete": "Delete",
     "open": "Highlight: {{title}}"
+  },
+  "collab": {
+    "invited": " invited you to collaborate on a post.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "Accepted — the post now shows on your profile.",
+    "declined": "Declined",
+    "error": "Couldn't answer the invite.",
+    "and": " and {{username}}",
+    "inviteRow": "Invite collaborator",
+    "inviteTitle": "Invite a collaborator",
+    "pendingHint": "Collab with {{username}} — shows once they accept"
   }
 }

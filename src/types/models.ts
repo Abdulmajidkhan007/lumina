@@ -50,5 +50,6 @@ export type {
   CommentNotification,
   FollowNotification,
   MentionNotification,
+  CollabInviteNotification,
   Notification,
 } from '@/schemas';

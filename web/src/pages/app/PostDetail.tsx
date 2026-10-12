@@ -105,7 +105,10 @@ export function PostDetail() {
       <div className="mt-4 md:mt-0">
         <Link to={`/app/u/${post.author.id}`} className="mb-3 flex items-center gap-3">
           <Avatar name={post.author.displayName} avatarUrl={post.author.avatarUrl} size="sm" />
-          <span className="text-sm font-semibold">{post.author.username}</span>
+          <span className="text-sm font-semibold">
+            {post.author.username}
+            {post.collaborator ? t(' and {name}', { name: post.collaborator.username }) : ''}
+          </span>
         </Link>
 
         <div className="mb-3 flex items-center gap-4">

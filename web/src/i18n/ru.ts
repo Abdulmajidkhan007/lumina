@@ -266,4 +266,11 @@ export const ru: Record<string, string> = {
   "Unmute": "Включить звук",
   "Couldn't load reels.": "Не удалось загрузить Reels.",
   "View {name}’s story": "Смотреть историю {name}",
+  " and {name}": " и {name}",
+  "invited you to collaborate on a post": "приглашает вас в соавторы публикации",
+  "Accept": "Принять",
+  "Decline": "Отклонить",
+  "Accepted — the post now shows on your profile.": "Принято — публикация появится в вашем профиле.",
+  "Declined": "Отклонено",
+  "Couldn't answer the invite.": "Не удалось ответить на приглашение.",
 };

@@ -54,7 +54,10 @@ function PostCard({ post }: { post: Post }) {
       <header className="flex items-center gap-3 px-4 py-3">
         <Link to={`/app/u/${post.author.id}`} className="flex items-center gap-3">
           <Avatar name={post.author.displayName} avatarUrl={post.author.avatarUrl} size="sm" />
-          <p className="truncate text-sm font-semibold">{post.author.username}</p>
+          <p className="truncate text-sm font-semibold">
+            {post.author.username}
+            {post.collaborator ? t(' and {name}', { name: post.collaborator.username }) : ''}
+          </p>
         </Link>
         <time className="ml-auto shrink-0 text-xs text-text-muted">
           {formatRelativeTime(post.createdAt)}

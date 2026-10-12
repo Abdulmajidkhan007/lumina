@@ -45,6 +45,7 @@ import { useCreatePost } from '@/data/query/hooks';
 import type { CreatePostInput } from '@/data/api/contracts';
 import { UserMultiSelectModal } from '@/components/UserMultiSelectModal';
 import { useCurrentUser } from '@/stores';
+import { useTranslation } from 'react-i18next';
 import type { UserId, UserSummary } from '@/types/models';
 import {
   MediaPickerGrid,
@@ -80,6 +81,8 @@ export default function CreatePostModal(): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const currentUser = useCurrentUser();
+  const { t } = useTranslation();
+  const currentUserIds = useMemo(() => (currentUser ? [currentUser.id] : []), [currentUser]);
   const tiles = useMockGalleryTiles();
   const { pickFromGallery, captureWithCamera } = useMediaPicker();
 
@@ -482,13 +485,13 @@ export default function CreatePostModal(): React.JSX.Element {
           style={[styles.metaRow, { borderTopColor: theme.colors.border, paddingHorizontal: theme.spacing.lg }]}
           onPress={() => setCollabModalOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Invite collaborator"
+          accessibilityLabel={t('collab.inviteRow')}
         >
           <Ionicons name="people-outline" size={22} color={theme.colors.textSecondary} />
           <Text variant="callout" color={collaborators.length > 0 ? 'primary' : 'tertiary'} style={styles.metaLabel}>
-            {collaborators.length > 0
-              ? `Collab: ${collaborators.map((u) => u.username).join(', ')}`
-              : 'Invite collaborator'}
+            {collaborators[0]
+              ? t('collab.pendingHint', { username: collaborators[0].username })
+              : t('collab.inviteRow')}
           </Text>
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textTertiary} />
         </Pressable>
@@ -502,8 +505,10 @@ export default function CreatePostModal(): React.JSX.Element {
         />
         <UserMultiSelectModal
           visible={collabModalOpen}
-          title="Invite collaborators"
+          title={t('collab.inviteTitle')}
           initialSelected={collaborators}
+          maxSelected={1}
+          excludeIds={currentUserIds}
           onClose={() => setCollabModalOpen(false)}
           onDone={setCollaborators}
         />

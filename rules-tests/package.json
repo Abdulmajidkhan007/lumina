@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Firestore security-rules tests against the local emulator.",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-lumina \"node --test\""
+    "test": "firebase emulators:exec --only firestore --project demo-lumina \"node --test --test-concurrency=1\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",

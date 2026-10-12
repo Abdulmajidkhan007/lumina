@@ -372,5 +372,17 @@
     "deleteBody": "Bu highlight profilingizdan olib tashlanadi.",
     "delete": "O'chirish",
     "open": "Highlight: {{title}}"
+  },
+  "collab": {
+    "invited": " sizni postga hammuallif bo'lishga taklif qildi.",
+    "accept": "Qabul qilish",
+    "decline": "Rad etish",
+    "accepted": "Qabul qilindi — post profilingizda ko'rinadi.",
+    "declined": "Rad etildi",
+    "error": "Taklifga javob berilmadi.",
+    "and": " va {{username}}",
+    "inviteRow": "Hammuallif taklif qilish",
+    "inviteTitle": "Hammuallif taklif qilish",
+    "pendingHint": "{{username}} bilan collab — u qabul qilgach ko'rinadi"
   }
 }

@@ -191,6 +191,7 @@ export function PostDetail({
             <View style={{ marginLeft: theme.spacing.sm }}>
               <Text variant="bodyStrong" color="primary">
                 {post.author.username}
+                {post.collaborators?.[0] ? t('collab.and', { username: post.collaborators[0].username }) : ''}
               </Text>
               {post.location !== undefined && post.location !== '' ? (
                 <Text variant="overline" color="secondary">

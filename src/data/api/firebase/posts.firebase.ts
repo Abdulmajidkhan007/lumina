@@ -21,6 +21,13 @@
  *    Mirrors `posts/{postId}/saves/{uid}` but keyed the other way round so
  *    getSavedPosts can page through "my saves" ordered by save time.
  *
+ *  - `posts/{postId}.collab` — { uid, status: 'pending'|'accepted'|'declined',
+ *    user (UserSummary) }. Written as 'pending' with the post; only the
+ *    invited uid can flip it to accepted/declined (rules). The post shows as
+ *    "A and B" and on B's grid only once accepted (see utils/collab.ts).
+ *    The legacy `collaborators` array (written without consent) is ignored.
+ *    The invite reaches B as a `collab_invite` notification.
+ *
  * `createPost` uploads any local-URI media to Cloud Storage
  * (`posts/{uid}/{timestamp}_{index}`) via `uploadMedia`, then writes the
  * post doc with the resulting download URLs and increments the author's
@@ -35,10 +42,18 @@ import { postSchema, commentSchema } from '@/schemas';
 import type { Media } from '@/schemas';
 import type { UserSummary } from '@/types/models';
 import { extractHashtags } from '@/utils/richText';
+import {
+  canRespondToCollab,
+  mergeCollabPosts,
+  parseCollab,
+  visibleCollaborators,
+  type CollabField,
+} from '@/utils/collab';
 import { getFirebaseFirestore } from '@/lib/firebase';
 import { logActivity } from '@/data/services/activityLog';
 import {
   buildValidatedList,
+  decodeCursor,
   fetchUserSummary,
   getBlockedUids,
   getMembershipFlags,
@@ -65,7 +80,9 @@ interface PostDocFields {
   createdAt: string;
   location?: string;
   taggedUsers?: UserSummary[];
+  /** Legacy, unconfirmed co-authors — never displayed. */
   collaborators?: UserSummary[];
+  collab?: CollabField<UserSummary>;
   archivedAt?: string;
 }
 
@@ -108,6 +125,7 @@ async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promis
     ['likes', 'saves'],
     viewerUid,
   );
+  const collaborators = visibleCollaborators(data);
   return {
     id: raw.id,
     author: data.author,
@@ -120,9 +138,20 @@ async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promis
     createdAt: data.createdAt,
     ...(data.location ? { location: data.location } : {}),
     ...(data.taggedUsers ? { taggedUsers: data.taggedUsers } : {}),
-    ...(data.collaborators ? { collaborators: data.collaborators } : {}),
+    ...(collaborators ? { collaborators } : {}),
     ...(data.archivedAt ? { archivedAt: data.archivedAt } : {}),
   };
+}
+
+function notificationsCollection(uid: string) {
+  return getFirebaseFirestore().collection('users').doc(uid).collection('notifications');
+}
+
+/** A small image for notifications: the first image, or a video's poster/uri. */
+function previewUri(media: Media[]): string | null {
+  const first = media[0];
+  if (!first) return null;
+  return first.type === 'video' ? first.thumbnailUri ?? first.uri : first.uri;
 }
 
 async function buildCommentCandidate(
@@ -160,11 +189,15 @@ async function resolveSummaries(ids: UserId[] | undefined): Promise<UserSummary[
 
 export class FirebasePostsApi implements IPostsApi {
   async getFeed(params: FeedParams): Promise<Paginated<Post>> {
+    if (params.userId) {
+      const page = await this.profileGridPage(params.userId, params);
+      const blocked = await getBlockedUids(getCurrentUid());
+      return { ...page, items: page.items.filter((p) => !blocked.has(p.author.id)) };
+    }
     return withReadableErrors('feed', async () => {
-      const constraints = params.userId ? [where('authorId', '==', params.userId)] : [];
       const { docs, nextCursor } = await queryCreatedAtPage(
         postsCollection(),
-        constraints,
+        [],
         params.cursor,
         params.limit,
       );
@@ -229,10 +262,15 @@ export class FirebasePostsApi implements IPostsApi {
     );
 
     const createdAt = new Date(now).toISOString();
-    const [taggedUsers, collaborators] = await Promise.all([
+    // One collaborator, never yourself; they must accept before it shows.
+    const collabId = input.collaboratorIds?.find((id) => id !== uid);
+    const [taggedUsers, collabUser] = await Promise.all([
       resolveSummaries(input.taggedUserIds),
-      resolveSummaries(input.collaboratorIds),
+      collabId ? fetchUserSummary(collabId) : Promise.resolve(null),
     ]);
+    const collab: CollabField<UserSummary> | undefined = collabUser
+      ? { uid: collabUser.id, status: 'pending', user: collabUser }
+      : undefined;
     const newRef = postsCollection().doc();
     const postDoc: PostDocFields = {
       authorId: uid,
@@ -245,9 +283,22 @@ export class FirebasePostsApi implements IPostsApi {
       createdAt,
       ...(input.location ? { location: input.location } : {}),
       ...(taggedUsers ? { taggedUsers } : {}),
-      ...(collaborators ? { collaborators } : {}),
+      ...(collab ? { collab } : {}),
     };
     await newRef.set(postDoc);
+    const thumbnailUri = previewUri(media);
+    if (collab && thumbnailUri) {
+      // Best effort — the post is already live under the author alone.
+      await notificationsCollection(collab.uid)
+        .add({
+          type: 'collab_invite',
+          actor: author,
+          postPreview: { postId: newRef.id, thumbnailUri },
+          createdAt,
+          read: false,
+        })
+        .catch((e: unknown) => console.warn('[posts] collab invite not sent', e));
+    }
     // A post that is one video is also a reel — the Reels tab reads `reels/`,
     // which nothing used to write. Same id, so deleting the post removes it.
     const [onlyMedia] = media;
@@ -283,7 +334,21 @@ export class FirebasePostsApi implements IPostsApi {
       createdAt,
       ...(input.location ? { location: input.location } : {}),
       ...(taggedUsers ? { taggedUsers } : {}),
-      ...(collaborators ? { collaborators } : {}),
+    });
+  }
+
+  async respondToCollab(id: PostId, accept: boolean): Promise<void> {
+    const uid = requireCurrentUid();
+    const ref = postDocRef(id);
+    await getFirebaseFirestore().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.data() as Partial<PostDocFields> | undefined;
+      if (!snap.exists() || !data) throw new Error('This post no longer exists.');
+      const collab = parseCollab(data.collab);
+      if (!collab || !canRespondToCollab(data, uid)) {
+        throw new Error('This invite was already answered.');
+      }
+      tx.update(ref, { collab: { ...collab, status: accept ? 'accepted' : 'declined' } });
     });
   }
 
@@ -491,6 +556,34 @@ export class FirebasePostsApi implements IPostsApi {
       );
       const items = built.filter((p) => p.archivedAt === undefined);
       return { items, nextCursor };
+    });
+  }
+
+  /** A profile grid page: the user's own posts plus collabs they accepted. */
+  private async profileGridPage(userId: UserId, params: FeedParams): Promise<Paginated<Post>> {
+    return withReadableErrors('user posts', async () => {
+      const [{ docs, nextCursor }, collabDocs] = await Promise.all([
+        queryCreatedAtPage(postsCollection(), [where('authorId', '==', userId)], params.cursor, params.limit),
+        // Accepted collabs also belong on the collaborator's grid. Two
+        // equality filters — no composite index needed.
+        queryAllWhere(postsCollection(), [
+          where('collab.uid', '==', userId),
+          where('collab.status', '==', 'accepted'),
+        ]).catch((e: unknown) => {
+          console.warn('[posts] collab posts unavailable', e);
+          return [] as RawDoc[];
+        }),
+      ]);
+      const viewerUid = getCurrentUid();
+      const [built, collabBuilt] = await Promise.all([
+        buildValidatedList(docs, (raw) => buildPostCandidate(raw, viewerUid), postSchema),
+        buildValidatedList(collabDocs, (raw) => buildPostCandidate(raw, viewerUid), postSchema),
+      ]);
+      const own = built.filter((p) => p.archivedAt === undefined);
+      const collabs = collabBuilt.filter((p) => p.archivedAt === undefined);
+      const upper = params.cursor ? (decodeCursor(params.cursor)?.orderValue ?? null) : null;
+      const lower = nextCursor ? (docs[docs.length - 1]?.data as { createdAt?: string } | undefined)?.createdAt ?? null : null;
+      return { items: mergeCollabPosts(own, collabs, upper, lower), nextCursor };
     });
   }
 

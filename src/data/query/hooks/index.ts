@@ -6,6 +6,7 @@ export { useStoryReels } from './useStoryReels';
 export { useStoryViewers } from './useStoryViewers';
 export { useStoryArchive } from './useStoryArchive';
 export { useAddToHighlight } from './useAddToHighlight';
+export { useRespondToCollab } from './useRespondToCollab';
 export { useReels } from './useReels';
 export { useExplore } from './useExplore';
 export { useHashtagPosts } from './useHashtagPosts';
