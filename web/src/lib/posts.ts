@@ -72,6 +72,8 @@ function toPost(
   if (!data.author || !Array.isArray(data.media) || data.media.length === 0 || !data.createdAt) {
     return null;
   }
+  // Hidden by a moderator (admin → Reports); the post stays in Firestore.
+  if ((data as { hidden?: unknown }).hidden === true) return null;
   const collaborator = acceptedCollaborator(data);
   return {
     id: snap.id,

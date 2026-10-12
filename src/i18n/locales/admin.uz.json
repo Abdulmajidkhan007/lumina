@@ -1,0 +1,132 @@
+{
+  "title": "Admin",
+  "roleModerator": "Moderator",
+  "tabs": {
+    "overview": "Umumiy",
+    "reports": "Shikoyatlar",
+    "users": "Foydalanuvchilar",
+    "activity": "Faollik",
+    "broadcast": "E'lon"
+  },
+  "common": {
+    "error": "Xatolik yuz berdi.",
+    "retry": "Qayta urinish",
+    "cancel": "Bekor qilish",
+    "confirm": "Tasdiqlash",
+    "loadFailed": "Yuklanmadi."
+  },
+  "overview": {
+    "activeToday": "Bugun faol",
+    "avgPerDay": "o'rtacha {{n}}/kun",
+    "totalUsers": "Jami foydalanuvchi",
+    "totalPosts": "Jami post",
+    "plusInDays": "{{d}} kunda +{{n}}",
+    "openReports": "Ochiq shikoyatlar",
+    "dailyActive": "Kunlik faol foydalanuvchilar",
+    "newUsersPerDay": "Kunlik yangi foydalanuvchilar",
+    "postsPerDay": "Kunlik postlar",
+    "range": "{{n}} kun",
+    "utcNote": "Kunlar UTC bo'yicha. Faol — o'sha kuni ilovani ochgan foydalanuvchi.",
+    "chartValue": "{{day}}: {{value}}"
+  },
+  "users": {
+    "searchPlaceholder": "Username, ism yoki email bo'yicha",
+    "blocked": "Bloklangan",
+    "block": "Bloklash",
+    "unblock": "Blokdan chiqarish",
+    "role": "Rol",
+    "lastActive": "Oxirgi faollik: {{when}}",
+    "neverSeen": "Hali ko'rinmagan",
+    "joined": "Qo'shilgan: {{date}}",
+    "posts": "{{n}} post",
+    "blockTitle": "@{{username}} bloklansinmi?",
+    "blockMessage": "Ko'rish huquqi qoladi, lekin blokdan chiqarilmaguncha post, izoh, like, obuna va xabar yozolmaydi.",
+    "reasonPlaceholder": "Sabab (majburiy)",
+    "empty": "Foydalanuvchi topilmadi",
+    "roles": {
+      "user": "Foydalanuvchi",
+      "moderator": "Moderator",
+      "admin": "Admin"
+    },
+    "roleA11y": "@{{username}} rolini {{role}} qilish"
+  },
+  "reports": {
+    "filters": {
+      "active": "Ko'rib chiqilmagan",
+      "open": "Ochiq",
+      "reviewing": "Ko'rilmoqda",
+      "resolved": "Hal qilingan",
+      "dismissed": "Rad etilgan",
+      "all": "Hammasi"
+    },
+    "statuses": {
+      "open": "ochiq",
+      "reviewing": "ko'rilmoqda",
+      "resolved": "hal qilingan",
+      "dismissed": "rad etilgan"
+    },
+    "targets": {
+      "user": "Foydalanuvchi",
+      "post": "Post",
+      "comment": "Izoh"
+    },
+    "reason": "Sabab",
+    "filed": "Yuborilgan",
+    "reporter": "Shikoyatchi",
+    "notePlaceholder": "Izoh (ixtiyoriy) — keyingi amal bilan saqlanadi",
+    "mark": "Holat: {{status}}",
+    "reopen": "Qayta ochish",
+    "addNote": "Izoh qo'shish",
+    "hidePost": "Postni yashirish",
+    "blockAuthor": "Muallifni bloklash",
+    "blockUser": "Foydalanuvchini bloklash",
+    "trail": "Audit izi",
+    "noTrail": "Hali amal yo'q.",
+    "trailActions": {
+      "status": "Holat o'zgardi",
+      "note": "Izoh",
+      "hide_post": "Post yashirildi",
+      "ban_user": "Foydalanuvchi bloklandi",
+      "legacy": "Qaror"
+    },
+    "empty": "Shikoyat yo'q",
+    "back": "Shikoyatlarga qaytish",
+    "openTarget": "Ochish"
+  },
+  "activity": {
+    "adminActions": "Admin amallari",
+    "userEvents": "Foydalanuvchi hodisalari",
+    "allTypes": "Hammasi",
+    "filterPlaceholder": "Email, id yoki izoh bo'yicha",
+    "empty": "Hozircha bo'sh"
+  },
+  "broadcast": {
+    "titleLabel": "Sarlavha",
+    "messageLabel": "Matn",
+    "linkLabel": "Havola (ixtiyoriy)",
+    "send": "Hammaga yuborish",
+    "confirmTitle": "E'lon yuborilsinmi?",
+    "confirmMessage": "Har bir foydalanuvchi uni Bildirishnomalarda ko'radi.",
+    "sent": "Yuborildi. Har bir foydalanuvchining Bildirishnomalarida ko'rinadi.",
+    "recent": "Yuborilgan e'lonlar",
+    "delete": "O'chirish",
+    "deleteTitle": "E'lon o'chirilsinmi?",
+    "deleteMessage": "Foydalanuvchilar “{{title}}” ni boshqa ko'rmaydi.",
+    "nothingSent": "Hali hech narsa yuborilmagan",
+    "pushNote": "Telefonga push uchun Cloud Function (functions/) va Blaze tarifi kerak.",
+    "errors": {
+      "titleRequired": "Sarlavha kiritilishi shart.",
+      "titleTooLong": "Sarlavha juda uzun.",
+      "bodyRequired": "Matn kiritilishi shart.",
+      "bodyTooLong": "Matn juda uzun.",
+      "linkInvalid": "Havola https:// bilan boshlanishi kerak"
+    }
+  },
+  "account": {
+    "blockedBanner": "Akkauntingiz moderator tomonidan bloklangan. Ko'rishingiz mumkin, lekin post, izoh, like va xabarlar o'chirilgan."
+  },
+  "notifications": {
+    "announcement": "E'lon",
+    "openLink": "Havolani ochish"
+  }
+}

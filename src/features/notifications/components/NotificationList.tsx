@@ -26,6 +26,9 @@ import { useTheme } from '@/design-system/theme';
 import { useNotifications } from '@/data/query/hooks/useNotifications';
 import type { Notification } from '@/types/models';
 import { NotificationItem } from './NotificationItem';
+import { BroadcastItem } from './BroadcastItem';
+import { useBroadcasts, type BroadcastItem as BroadcastModel } from '../hooks/useBroadcasts';
+import { mergeNewestFirst } from '@/utils/admin';
 import {
   NotificationSectionHeader,
   type TimeBucket,
@@ -51,19 +54,29 @@ function getBucket(isoDate: string): TimeBucket {
 
 type ListEntry =
   | { kind: 'header'; bucket: TimeBucket; key: string }
-  | { kind: 'item'; notification: Notification; key: string };
+  | { kind: 'item'; notification: Notification; key: string }
+  | { kind: 'broadcast'; broadcast: BroadcastModel; key: string };
 
-function buildEntries(notifications: Notification[]): ListEntry[] {
+function isBroadcast(item: Notification | BroadcastModel): item is BroadcastModel {
+  return 'title' in item && 'body' in item;
+}
+
+/** Admin announcements are interleaved with notifications by createdAt. */
+function buildEntries(notifications: Notification[], broadcasts: BroadcastModel[]): ListEntry[] {
   const entries: ListEntry[] = [];
   let lastBucket: TimeBucket | null = null;
 
-  for (const n of notifications) {
+  for (const n of mergeNewestFirst(notifications, broadcasts)) {
     const bucket = getBucket(n.createdAt);
     if (bucket !== lastBucket) {
       entries.push({ kind: 'header', bucket, key: `header-${bucket}` });
       lastBucket = bucket;
     }
-    entries.push({ kind: 'item', notification: n, key: n.id });
+    entries.push(
+      isBroadcast(n)
+        ? { kind: 'broadcast', broadcast: n, key: `broadcast-${n.id}` }
+        : { kind: 'item', notification: n, key: n.id },
+    );
   }
 
   return entries;
@@ -108,9 +121,11 @@ export function NotificationList(): React.JSX.Element {
     [data],
   );
 
+  const { data: broadcasts } = useBroadcasts();
+
   const entries = useMemo(
-    () => buildEntries(allNotifications),
-    [allNotifications],
+    () => buildEntries(allNotifications, broadcasts ?? []),
+    [allNotifications, broadcasts],
   );
 
   const keyExtractor = useCallback((entry: ListEntry) => entry.key, []);
@@ -119,6 +134,9 @@ export function NotificationList(): React.JSX.Element {
     ({ item }: ListRenderItemInfo<ListEntry>): React.JSX.Element | null => {
       if (item.kind === 'header') {
         return <NotificationSectionHeader title={item.bucket} />;
+      }
+      if (item.kind === 'broadcast') {
+        return <BroadcastItem broadcast={item.broadcast} />;
       }
       return <NotificationItem notification={item.notification} />;
     },

@@ -24,6 +24,9 @@ import type { AppLocale } from '@/stores/preferences.store';
 import en from './locales/en.json';
 import uz from './locales/uz.json';
 import ru from './locales/ru.json';
+import adminEn from './locales/admin.en.json';
+import adminUz from './locales/admin.uz.json';
+import adminRu from './locales/admin.ru.json';
 
 // ---------------------------------------------------------------------------
 // Resources
@@ -31,10 +34,11 @@ import ru from './locales/ru.json';
 
 export const defaultNS = 'translation' as const;
 
+// `admin` namespace: admin panel + announcements (kept in separate files).
 const resources = {
-  en: { translation: en },
-  uz: { translation: uz },
-  ru: { translation: ru },
+  en: { translation: en, admin: adminEn },
+  uz: { translation: uz, admin: adminUz },
+  ru: { translation: ru, admin: adminRu },
 } as const;
 
 export type SupportedLanguage = keyof typeof resources;

@@ -1,0 +1,20 @@
+{
+  "name": "lumina-functions",
+  "private": true,
+  "description": "Cloud Functions: push admin announcements to the FCM 'all' topic.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "deploy": "npm run build && firebase deploy --only functions --project lumina-007app"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.8"
+  }
+}

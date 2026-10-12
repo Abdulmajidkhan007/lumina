@@ -12,6 +12,7 @@ import { StatusBar, View } from 'react-native';
 import { useTheme } from '@/design-system';
 import { useAuthStatus, useAuthStore } from '@/stores';
 import { VerifyEmailBanner } from '@/features/auth';
+import { BlockedAccountBanner, useAccountBootstrap } from '@/features/moderation';
 import { AuthStack } from './AuthStack';
 import { BrandedSplash } from './BrandedSplash';
 import { ProtectedStack } from './ProtectedStack';
@@ -32,6 +33,8 @@ export function RootNavigator(): React.JSX.Element {
     content = (
       <View style={{ flex: 1 }}>
         <VerifyEmailBanner />
+        <BlockedAccountBanner />
+        <SessionBootstrap />
         <ProtectedStack />
       </View>
     );
@@ -48,4 +51,10 @@ export function RootNavigator(): React.JSX.Element {
       {content}
     </>
   );
+}
+
+/** Runs per-session side effects (presence, push topic) while signed in. */
+function SessionBootstrap(): null {
+  useAccountBootstrap();
+  return null;
 }

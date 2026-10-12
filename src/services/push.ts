@@ -15,6 +15,7 @@
  * or from a root-level effect) — wiring that call site is out of scope here.
  */
 
+import { PermissionsAndroid, Platform } from 'react-native';
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 
 /** Result of a push-permission request. */
@@ -107,4 +108,28 @@ export async function initPushNotifications(): Promise<string | null> {
     return null;
   }
   return getFcmToken();
+}
+
+/** FCM topic every device joins; the `onBroadcastCreated` Cloud Function pushes to it. */
+export const BROADCAST_TOPIC = 'all';
+
+/**
+ * Joins the announcements topic so admin broadcasts arrive as push
+ * notifications. On Android 13+ the system also needs POST_NOTIFICATIONS
+ * (requested here); without it the topic still works but nothing is shown.
+ * Resolves false when messaging is unavailable — never throws.
+ */
+export async function subscribeToBroadcasts(): Promise<boolean> {
+  try {
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    } else {
+      await requestPushPermission();
+    }
+    const messagingModule = (await import('@react-native-firebase/messaging')).default;
+    await messagingModule().subscribeToTopic(BROADCAST_TOPIC);
+    return true;
+  } catch {
+    return false;
+  }
 }

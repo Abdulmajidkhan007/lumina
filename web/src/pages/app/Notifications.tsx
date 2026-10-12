@@ -5,6 +5,9 @@ import { Avatar } from '../../components/Avatar';
 import { EmptyState } from '../../components/StateViews';
 import { formatRelativeTime } from '../../lib/time';
 import { respondToCollab } from '../../lib/collab';
+import { fetchBroadcastReadAt, fetchBroadcastsSince, markBroadcastsRead, type Broadcast } from '../../lib/broadcasts';
+import { isBroadcastUnread, mergeNewestFirst } from '../../lib/broadcastUtils';
+import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../i18n';
 
 const VERB: Record<AppNotification['type'], string> = {
@@ -64,24 +67,69 @@ function CollabActions({ n, onDone }: { n: AppNotification; onDone: () => void }
   );
 }
 
+type BroadcastEntry = Broadcast & { kind: 'broadcast'; read: boolean };
+type NotificationEntry = AppNotification & { kind: 'notification' };
+
+/** An admin announcement (broadcasts/{id}) shown among notifications. */
+function BroadcastCard({ b }: { b: BroadcastEntry }) {
+  const { t } = useI18n();
+  return (
+    <article className={`rounded-xl border border-brand-magenta/30 px-3 py-2.5 ${b.read ? '' : 'bg-brand-magenta/10'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-magenta">{t('Announcement')}</p>
+        <time className="shrink-0 text-xs text-text-muted">{formatRelativeTime(b.createdAt)}</time>
+      </div>
+      <p className="mt-0.5 text-sm font-semibold">{b.title}</p>
+      <p className="whitespace-pre-line text-sm text-text-muted">{b.body}</p>
+      {b.link ? (
+        <a
+          href={b.link}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 inline-block max-w-full truncate text-sm font-semibold text-brand-magenta hover:underline"
+        >
+          {t('Open link')} ↗
+        </a>
+      ) : null}
+    </article>
+  );
+}
+
 export function Notifications() {
   const { t } = useI18n();
-  const [items, setItems] = useState<AppNotification[] | null>(null);
+  const { profile } = useAuth();
+  const joinedAt = profile?.createdAt ?? null;
+  const [items, setItems] = useState<(NotificationEntry | BroadcastEntry)[] | null>(null);
 
   const load = useCallback(async () => {
-    try {
-      setItems(await fetchNotifications());
-    } catch {
-      setItems([]);
-    }
-  }, []);
+    const [notifications, broadcasts] = await Promise.all([
+      fetchNotifications().catch(() => []),
+      // Announcements are optional extras: a failure must not hide notifications.
+      joinedAt
+        ? Promise.all([fetchBroadcastsSince(joinedAt), fetchBroadcastReadAt()]).catch(
+            () => [[], null] as [Broadcast[], null],
+          )
+        : Promise.resolve([[], null] as [Broadcast[], null]),
+    ]);
+    const [list, readAt] = broadcasts;
+    setItems(
+      mergeNewestFirst(
+        notifications.map((n): NotificationEntry => ({ ...n, kind: 'notification' })),
+        list.map((b): BroadcastEntry => ({
+          ...b,
+          kind: 'broadcast',
+          read: !isBroadcastUnread(Date.parse(b.createdAt), readAt),
+        })),
+      ),
+    );
+  }, [joinedAt]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const markRead = async () => {
-    await markAllNotificationsRead();
+    await Promise.allSettled([markAllNotificationsRead(), markBroadcastsRead()]);
     await load();
   };
 
@@ -104,7 +152,10 @@ export function Notifications() {
         <EmptyState title={t('No notifications')} description={t('Likes, comments and follows appear here.')} />
       ) : (
         <div className="space-y-1">
-          {items.map((n) => (
+          {items.map((n) =>
+            n.kind === 'broadcast' ? (
+              <BroadcastCard key={`b-${n.id}`} b={n} />
+            ) : (
             <div
               key={n.id}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${n.read ? '' : 'bg-white/5'}`}
@@ -129,7 +180,8 @@ export function Notifications() {
               ) : null}
               <time className="shrink-0 text-xs text-text-muted">{formatRelativeTime(n.createdAt)}</time>
             </div>
-          ))}
+            ),
+          )}
         </div>
       )}
     </div>

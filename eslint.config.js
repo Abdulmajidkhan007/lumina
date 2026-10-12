@@ -20,6 +20,7 @@ module.exports = tseslint.config(
       'scripts/**',
       'web/**',
       'rules-tests/**',
+      'functions/**',
       'jest.config.js',
       'jest.setup.js',
       '__mocks__/**',
