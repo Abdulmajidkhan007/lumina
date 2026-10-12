@@ -55,6 +55,8 @@ Admin paneli mavzusi: Avto / Yorug' / Qorong'i (veb sayt qolgan qismi avvalgidek
   olmaydi, admin o'z rolini o'zgartira olmaydi, faqat admin broadcast yozadi, javascript:
   havola rad etiladi, shikoyat o'tishlari va h.k.). Qoidani ataylab buzib tekshirildi —
   testlar yiqildi. CI'da `firestore-rules`, `web`, `functions` joblari qo'shildi.
+- GitHub CI: `dbe678f` uchun run #84 — yashil (quality, firestore-rules, web, functions,
+  android-apk). Avvalgi `d3b0f61` dagi qizil `firestore-rules` (tsconfig) shu commit'da tuzatildi.
 - Metro bundle (android) ✓. Grafik/kartochkalar brauzerda dark/light, 390 px va 1280 px
   da ko'rib chiqildi. Admin sahifalarining o'zi haqiqiy akkaunt bilan sinalmagan
   (sessiyada login yo'q) — `main`ga chiqqach egasi qo'lda tekshirishi kerak.
