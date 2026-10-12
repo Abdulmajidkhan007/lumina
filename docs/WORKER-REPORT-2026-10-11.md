@@ -181,8 +181,9 @@ yoziladi. Push xabar yuborilmaydi (Functions yo'q).
 
 - Run #80 (`e224b24`, 1–5-bandlar): quality, firestore-rules, web,
   **android-apk** — hammasi yashil.
-- Keyingi run'lar (6–7-bandlar va shu hisobot) natijasi pastda/nazoratchi
-  tekshiradi; #82 yangi push sabab bekor qilingan (concurrency).
+- Run #86 (`70229ca`, 1–7-bandlar + hisobot): quality, firestore-rules, web,
+  **android-apk** — hammasi yashil (APK artefakti `lumina-apk`).
+- #77, #82, #85 — keyingi push sabab bekor qilingan (concurrency), xato emas.
 
 ## Deploy haqida
 
