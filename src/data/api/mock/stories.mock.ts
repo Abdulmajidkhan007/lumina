@@ -1,4 +1,9 @@
-import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
+import type {
+  IStoriesApi,
+  CreateStoryInput,
+  CreateHighlightInput,
+  HighlightMediaInput,
+} from '@/data/api/contracts';
 import type { Story, StoryReel, StoryView, Highlight, Media, StoryId, UserId } from '@/types/models';
 import { storyIdSchema } from '@/schemas';
 import { mutableStoryReels } from './fixtures/stories.fixture';
@@ -137,6 +142,31 @@ export class MockStoriesApi implements IStoriesApi {
     const existing = mutableHighlights.get(currentUser.id) ?? [];
     mutableHighlights.set(currentUser.id, [highlight, ...existing]);
     return highlight;
+  }
+
+  async getStoryArchive(): Promise<Story[]> {
+    await mockDelay();
+    return mutableStoryReels
+      .filter((r) => r.author.id === currentUser.id)
+      .flatMap((r) => r.stories)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async addToHighlight(highlightId: string, input: HighlightMediaInput[]): Promise<Highlight> {
+    await mockDelay();
+    const existing = mutableHighlights.get(currentUser.id) ?? [];
+    const target = existing.find((h) => h.id === highlightId);
+    if (!target) throw new Error('Highlight not found');
+    const known = new Set(target.media.map((m) => m.uri));
+    const updated: Highlight = {
+      ...target,
+      media: [...target.media, ...input.filter((m) => !known.has(m.uri)).map(toMedia)],
+    };
+    mutableHighlights.set(
+      currentUser.id,
+      existing.map((h) => (h.id === highlightId ? updated : h)),
+    );
+    return updated;
   }
 
   async deleteHighlight(id: string): Promise<void> {

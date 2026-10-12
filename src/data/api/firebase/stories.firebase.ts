@@ -31,7 +31,12 @@
  * intentionally does not fan out a notification to the author — wiring that
  * up is a schema change for a separate change.
  */
-import type { IStoriesApi, CreateStoryInput, CreateHighlightInput } from '@/data/api/contracts';
+import type {
+  IStoriesApi,
+  CreateStoryInput,
+  CreateHighlightInput,
+  HighlightMediaInput,
+} from '@/data/api/contracts';
 import type { Story, StoryReel, StoryView, Highlight, StoryId, UserId } from '@/types/models';
 import type { UserSummary, Media } from '@/schemas';
 import { highlightSchema, storyReelSchema, storySchema, storyViewSchema } from '@/schemas';
@@ -317,6 +322,61 @@ export class FirebaseStoriesApi implements IStoriesApi {
     };
     await newRef.set(doc);
     return highlightSchema.parse({ id: newRef.id, title: doc.title, coverUri, media, createdAt });
+  }
+
+  async getStoryArchive(): Promise<Story[]> {
+    const uid = requireCurrentUid();
+    // Index-free: equality filter only, newest-first client-side.
+    const snapshot = await storiesCollection().where('authorId', '==', uid).limit(200).get();
+    const stories: Story[] = [];
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data() as Partial<StoryDocFields>;
+      const parsed = storySchema.safeParse({
+        id: docSnap.id,
+        author: data.author,
+        media: data.media,
+        createdAt: data.createdAt,
+        expiresAt: data.expiresAt,
+        seen: true,
+        ...(data.audience ? { audience: data.audience } : {}),
+      });
+      if (parsed.success) stories.push(parsed.data);
+    }
+    return stories.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async addToHighlight(highlightId: string, input: HighlightMediaInput[]): Promise<Highlight> {
+    const uid = requireCurrentUid();
+    const ref = highlightsCollection().doc(highlightId);
+    const snap = await ref.get();
+    const data = snap.data() as Partial<HighlightDocFields> | undefined;
+    if (!snap.exists() || !data || data.ownerId !== uid) {
+      throw new Error('You can only edit your own highlights.');
+    }
+    const existing = data.media ?? [];
+    const known = new Set(existing.map((m) => m.uri));
+    const added: Media[] = input
+      .filter((m) => !known.has(m.uri))
+      .map((item) =>
+        item.type === 'video'
+          ? {
+              type: 'video',
+              uri: item.uri,
+              width: item.width ?? 1080,
+              height: item.height ?? 1920,
+              ...(item.durationMs !== undefined ? { durationMs: item.durationMs } : {}),
+            }
+          : { type: 'image', uri: item.uri, width: item.width ?? 1080, height: item.height ?? 1920 },
+      );
+    const media = [...existing, ...added];
+    if (added.length > 0) await ref.update({ media });
+    return highlightSchema.parse({
+      id: snap.id,
+      title: data.title,
+      coverUri: data.coverUri,
+      media,
+      createdAt: data.createdAt,
+    });
   }
 
   async deleteHighlight(id: string): Promise<void> {

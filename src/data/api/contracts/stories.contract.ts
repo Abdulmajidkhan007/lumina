@@ -50,6 +50,13 @@ export interface IStoriesApi {
   getHighlights(userId: UserId): Promise<Highlight[]>;
   /** Creates a highlight owned by the current user. */
   createHighlight(input: CreateHighlightInput): Promise<Highlight>;
+  /**
+   * The current user's own stories, active and expired (the story archive),
+   * newest first. Highlights are built from these.
+   */
+  getStoryArchive(): Promise<Story[]>;
+  /** Appends media (e.g. a story) to one of the current user's highlights. */
+  addToHighlight(highlightId: string, media: HighlightMediaInput[]): Promise<Highlight>;
   /** Deletes one of the current user's highlights. */
   deleteHighlight(id: string): Promise<void>;
 }

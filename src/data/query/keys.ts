@@ -25,6 +25,7 @@ export const queryKeys = {
   storyReels: () => ['storyReels'] as const,
   storyViewers: (storyId: StoryId) => ['storyViewers', storyId] as const,
   highlights: (userId: UserId) => ['highlights', userId] as const,
+  storyArchive: () => ['storyArchive'] as const,
 
   // Reels
   reels: () => ['reels'] as const,

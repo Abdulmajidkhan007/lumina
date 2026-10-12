@@ -345,5 +345,32 @@
   },
   "profile": {
     "openStory": "View {{username}}'s story"
+  },
+  "highlights": {
+    "new": "New",
+    "newTitle": "New highlight",
+    "pickStories": "Choose stories",
+    "name": "Name",
+    "namePlaceholder": "Highlight name",
+    "cover": "Cover",
+    "coverHint": "Tap a story to use it as the cover.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "archiveEmpty": "No stories yet",
+    "archiveEmptyHint": "Stories you share are kept here, even after 24 hours.",
+    "archiveError": "Couldn't load your stories.",
+    "saveError": "Couldn't save the highlight. Try again.",
+    "needStories": "Choose at least one story.",
+    "needName": "Give the highlight a name.",
+    "selectedCount": "{{count}} selected",
+    "addToHighlight": "Highlight",
+    "addToHighlightTitle": "Add to highlight",
+    "createWithStory": "New highlight with this story",
+    "added": "Added to “{{title}}”",
+    "alreadyIn": "Already in this highlight",
+    "deleteTitle": "Delete highlight",
+    "deleteBody": "This highlight will be removed from your profile.",
+    "delete": "Delete",
+    "open": "Highlight: {{title}}"
   }
 }

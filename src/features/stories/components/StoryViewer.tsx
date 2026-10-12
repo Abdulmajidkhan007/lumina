@@ -10,7 +10,8 @@
  *   media is shown whole on black (see `storyContentFit`). Only a light
  *   gradient at the very top keeps the header legible — nothing dims the
  *   picture itself.
- * - Own stories: "Seen by N" pill at the bottom opens the viewers sheet.
+ * - Own stories: "Seen by N" pill opens the viewers sheet; "Highlight"
+ *   adds the story to an existing highlight or starts a new one.
  *   Other people's stories: quick emoji reactions.
  * - Marks stories seen (and records the view for the author) via storiesApi.
  */
@@ -61,6 +62,7 @@ import type { ProtectedStackParamList } from '@/navigation/types';
 import type { StoryReel } from '@/types/models';
 import { StoryProgressBar } from './StoryProgressBar';
 import { StoryViewersSheet } from './StoryViewersSheet';
+import { AddToHighlightButton } from './AddToHighlightButton';
 import { storyContentFit, storyTapAction } from '../utils/storyMedia';
 
 // ---------------------------------------------------------------------------
@@ -127,22 +129,13 @@ function ReactionButton({ emoji, onPressIn, onPressOut, onReact }: ReactionButto
 export interface StoryViewerProps {
   reel: StoryReel;
   onDismiss: () => void;
-  /**
-   * Extra bottom action rendered on your own stories next to "Seen by"
-   * (e.g. "Add to highlight"). Receives the current story and a setter that
-   * pauses playback while its own UI is open.
-   */
-  renderOwnAction?: (args: {
-    storyIndex: number;
-    setPausedByAction: (paused: boolean) => void;
-  }) => React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StoryViewer({ reel, onDismiss, renderOwnAction }: StoryViewerProps): React.JSX.Element {
+export function StoryViewer({ reel, onDismiss }: StoryViewerProps): React.JSX.Element {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -475,7 +468,7 @@ export function StoryViewer({ reel, onDismiss, renderOwnAction }: StoryViewerPro
                   {t('storyViewer.seenBy', { count: viewerCount })}
                 </Text>
               </Pressable>
-              {renderOwnAction?.({ storyIndex, setPausedByAction })}
+              <AddToHighlightButton story={story} onOpenChange={setPausedByAction} />
             </View>
           ) : (
             <View style={styles.reactionBar} pointerEvents="box-none">

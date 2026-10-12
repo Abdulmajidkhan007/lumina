@@ -4,6 +4,8 @@ export { usePost } from './usePost';
 export { useComments } from './useComments';
 export { useStoryReels } from './useStoryReels';
 export { useStoryViewers } from './useStoryViewers';
+export { useStoryArchive } from './useStoryArchive';
+export { useAddToHighlight } from './useAddToHighlight';
 export { useReels } from './useReels';
 export { useExplore } from './useExplore';
 export { useHashtagPosts } from './useHashtagPosts';

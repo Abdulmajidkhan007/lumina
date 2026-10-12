@@ -345,5 +345,32 @@
   },
   "profile": {
     "openStory": "{{username}} story'sini ko'rish"
+  },
+  "highlights": {
+    "new": "Yangi",
+    "newTitle": "Yangi highlight",
+    "pickStories": "Story'larni tanlang",
+    "name": "Nomi",
+    "namePlaceholder": "Highlight nomi",
+    "cover": "Muqova",
+    "coverHint": "Muqova qilish uchun story'ni bosing.",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "archiveEmpty": "Hali story yo'q",
+    "archiveEmptyHint": "Joylagan story'laringiz 24 soatdan keyin ham shu yerda saqlanadi.",
+    "archiveError": "Story'laringiz yuklanmadi.",
+    "saveError": "Highlight saqlanmadi. Qayta urinib ko'ring.",
+    "needStories": "Kamida bitta story tanlang.",
+    "needName": "Highlight'ga nom bering.",
+    "selectedCount": "{{count}} ta tanlandi",
+    "addToHighlight": "Highlight",
+    "addToHighlightTitle": "Highlight'ga qo'shish",
+    "createWithStory": "Shu story bilan yangi highlight",
+    "added": "“{{title}}” ga qo'shildi",
+    "alreadyIn": "Bu highlight'da allaqachon bor",
+    "deleteTitle": "Highlight'ni o'chirish",
+    "deleteBody": "Bu highlight profilingizdan olib tashlanadi.",
+    "delete": "O'chirish",
+    "open": "Highlight: {{title}}"
   }
 }

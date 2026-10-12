@@ -18,6 +18,7 @@ export function useCreateStory() {
 
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.storyReels() });
+      void qc.invalidateQueries({ queryKey: queryKeys.storyArchive() });
     },
   });
 }
