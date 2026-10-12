@@ -13,7 +13,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
 import { StatusBar } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/design-system/primitives/Text';
+import { Button } from '@/design-system/primitives/Button';
 import { Spinner } from '@/design-system/primitives/Spinner';
 import { useStoryReels } from '@/data/query/hooks/useStoryReels';
 import { useUiStore } from '@/stores/ui.store';
@@ -31,11 +33,12 @@ export default function StoryViewerScreen(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const params = useRoute<RouteProp<ProtectedStackParamList, 'Story'>>().params;
   const userId = params.userId ?? null;
+  const { t } = useTranslation();
 
   const setTabBarVisible = useUiStore((s) => s.setTabBarVisible);
   const resetStoryViewer = useUiStore((s) => s.resetStoryViewer);
 
-  const { data: reels, isLoading } = useStoryReels();
+  const { data: reels, isLoading, isError, refetch } = useStoryReels();
 
   // Hide tab bar while viewing story; restore on unmount
   useEffect(() => {
@@ -55,7 +58,7 @@ export default function StoryViewerScreen(): React.JSX.Element {
     return (
       <View style={styles.fallback}>
         <Text variant="callout" color="inverse" align="center">
-          Story not found.
+          {t('storyViewer.notFound')}
         </Text>
       </View>
     );
@@ -70,6 +73,18 @@ export default function StoryViewerScreen(): React.JSX.Element {
     );
   }
 
+  if (isError && !reels) {
+    return (
+      <View style={[styles.fallback, styles.gap]}>
+        <Text variant="callout" color="inverse" align="center">
+          {t('storyViewer.loadError')}
+        </Text>
+        <Button label={t('common.retry')} variant="secondary" size="sm" onPress={() => void refetch()} />
+        <Button label={t('storyViewer.close')} variant="ghost" size="sm" onPress={dismiss} />
+      </View>
+    );
+  }
+
   // Find the matching reel
   const reel = reels?.find((r) => r.author.id === userId) ?? null;
 
@@ -77,8 +92,9 @@ export default function StoryViewerScreen(): React.JSX.Element {
     return (
       <View style={styles.fallback}>
         <Text variant="callout" color="inverse" align="center">
-          No stories found for this user.
+          {t('storyViewer.notFound')}
         </Text>
+        <Button label={t('storyViewer.close')} variant="ghost" size="sm" onPress={dismiss} />
       </View>
     );
   }
@@ -102,5 +118,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
+  },
+  gap: {
+    gap: 12,
   },
 });

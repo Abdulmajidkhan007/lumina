@@ -33,6 +33,8 @@ export interface VideoPlayerProps {
   paused: boolean;
   muted?: boolean;
   repeat?: boolean;
+  /** Playback speed (1 = normal). */
+  rate?: number;
   resizeMode?: VideoPlayerResizeMode;
   posterUri?: string;
   onEnd?: () => void;
@@ -52,6 +54,7 @@ function VideoPlayerBase({
   paused,
   muted = false,
   repeat = false,
+  rate = 1,
   resizeMode = 'cover',
   posterUri,
   onEnd,
@@ -92,6 +95,7 @@ function VideoPlayerBase({
         paused={paused}
         muted={muted}
         repeat={repeat}
+        rate={rate}
         resizeMode={resizeMode}
         playInBackground={false}
         playWhenInactive={false}

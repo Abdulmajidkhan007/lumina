@@ -180,12 +180,15 @@ export class MockPostsApi implements IPostsApi {
       ...(resolveSummaries(input.taggedUserIds) !== undefined
         ? { taggedUsers: resolveSummaries(input.taggedUserIds) }
         : {}),
-      ...(resolveSummaries(input.collaboratorIds) !== undefined
-        ? { collaborators: resolveSummaries(input.collaboratorIds) }
-        : {}),
+      // Collaborators stay hidden until they accept (see utils/collab.ts) —
+      // the mock has no second account to accept, so none are shown.
     };
     mutablePosts.unshift(newPost);
     return newPost;
+  }
+
+  async respondToCollab(_id: PostId, _accept: boolean): Promise<void> {
+    await mockDelay();
   }
 
   async getUserPosts(userId: UserId, params: FeedParams): Promise<Paginated<Post>> {

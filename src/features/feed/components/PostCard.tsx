@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProtectedStackParamList } from '@/navigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -179,6 +180,7 @@ export const PostCard = React.memo(function PostCard({
   isActive = true,
 }: PostCardProps): React.JSX.Element {
   const theme = useTheme();
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const { mutate: likePost } = useLikePost();
@@ -376,11 +378,10 @@ export const PostCard = React.memo(function PostCard({
               {post.author.isVerified ? (
                 <Text variant="bodyStrong" color="accent"> ✓</Text>
               ) : null}
-              {post.collaborators && post.collaborators.length > 0 ? (
+              {/* Accepted collab only — the data layer drops pending/declined */}
+              {post.collaborators?.[0] ? (
                 <Text variant="bodyStrong" color="primary">
-                  {post.collaborators.length === 1
-                    ? ` and ${post.collaborators[0]!.username}`
-                    : ` and ${post.collaborators.length} others`}
+                  {t('collab.and', { username: post.collaborators[0].username })}
                 </Text>
               ) : null}
             </Text>

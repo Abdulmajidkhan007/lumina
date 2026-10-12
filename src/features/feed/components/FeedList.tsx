@@ -105,7 +105,9 @@ export function FeedList(): React.JSX.Element {
   const onViewableItemsChanged = React.useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const first = viewableItems.find((v) => v.isViewable);
-      if (first?.item) setActivePostId((first.item as Post).id);
+      // Nothing ≥60% visible (e.g. mid-scroll between two tall posts) → no
+      // post plays, so a video that scrolled out of view stops.
+      setActivePostId(first?.item ? (first.item as Post).id : null);
     },
   ).current;
   const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 60 }).current;

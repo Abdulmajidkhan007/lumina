@@ -28,6 +28,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { useReels } from '@/data/query/hooks/useReels';
 import { screen } from '@/constants/layout';
+import { usePlaybackAllowed } from '@/components/video';
 import type { Reel } from '@/types/models';
 
 import { ReelItem } from './ReelItem';
@@ -73,6 +74,8 @@ export function ReelsPager(): React.JSX.Element {
   } = useReels();
 
   const [activeIndex, setActiveIndex] = useState(0);
+  // Pause when leaving the Reels tab or backgrounding the app.
+  const playbackAllowed = usePlaybackAllowed();
 
   const reels: Reel[] = data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -114,9 +117,10 @@ export function ReelsPager(): React.JSX.Element {
         reel={item}
         isActive={index === activeIndex}
         isAdjacent={Math.abs(index - activeIndex) === 1}
+        playbackAllowed={playbackAllowed}
       />
     ),
-    [activeIndex],
+    [activeIndex, playbackAllowed],
   );
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);

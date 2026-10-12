@@ -4,6 +4,7 @@ import { fetchNotifications, markAllNotificationsRead, type AppNotification } fr
 import { Avatar } from '../../components/Avatar';
 import { EmptyState } from '../../components/StateViews';
 import { formatRelativeTime } from '../../lib/time';
+import { respondToCollab } from '../../lib/collab';
 import { useI18n } from '../../i18n';
 
 const VERB: Record<AppNotification['type'], string> = {
@@ -11,7 +12,57 @@ const VERB: Record<AppNotification['type'], string> = {
   comment: 'commented',
   follow: 'started following you',
   mention: 'mentioned you',
+  collab_invite: 'invited you to collaborate on a post',
 };
+
+/** Accept / Decline for a collab invite, or the recorded answer. */
+function CollabActions({ n, onDone }: { n: AppNotification; onDone: () => void }) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState<boolean | null>(null);
+  const [error, setError] = useState(false);
+  if (n.response) {
+    return (
+      <p className="mt-1 text-xs text-text-muted">
+        {n.response === 'accepted' ? t('Accepted — the post now shows on your profile.') : t('Declined')}
+      </p>
+    );
+  }
+  if (!n.postPreview) return null;
+  const postId = n.postPreview.postId;
+  const answer = async (accept: boolean) => {
+    setBusy(accept);
+    setError(false);
+    try {
+      await respondToCollab(postId, n.id, accept);
+      onDone();
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={busy !== null}
+        onClick={() => void answer(true)}
+        className="rounded-lg bg-gradient-brand px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+      >
+        {busy === true ? '…' : t('Accept')}
+      </button>
+      <button
+        type="button"
+        disabled={busy !== null}
+        onClick={() => void answer(false)}
+        className="rounded-lg border border-border bg-surface px-3 py-1 text-xs font-semibold disabled:opacity-60"
+      >
+        {busy === false ? '…' : t('Decline')}
+      </button>
+      {error ? <span className="text-xs text-red-400">{t("Couldn't answer the invite.")}</span> : null}
+    </div>
+  );
+}
 
 export function Notifications() {
   const { t } = useI18n();
@@ -61,13 +112,16 @@ export function Notifications() {
               <Link to={`/app/u/${n.actor.id}`}>
                 <Avatar name={n.actor.displayName} avatarUrl={n.actor.avatarUrl} size="sm" />
               </Link>
-              <p className="min-w-0 flex-1 text-sm">
-                <Link to={`/app/u/${n.actor.id}`} className="font-semibold">
-                  {n.actor.username}
-                </Link>{' '}
-                {t(VERB[n.type])}
-                {n.commentText ? <span className="text-text-muted">: {n.commentText}</span> : null}
-              </p>
+              <div className="min-w-0 flex-1 text-sm">
+                <p>
+                  <Link to={`/app/u/${n.actor.id}`} className="font-semibold">
+                    {n.actor.username}
+                  </Link>{' '}
+                  {t(VERB[n.type])}
+                  {n.commentText ? <span className="text-text-muted">: {n.commentText}</span> : null}
+                </p>
+                {n.type === 'collab_invite' ? <CollabActions n={n} onDone={() => void load()} /> : null}
+              </div>
               {n.postPreview ? (
                 <Link to={`/app/p/${n.postPreview.postId}`} className="shrink-0">
                   <img src={n.postPreview.thumbnailUri} alt="" className="h-10 w-10 rounded object-cover" />

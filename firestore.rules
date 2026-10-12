@@ -65,12 +65,46 @@ service cloud.firestore {
     }
 
     // ---------------- posts ----------------
+    // Collab invite: { uid, status, user }. The author can only create it
+    // as 'pending' for someone else, and can never change it afterwards
+    // (so they can't accept on the invitee's behalf).
+    function validNewCollab(data) {
+      return !('collab' in data)
+        || (data.collab is map
+            && data.collab.keys().hasOnly(['uid', 'status', 'user'])
+            && data.collab.uid is string
+            && data.collab.uid != request.auth.uid
+            && data.collab.status == 'pending'
+            && data.collab.user is map
+            && data.collab.user.id == data.collab.uid);
+    }
+
+    function collabUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['collab']);
+    }
+
+    // Only the invited uid, only pending → accepted/declined, nothing else.
+    function collabAnswer() {
+      return signedIn()
+        && resource.data.get('collab', null) is map
+        && resource.data.collab.uid == request.auth.uid
+        && resource.data.collab.status == 'pending'
+        && onlyKeys(['collab'])
+        && request.resource.data.collab.keys().hasOnly(['uid', 'status', 'user'])
+        && request.resource.data.collab.uid == resource.data.collab.uid
+        && request.resource.data.collab.user == resource.data.collab.user
+        && request.resource.data.collab.status in ['accepted', 'declined'];
+    }
+
     match /posts/{postId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow create: if signedIn()
+                    && request.resource.data.authorId == request.auth.uid
+                    && validNewCollab(request.resource.data);
       allow update: if signedIn()
-                    && (resource.data.authorId == request.auth.uid
-                        || onlyKeys(['likeCount', 'commentCount']));
+                    && ((resource.data.authorId == request.auth.uid && collabUntouched())
+                        || onlyKeys(['likeCount', 'commentCount'])
+                        || collabAnswer());
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{uid} {
@@ -116,6 +150,22 @@ service cloud.firestore {
       match /reactions/{uid} {
         allow read: if signedIn();
         allow write: if isOwner(uid);
+      }
+
+      // "Seen by" list. A viewer records only themselves, never on their own
+      // story (the author's view doesn't count); only the author reads it.
+      match /views/{viewerUid} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/stories/$(storyId)).data.authorId == request.auth.uid;
+        allow create, update: if isOwner(viewerUid)
+          && get(/databases/$(database)/documents/stories/$(storyId)).data.authorId != viewerUid
+          && request.resource.data.keys().hasOnly(['uid', 'viewer', 'viewedAt'])
+          && request.resource.data.uid == viewerUid
+          && request.resource.data.viewer is map
+          && request.resource.data.viewer.id == viewerUid
+          && request.resource.data.viewedAt is string
+          && request.resource.data.viewedAt.size() <= 40;
+        allow delete: if false;
       }
     }
 

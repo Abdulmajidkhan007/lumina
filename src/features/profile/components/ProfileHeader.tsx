@@ -7,10 +7,16 @@
  *   - other:   Follow/Following (optimistic) + Message
  *
  * Used by both profile.tsx (own) and user/[id].tsx (other).
+ *
+ * When the user has an active (24 h) story the avatar gets the gradient ring
+ * (muted when already seen) and tapping it opens the story viewer — on your
+ * own profile and on anyone else's.
  */
 
 import React, { useCallback, useEffect } from 'react';
 import { Linking, Pressable, Share, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Animated, {
   FadeIn,
@@ -26,6 +32,9 @@ import { Avatar } from '@/design-system/primitives/Avatar';
 import { Text } from '@/design-system/primitives/Text';
 import { Button } from '@/design-system/primitives/Button';
 import { useFollowUser } from '@/data/query/hooks/useFollowUser';
+import { useStoryReels } from '@/data/query/hooks/useStoryReels';
+import { findActiveStoryReel } from '@/features/stories/utils/storyMedia';
+import type { ProtectedStackParamList } from '@/navigation/types';
 import {
   useCancelFollowRequest,
   useFollowRequestStatus,
@@ -69,6 +78,13 @@ export const ProfileHeader = React.memo(function ProfileHeader({
   const { mutate: followUser, isPending: isFollowPending } = useFollowUser();
   const { mutate: cancelFollowRequest, isPending: isCancelPending } = useCancelFollowRequest();
   const { data: followStatus } = useFollowRequestStatus(user.isMe ? null : user.id);
+  const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
+  const { data: storyReels } = useStoryReels();
+  const activeReel = findActiveStoryReel(storyReels, user.id);
+
+  const openStory = useCallback(() => {
+    navigation.navigate('Story', { userId: user.id });
+  }, [navigation, user.id]);
 
   // useFollowRequestStatus is the source of truth for the button — it
   // distinguishes an established follow from a pending request, which
@@ -139,12 +155,24 @@ export const ProfileHeader = React.memo(function ProfileHeader({
       {/* Top row: avatar + stats */}
       <View style={styles.topRow}>
         <Animated.View style={avatarAnimatedStyle}>
-          <Avatar
-            uri={user.avatarUrl ?? undefined}
-            displayName={user.displayName}
-            size="2xl"
-            accessibilityLabel={`${user.displayName}'s avatar`}
-          />
+          <Pressable
+            onPress={activeReel ? openStory : undefined}
+            disabled={!activeReel}
+            accessibilityRole={activeReel ? 'button' : 'image'}
+            accessibilityLabel={
+              activeReel
+                ? t('profile.openStory', { username: user.username })
+                : `${user.displayName}'s avatar`
+            }
+          >
+            <Avatar
+              uri={user.avatarUrl ?? undefined}
+              displayName={user.displayName}
+              size="2xl"
+              hasStoryRing={activeReel != null}
+              ringSeen={activeReel != null && !activeReel.hasUnseen && !user.isMe}
+            />
+          </Pressable>
         </Animated.View>
 
         <View style={styles.statsContainer}>

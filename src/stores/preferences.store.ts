@@ -23,6 +23,8 @@ type PreferencesState = {
   /** Colour scheme preference — read by design-system/theme/theme.ts */
   colorSchemePreference: ColorSchemePreference;
   autoplayVideos: boolean;
+  /** Global sound toggle shared by Reels and feed videos (remembered across launches). */
+  videoMuted: boolean;
   hapticsEnabled: boolean;
   /** App locale preference — read by src/i18n/index.ts */
   locale: AppLocale;
@@ -33,6 +35,8 @@ type PreferencesState = {
 type PreferencesActions = {
   setColorSchemePreference(pref: ColorSchemePreference): void;
   setAutoplayVideos(enabled: boolean): void;
+  setVideoMuted(muted: boolean): void;
+  toggleVideoMuted(): void;
   setHapticsEnabled(enabled: boolean): void;
   setLocale(locale: AppLocale): void;
   markWelcomeSeen(): void;
@@ -47,6 +51,9 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
     (set) => ({
       colorSchemePreference: 'system',
       autoplayVideos: true,
+      // Sound on by default — feed videos used to be hard-muted with no way
+      // to hear them. One tap on the speaker mutes everywhere.
+      videoMuted: false,
       hapticsEnabled: true,
       locale: 'system',
       hasSeenWelcome: false,
@@ -57,6 +64,14 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
 
       setAutoplayVideos(enabled) {
         set({ autoplayVideos: enabled });
+      },
+
+      setVideoMuted(muted) {
+        set({ videoMuted: muted });
+      },
+
+      toggleVideoMuted() {
+        set((s) => ({ videoMuted: !s.videoMuted }));
       },
 
       setHapticsEnabled(enabled) {
@@ -86,6 +101,10 @@ export const usePreferencesStore = create<PreferencesState & PreferencesActions>
 export const useThemeMode = () => usePreferencesStore((s) => s.colorSchemePreference);
 
 export const useAutoplayVideos = () => usePreferencesStore((s) => s.autoplayVideos);
+
+export const useVideoMuted = () => usePreferencesStore((s) => s.videoMuted);
+
+export const useToggleVideoMuted = () => usePreferencesStore((s) => s.toggleVideoMuted);
 
 export const useHapticsEnabled = () => usePreferencesStore((s) => s.hapticsEnabled);
 

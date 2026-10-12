@@ -323,5 +323,66 @@
     "shareToStory": "Tarixga ulashish",
     "uploading": "Yuklanmoqda…",
     "shareError": "Tarixni ulashib bo'lmadi. Qaytadan urinib ko'ring."
+  },
+  "storyViewer": {
+    "seenBy": "Ko'rganlar: {{count}}",
+    "viewersTitle": "Ko'rganlar",
+    "noViewers": "Hali hech kim ko'rmagan",
+    "noViewersHint": "Story'ingizni ko'rganlar shu yerda chiqadi.",
+    "viewersError": "Ko'rganlar ro'yxati yuklanmadi.",
+    "openViewers": "Story'ni kim ko'rganini ko'rsatish",
+    "previous": "Oldingi story",
+    "next": "Keyingi story",
+    "close": "Story'ni yopish",
+    "notFound": "Bu foydalanuvchida story yo'q.",
+    "loadError": "Story'lar yuklanmadi.",
+    "progress": "{{total}} tadan {{current}}-story"
+  },
+  "video": {
+    "mute": "Ovozni o'chirish",
+    "unmute": "Ovozni yoqish",
+    "playPause": "Video — bosing: pauza/davom, ikki marta: like"
+  },
+  "profile": {
+    "openStory": "{{username}} story'sini ko'rish"
+  },
+  "highlights": {
+    "new": "Yangi",
+    "newTitle": "Yangi highlight",
+    "pickStories": "Story'larni tanlang",
+    "name": "Nomi",
+    "namePlaceholder": "Highlight nomi",
+    "cover": "Muqova",
+    "coverHint": "Muqova qilish uchun story'ni bosing.",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "archiveEmpty": "Hali story yo'q",
+    "archiveEmptyHint": "Joylagan story'laringiz 24 soatdan keyin ham shu yerda saqlanadi.",
+    "archiveError": "Story'laringiz yuklanmadi.",
+    "saveError": "Highlight saqlanmadi. Qayta urinib ko'ring.",
+    "needStories": "Kamida bitta story tanlang.",
+    "needName": "Highlight'ga nom bering.",
+    "selectedCount": "{{count}} ta tanlandi",
+    "addToHighlight": "Highlight",
+    "addToHighlightTitle": "Highlight'ga qo'shish",
+    "createWithStory": "Shu story bilan yangi highlight",
+    "added": "“{{title}}” ga qo'shildi",
+    "alreadyIn": "Bu highlight'da allaqachon bor",
+    "deleteTitle": "Highlight'ni o'chirish",
+    "deleteBody": "Bu highlight profilingizdan olib tashlanadi.",
+    "delete": "O'chirish",
+    "open": "Highlight: {{title}}"
+  },
+  "collab": {
+    "invited": " sizni postga hammuallif bo'lishga taklif qildi.",
+    "accept": "Qabul qilish",
+    "decline": "Rad etish",
+    "accepted": "Qabul qilindi — post profilingizda ko'rinadi.",
+    "declined": "Rad etildi",
+    "error": "Taklifga javob berilmadi.",
+    "and": " va {{username}}",
+    "inviteRow": "Hammuallif taklif qilish",
+    "inviteTitle": "Hammuallif taklif qilish",
+    "pendingHint": "{{username}} bilan collab — u qabul qilgach ko'rinadi"
   }
 }
