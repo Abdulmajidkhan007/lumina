@@ -9,12 +9,14 @@
 import 'react-i18next';
 
 import type en from './locales/en.json';
+import type adminEn from './locales/admin.en.json';
 
 declare module 'react-i18next' {
   interface CustomTypeOptions {
     defaultNS: 'translation';
     resources: {
       translation: typeof en;
+      admin: typeof adminEn;
     };
   }
 }

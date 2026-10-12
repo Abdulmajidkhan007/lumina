@@ -1,0 +1,132 @@
+{
+  "title": "Админ",
+  "roleModerator": "Модератор",
+  "tabs": {
+    "overview": "Обзор",
+    "reports": "Жалобы",
+    "users": "Пользователи",
+    "activity": "Активность",
+    "broadcast": "Рассылка"
+  },
+  "common": {
+    "error": "Что-то пошло не так.",
+    "retry": "Повторить",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "loadFailed": "Не удалось загрузить."
+  },
+  "overview": {
+    "activeToday": "Активны сегодня",
+    "avgPerDay": "в среднем {{n}}/день",
+    "totalUsers": "Всего пользователей",
+    "totalPosts": "Всего постов",
+    "plusInDays": "+{{n}} за {{d}} дн.",
+    "openReports": "Открытые жалобы",
+    "dailyActive": "Активные пользователи по дням",
+    "newUsersPerDay": "Новые пользователи по дням",
+    "postsPerDay": "Посты по дням",
+    "range": "{{n}} дн.",
+    "utcNote": "Дни в UTC. Активный — открыл приложение в этот день.",
+    "chartValue": "{{day}}: {{value}}"
+  },
+  "users": {
+    "searchPlaceholder": "Username, имя или email",
+    "blocked": "Заблокирован",
+    "block": "Заблокировать",
+    "unblock": "Разблокировать",
+    "role": "Роль",
+    "lastActive": "Активность: {{when}}",
+    "neverSeen": "Ещё не заходил",
+    "joined": "С нами с {{date}}",
+    "posts": "{{n}} постов",
+    "blockTitle": "Заблокировать @{{username}}?",
+    "blockMessage": "Смогут смотреть, но до разблокировки не смогут публиковать, комментировать, лайкать, подписываться и писать.",
+    "reasonPlaceholder": "Причина (обязательно)",
+    "empty": "Пользователи не найдены",
+    "roles": {
+      "user": "Пользователь",
+      "moderator": "Модератор",
+      "admin": "Админ"
+    },
+    "roleA11y": "Назначить @{{username}} роль {{role}}"
+  },
+  "reports": {
+    "filters": {
+      "active": "Требуют действий",
+      "open": "Открытые",
+      "reviewing": "На рассмотрении",
+      "resolved": "Решённые",
+      "dismissed": "Отклонённые",
+      "all": "Все"
+    },
+    "statuses": {
+      "open": "открыта",
+      "reviewing": "на рассмотрении",
+      "resolved": "решена",
+      "dismissed": "отклонена"
+    },
+    "targets": {
+      "user": "Пользователь",
+      "post": "Пост",
+      "comment": "Комментарий"
+    },
+    "reason": "Причина",
+    "filed": "Подана",
+    "reporter": "Автор жалобы",
+    "notePlaceholder": "Заметка (необязательно) — сохранится со следующим шагом",
+    "mark": "Отметить: {{status}}",
+    "reopen": "Открыть снова",
+    "addNote": "Добавить заметку",
+    "hidePost": "Скрыть пост",
+    "blockAuthor": "Заблокировать автора",
+    "blockUser": "Заблокировать пользователя",
+    "trail": "Журнал действий",
+    "noTrail": "Действий пока нет.",
+    "trailActions": {
+      "status": "Статус изменён",
+      "note": "Заметка",
+      "hide_post": "Пост скрыт",
+      "ban_user": "Пользователь заблокирован",
+      "legacy": "Решение"
+    },
+    "empty": "Жалоб нет",
+    "back": "Назад к жалобам",
+    "openTarget": "Открыть"
+  },
+  "activity": {
+    "adminActions": "Действия админов",
+    "userEvents": "События пользователей",
+    "allTypes": "Все",
+    "filterPlaceholder": "Фильтр по email, id или заметке",
+    "empty": "Пока пусто"
+  },
+  "broadcast": {
+    "titleLabel": "Заголовок",
+    "messageLabel": "Текст",
+    "linkLabel": "Ссылка (необязательно)",
+    "send": "Отправить всем",
+    "confirmTitle": "Отправить объявление?",
+    "confirmMessage": "Все пользователи увидят его в Уведомлениях.",
+    "sent": "Отправлено. Появится в Уведомлениях у всех пользователей.",
+    "recent": "Отправленные объявления",
+    "delete": "Удалить",
+    "deleteTitle": "Удалить объявление?",
+    "deleteMessage": "Пользователи больше не увидят «{{title}}».",
+    "nothingSent": "Пока ничего не отправлено",
+    "pushNote": "Для push на телефоны нужна Cloud Function (functions/) и тариф Blaze.",
+    "errors": {
+      "titleRequired": "Введите заголовок.",
+      "titleTooLong": "Слишком длинный заголовок.",
+      "bodyRequired": "Введите текст.",
+      "bodyTooLong": "Слишком длинный текст.",
+      "linkInvalid": "Ссылка должна начинаться с https://"
+    }
+  },
+  "account": {
+    "blockedBanner": "Ваш аккаунт заблокирован модератором. Просмотр доступен, но публикации, комментарии, лайки и сообщения отключены."
+  },
+  "notifications": {
+    "announcement": "Объявление",
+    "openLink": "Открыть ссылку"
+  }
+}

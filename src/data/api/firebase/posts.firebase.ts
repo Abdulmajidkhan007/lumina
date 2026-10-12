@@ -102,6 +102,8 @@ function savesCollection(uid: string) {
 }
 
 async function buildPostCandidate(raw: RawDoc, viewerUid: string | null): Promise<unknown> {
+  // Hidden by a moderator (admin → Reports): fails validation, so lists skip it.
+  if (raw.data.hidden === true) return null;
   const data = raw.data as Partial<PostDocFields>;
   const [isLikedByMe, isSavedByMe] = await getMembershipFlags(
     postDocRef(raw.id),

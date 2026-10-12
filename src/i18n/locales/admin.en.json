@@ -1,0 +1,132 @@
+{
+  "title": "Admin",
+  "roleModerator": "Moderator",
+  "tabs": {
+    "overview": "Overview",
+    "reports": "Reports",
+    "users": "Users",
+    "activity": "Activity",
+    "broadcast": "Broadcast"
+  },
+  "common": {
+    "error": "Something went wrong.",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loadFailed": "Failed to load."
+  },
+  "overview": {
+    "activeToday": "Active today",
+    "avgPerDay": "avg {{n}}/day",
+    "totalUsers": "Total users",
+    "totalPosts": "Total posts",
+    "plusInDays": "+{{n}} in {{d}} days",
+    "openReports": "Open reports",
+    "dailyActive": "Daily active users",
+    "newUsersPerDay": "New users per day",
+    "postsPerDay": "Posts per day",
+    "range": "{{n}} days",
+    "utcNote": "Days are in UTC. A user is active on a day they opened the app.",
+    "chartValue": "{{day}}: {{value}}"
+  },
+  "users": {
+    "searchPlaceholder": "Search username, name or email",
+    "blocked": "Blocked",
+    "block": "Block",
+    "unblock": "Unblock",
+    "role": "Role",
+    "lastActive": "Last active {{when}}",
+    "neverSeen": "Not seen yet",
+    "joined": "Joined {{date}}",
+    "posts": "{{n}} posts",
+    "blockTitle": "Block @{{username}}?",
+    "blockMessage": "They keep read access but cannot post, comment, like, follow or message until unblocked.",
+    "reasonPlaceholder": "Reason (required)",
+    "empty": "No users found",
+    "roles": {
+      "user": "User",
+      "moderator": "Moderator",
+      "admin": "Admin"
+    },
+    "roleA11y": "Set role of @{{username}} to {{role}}"
+  },
+  "reports": {
+    "filters": {
+      "active": "Needs action",
+      "open": "Open",
+      "reviewing": "Reviewing",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed",
+      "all": "All"
+    },
+    "statuses": {
+      "open": "open",
+      "reviewing": "reviewing",
+      "resolved": "resolved",
+      "dismissed": "dismissed"
+    },
+    "targets": {
+      "user": "User",
+      "post": "Post",
+      "comment": "Comment"
+    },
+    "reason": "Reason",
+    "filed": "Filed",
+    "reporter": "Reporter",
+    "notePlaceholder": "Note (optional) — saved with the next step",
+    "mark": "Mark {{status}}",
+    "reopen": "Reopen",
+    "addNote": "Add note",
+    "hidePost": "Hide post",
+    "blockAuthor": "Block author",
+    "blockUser": "Block user",
+    "trail": "Audit trail",
+    "noTrail": "No actions yet.",
+    "trailActions": {
+      "status": "Status changed",
+      "note": "Note",
+      "hide_post": "Post hidden",
+      "ban_user": "User blocked",
+      "legacy": "Decision"
+    },
+    "empty": "No reports",
+    "back": "Back to reports",
+    "openTarget": "Open"
+  },
+  "activity": {
+    "adminActions": "Admin actions",
+    "userEvents": "User events",
+    "allTypes": "All",
+    "filterPlaceholder": "Filter by email, id or note",
+    "empty": "Nothing here yet"
+  },
+  "broadcast": {
+    "titleLabel": "Title",
+    "messageLabel": "Message",
+    "linkLabel": "Link (optional)",
+    "send": "Send to everyone",
+    "confirmTitle": "Send announcement?",
+    "confirmMessage": "Every user will see it in Notifications.",
+    "sent": "Sent. It appears in every user's Notifications.",
+    "recent": "Sent announcements",
+    "delete": "Delete",
+    "deleteTitle": "Delete announcement?",
+    "deleteMessage": "Users will no longer see “{{title}}”.",
+    "nothingSent": "Nothing sent yet",
+    "pushNote": "Push to phones needs the Cloud Function (functions/) on the Blaze plan.",
+    "errors": {
+      "titleRequired": "Title is required.",
+      "titleTooLong": "Title is too long.",
+      "bodyRequired": "Message is required.",
+      "bodyTooLong": "Message is too long.",
+      "linkInvalid": "Link must start with https://"
+    }
+  },
+  "account": {
+    "blockedBanner": "Your account is blocked by a moderator. You can browse, but posting, comments, likes and messages are disabled."
+  },
+  "notifications": {
+    "announcement": "Announcement",
+    "openLink": "Open link"
+  }
+}

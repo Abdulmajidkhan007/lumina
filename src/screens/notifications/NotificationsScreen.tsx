@@ -18,6 +18,7 @@ import { useTheme } from '@/design-system/theme';
 import { Text } from '@/design-system/primitives/Text';
 import { useMarkNotificationsRead } from '@/data/query/hooks/useMarkNotificationsRead';
 import { NotificationList } from '@/features/notifications/components/NotificationList';
+import { useMarkBroadcastsRead } from '@/features/notifications/hooks/useBroadcasts';
 import { hitSlop } from '@/constants/layout';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +29,7 @@ export default function NotificationsScreen(): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ProtectedStackParamList>>();
   const { mutate: markAllRead } = useMarkNotificationsRead();
+  const { mutate: markBroadcastsRead } = useMarkBroadcastsRead();
 
   // Mark all read when the screen mounts.
   // The mutation is optimistic — the cache is updated immediately and rolled
@@ -35,6 +37,11 @@ export default function NotificationsScreen(): React.JSX.Element {
   useEffect(() => {
     markAllRead();
   }, [markAllRead]);
+
+  // Announcements share the screen; opening it marks them read too.
+  useEffect(() => {
+    markBroadcastsRead();
+  }, [markBroadcastsRead]);
 
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
 
