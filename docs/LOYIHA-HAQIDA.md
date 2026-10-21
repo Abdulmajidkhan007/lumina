@@ -2,7 +2,7 @@
 
 > Instagram uslubidagi ijtimoiy tarmoq: Android ilova (bare React Native) va veb.
 > Veb: https://lumina-007app.web.app · APK: https://github.com/Abdulmajidkhan007/lumina/releases/latest/download/lumina.apk
-> Oxirgi tekshiruv: 2026-10-11 (koddan).
+> Oxirgi tekshiruv: 2026-10-21 (koddan; oxirgi kod o'zgarishi 2026-10-12).
 
 ## Nima uchun
 
@@ -63,7 +63,9 @@ versiyada odamlar allaqachon post joylayapti.
   cheklangan, qiymat oralig'i tekshirilmaydi — kirgan foydalanuvchi soxta
   son yozishi mumkin. Tuzatish: ±1 o'zgarishni talab qilish yoki Function.
 - Veb'dan parol tiklash logi endi yozilmaydi (anonim log yopilgani uchun).
-- Veb sahifalar inglizcha; o'zbekcha tarjima yo'q.
+- ~~Veb sahifalar inglizcha~~ — 2026-10-11 dan veb uz/en/ru.
+- Admin e'lonining push bildirishnomasi (FCM) Functions deploy qilinmaguncha
+  ishlamaydi — e'lon faqat ilova ichida ko'rinadi.
 
 ## 2026-10-11 — o'zgarishlar
 
@@ -100,3 +102,14 @@ Batafsil: `docs/WORKER-REPORT-2026-10-11.md`.
   viewer'dan "Highlight'ga qo'shish".
 - Collab faqat tasdiqlangandan keyin ko'rinadi (`post.collab.status`).
 - `rules-tests/` — Firestore qoidalari emulyator testlari; CI'da ham.
+
+## 2026-10-12 — admin to'lqini
+
+Batafsil: `docs/ADMIN-REPORT-2026-10-11.md`.
+
+- Rollar (admin/moderator), foydalanuvchini bloklash (`userBans`), shikoyatlarni
+  ko'rib chiqish oqimi, kunlik faollik grafiklari — vebda ham, ilovada ham.
+- E'lon (broadcast): admin yozadi, foydalanuvchilar Bildirishnomalar'da ko'radi.
+  Push (`onBroadcastCreated` → FCM `all`) kodi bor, Functions deploy kutadi.
+- CI #86 yashil (android-apk bilan).
+
