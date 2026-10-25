@@ -37,6 +37,29 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
+    // A counter may move by at most one per write (like/unlike, follow/unfollow,
+    // a new comment). Untouched or missing counters read as 0 → 0.
+    function step1(field) {
+      let before = resource.data.get(field, 0);
+      let after = request.resource.data.get(field, 0);
+      return after is int && after - before >= -1 && after - before <= 1;
+    }
+
+    // New docs start with zero (or absent) counters.
+    function countersZero(keys) {
+      return request.resource.data.get(keys[0], 0) == 0
+             && (keys.size() < 2 || request.resource.data.get(keys[1], 0) == 0)
+             && (keys.size() < 3 || request.resource.data.get(keys[2], 0) == 0);
+    }
+
+    // Applies to every update path (author, staff, counter bump), so nobody —
+    // not even the profile/post owner — can write an arbitrary count.
+    function countersStep(keys) {
+      return step1(keys[0])
+             && (keys.size() < 2 || step1(keys[1]))
+             && (keys.size() < 3 || step1(keys[2]));
+    }
+
     // ---- admin panel helpers (roles, bans, moderation) ----
     function notBanned() {
       return !exists(/databases/$(database)/documents/userBans/$(request.auth.uid));
@@ -70,11 +93,13 @@ service cloud.firestore {
     // ---------------- users ----------------
     match /users/{uid} {
       allow read: if signedIn();
-      allow create: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    && countersZero(['followerCount', 'followingCount', 'postCount']);
       // Owner edits own profile; anyone signed-in may only bump social counters
       // (follow/unfollow transactions touch the other user's counts).
-      allow update: if isOwner(uid)
-                    || (signedIn() && onlyKeys(['followerCount', 'followingCount', 'postCount']));
+      allow update: if (isOwner(uid)
+                     || (signedIn() && onlyKeys(['followerCount', 'followingCount', 'postCount'])))
+                    && countersStep(['followerCount', 'followingCount', 'postCount']);
       allow delete: if false;
 
       match /saves/{postId} {
@@ -141,14 +166,16 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.authorId == request.auth.uid
                     && validNewCollab(request.resource.data)
-                    && !request.resource.data.keys().hasAny(moderationKeys());
+                    && !request.resource.data.keys().hasAny(moderationKeys())
+                    && countersZero(['likeCount', 'commentCount', 'shareCount']);
       allow update: if signedIn()
                     && ((resource.data.authorId == request.auth.uid
                          && collabUntouched()
                          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(moderationKeys()))
                         || onlyKeys(['likeCount', 'commentCount'])
                         || collabAnswer()
-                        || (isStaff() && onlyKeys(moderationKeys())));
+                        || (isStaff() && onlyKeys(moderationKeys())))
+                    && countersStep(['likeCount', 'commentCount', 'shareCount']);
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{uid} {
@@ -169,10 +196,12 @@ service cloud.firestore {
     // ---------------- reels ----------------
     match /reels/{reelId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid
+                    && countersZero(['likeCount', 'commentCount', 'shareCount']);
       allow update: if signedIn()
                     && (resource.data.authorId == request.auth.uid
-                        || onlyKeys(['likeCount', 'commentCount', 'shareCount']));
+                        || onlyKeys(['likeCount', 'commentCount', 'shareCount']))
+                    && countersStep(['likeCount', 'commentCount', 'shareCount']);
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
       // Hiding a reported video post also removes its reel copy (admin panel).
       allow delete: if isStaff();

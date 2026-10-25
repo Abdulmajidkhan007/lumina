@@ -59,9 +59,11 @@ versiyada odamlar allaqachon post joylayapti.
 
 ## Ma'lum kamchiliklar
 
-- Hisoblagichlar (`followerCount`...) qoidada faqat maydon nomi bilan
-  cheklangan, qiymat oralig'i tekshirilmaydi — kirgan foydalanuvchi soxta
-  son yozishi mumkin. Tuzatish: ±1 o'zgarishni talab qilish yoki Function.
+- Hisoblagichlar (`followerCount`, `likeCount`...) 2026-10-25 dan qoidada
+  bir yozuvda faqat ±1 o'zgaradi (profil/post egasi uchun ham), yangi
+  hujjat 0 dan boshlanadi (`rules-tests/test/counters.test.js`). Hali
+  mumkin: ±1 ni ko'p marta yozib sonni sekin oshirish — to'liq yechim
+  Function (Blaze). Izoh/sharh `likeCount`/`replyCount` cheklanmagan.
 - Veb'dan parol tiklash logi endi yozilmaydi (anonim log yopilgani uchun).
 - ~~Veb sahifalar inglizcha~~ — 2026-10-11 dan veb uz/en/ru.
 - Admin e'lonining push bildirishnomasi (FCM) Functions deploy qilinmaguncha
