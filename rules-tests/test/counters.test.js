@@ -16,7 +16,7 @@ describe('counters ±1', () => {
     await env.clearFirestore();
     await seed(env, {
       'users/alice': { username: 'alice', followerCount: 5, followingCount: 2, postCount: 1 },
-      'posts/p1': { authorId: 'alice', author: summary('alice'), caption: 'hi', likeCount: 3, commentCount: 0, shareCount: 0 },
+      'posts/p1': { authorId: 'alice', author: summary('alice'), media: [{ type: 'image', uri: 'https://img/a.png', width: 1, height: 1 }], caption: 'hi', likeCount: 3, commentCount: 0, shareCount: 0 },
       'reels/r1': { authorId: 'alice', author: summary('alice'), caption: 'hi', likeCount: 3, commentCount: 0, shareCount: 0 },
     });
   });
@@ -68,7 +68,7 @@ describe('counters ±1', () => {
   });
 
   it('a new post or reel cannot start with fake counts', async () => {
-    const post = { authorId: 'bob', author: summary('bob'), caption: 'x', likeCount: 0, commentCount: 0, shareCount: 0 };
+    const post = { authorId: 'bob', author: summary('bob'), media: [{ type: 'image', uri: 'https://img/a.png', width: 1, height: 1 }], caption: 'x', likeCount: 0, commentCount: 0, shareCount: 0 };
     await assertSucceeds(bob().doc('posts/p2').set(post));
     await assertFails(bob().doc('posts/p3').set({ ...post, likeCount: 900 }));
     await assertFails(bob().doc('reels/r2').set({ ...post, likeCount: 900 }));

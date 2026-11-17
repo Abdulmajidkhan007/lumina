@@ -68,6 +68,8 @@ export async function seed(env: RulesTestEnvironment): Promise<void> {
     }
     await setDoc(doc(db, 'posts', 'post-alice'), {
       authorId: UID.alice,
+      author: { id: UID.alice, username: UID.alice, displayName: UID.alice, avatarUrl: null, isVerified: false },
+      media: [{ type: 'image', uri: 'https://img/a.png', width: 1, height: 1 }],
       caption: 'hello',
       likeCount: 0,
       commentCount: 0,

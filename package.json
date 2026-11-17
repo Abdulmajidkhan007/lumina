@@ -8,7 +8,8 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "test:rules": "npm --prefix rules-tests test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
