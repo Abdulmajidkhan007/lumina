@@ -5,6 +5,7 @@ import { seed, setup, summary } from '../helpers/env.js';
 const post = (collab) => ({
   authorId: 'alice',
   author: summary('alice'),
+  media: [{ type: 'image', uri: 'https://img/a.png', width: 1, height: 1 }],
   caption: null,
   likeCount: 0,
   commentCount: 0,
@@ -80,7 +81,7 @@ describe('posts.collab', () => {
     const bob = env.authenticatedContext('bob').firestore();
     await assertSucceeds(bob.doc('users/bob/notifications/n1').update({ response: 'accepted', read: true }));
     const alice = env.authenticatedContext('alice').firestore();
-    await assertSucceeds(alice.doc('users/bob/notifications/n2').set({ type: 'collab_invite', read: false }));
+    await assertSucceeds(alice.doc('users/bob/notifications/n2').set({ type: 'collab_invite', actor: summary('alice'), createdAt: 'now', read: false }));
     await assertFails(alice.doc('users/bob/notifications/n1').update({ response: 'accepted' }));
   });
 });

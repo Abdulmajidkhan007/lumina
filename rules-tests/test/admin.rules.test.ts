@@ -54,7 +54,7 @@ describe('blocked users', () => {
 
   it('does not affect other users', async () => {
     await assertSucceeds(
-      setDoc(doc(db.alice, 'posts', 'p-alice-2'), { authorId: UID.alice, caption: 'ok', createdAt: 'now' }),
+      setDoc(doc(db.alice, 'posts', 'p-alice-2'), { authorId: UID.alice, author: { id: UID.alice }, media: [{ type: 'image', uri: 'https://img/a.png', width: 1, height: 1 }], caption: 'ok', createdAt: 'now' }),
     );
     await assertSucceeds(updateDoc(doc(db.alice, 'users', UID.alice), { bio: 'hi' }));
   });

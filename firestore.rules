@@ -90,16 +90,91 @@ service cloud.firestore {
       return string(request.time.year()) + '-' + pad2(request.time.month()) + '-' + pad2(request.time.day());
     }
 
+    // ---- shape helpers (audit 2026-11-10: L-2, L-4, L-5) ----
+    // Optional string field: absent/null, or a string no longer than `max`.
+    function optStr(d, field, max) {
+      return d.get(field, null) == null
+        || (d[field] is string && d[field].size() <= max);
+    }
+
+    // Embedded UserSummary snapshot must belong to the caller (no spoofed authors).
+    function selfSummary(m) {
+      return m is map && m.get('id', null) == request.auth.uid;
+    }
+
+    function socialCounters() {
+      return ['followerCount', 'followingCount', 'postCount'];
+    }
+
+    // Profile fields the owner may write (create and update).
+    function profileKeys() {
+      return ['username', 'usernameLower', 'displayName', 'avatarUrl', 'bio', 'website',
+              'birthday', 'isPrivate', 'isProfessional', 'deactivated', 'lastActiveAt'];
+    }
+
+    function validProfile(d) {
+      return (!('username' in d) || (d.username is string && d.username.size() >= 1 && d.username.size() <= 30))
+        && (!('usernameLower' in d) || (d.usernameLower is string && d.usernameLower.size() <= 30))
+        && (!('displayName' in d) || (d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 50))
+        && optStr(d, 'bio', 150)
+        && optStr(d, 'website', 200)
+        && optStr(d, 'birthday', 10)
+        && optStr(d, 'avatarUrl', 2048)
+        && (!('isPrivate' in d) || d.isPrivate is bool);
+    }
+
+    function validPostContent(d) {
+      return selfSummary(d.get('author', null))
+        && optStr(d, 'caption', 2200)
+        && d.media is list && d.media.size() >= 1 && d.media.size() <= 10;
+    }
+
+    function validCommentBody(d) {
+      return selfSummary(d.get('author', null))
+        && d.text is string && d.text.size() >= 1 && d.text.size() <= 2200;
+    }
+
+    // Notifications are created by clients only for collab invites today; the
+    // actor must be the caller. (Moves to Cloud Functions in a later PR.)
+    function validNotification(d) {
+      return d.keys().hasOnly(['type', 'actor', 'postPreview', 'commentText', 'mentionContext', 'createdAt', 'read'])
+        && d.type in ['like', 'comment', 'follow', 'mention', 'collab_invite']
+        && selfSummary(d.get('actor', null))
+        && d.read == false
+        && d.createdAt is string && d.createdAt.size() <= 40
+        && optStr(d, 'commentText', 2000)
+        && optStr(d, 'mentionContext', 2000);
+    }
+
+    function validMessage(d, conversationId) {
+      return d.keys().hasOnly(['senderId', 'sender', 'text', 'media', 'createdAt', 'status', 'sharedPost'])
+        && d.senderId == request.auth.uid
+        && selfSummary(d.get('sender', null))
+        && optStr(d, 'text', 4000)
+        && d.status == 'sent'
+        && d.createdAt is string && d.createdAt.size() <= 40;
+    }
+
     // ---------------- users ----------------
     match /users/{uid} {
       allow read: if signedIn();
+      // Create: only known profile fields, never pre-verified, counters at zero.
       allow create: if isOwner(uid)
-                    && countersZero(['followerCount', 'followingCount', 'postCount']);
-      // Owner edits own profile; anyone signed-in may only bump social counters
-      // (follow/unfollow transactions touch the other user's counts).
-      allow update: if (isOwner(uid)
-                     || (signedIn() && onlyKeys(['followerCount', 'followingCount', 'postCount'])))
-                    && countersStep(['followerCount', 'followingCount', 'postCount']);
+                    && request.resource.data.keys().hasOnly(
+                         profileKeys().concat(socialCounters()).concat(['isVerified', 'createdAt']))
+                    && request.resource.data.get('isVerified', false) == false
+                    && validProfile(request.resource.data)
+                    && countersZero(socialCounters());
+      // Owner edits own profile fields (never isVerified); anyone signed-in may
+      // only bump social counters (follow/unfollow transactions touch the other
+      // user's counts); only an admin sets the verified badge.
+      allow update: if ((isOwner(uid)
+                         && request.resource.data.diff(resource.data).affectedKeys()
+                              .hasOnly(profileKeys().concat(socialCounters()))
+                         && validProfile(request.resource.data))
+                        || (signedIn() && onlyKeys(socialCounters()))
+                        || (isAdmin() && onlyKeys(['isVerified'])))
+                    && countersStep(socialCounters());
       allow delete: if false;
 
       match /saves/{postId} {
@@ -110,8 +185,9 @@ service cloud.firestore {
       }
       match /notifications/{notificationId} {
         allow read, update, delete: if isOwner(uid);
-        // Other users generate notifications for you (like/comment/follow).
-        allow create: if signedIn();
+        // Other users send you notifications (collab invites), as themselves,
+        // in a fixed shape.
+        allow create: if signedIn() && validNotification(request.resource.data);
       }
       // Close Friends list. Readable by the owner (to manage it) and by the
       // listed friend (a viewer checks whether they're in an author's list to
@@ -166,11 +242,16 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.authorId == request.auth.uid
                     && validNewCollab(request.resource.data)
+                    && validPostContent(request.resource.data)
+                    && request.resource.data.keys().hasOnly(
+                         ['authorId', 'author', 'media', 'caption', 'hashtags', 'likeCount', 'commentCount',
+                          'shareCount', 'createdAt', 'location', 'taggedUsers', 'collaborators', 'collab', 'archivedAt'])
                     && !request.resource.data.keys().hasAny(moderationKeys())
                     && countersZero(['likeCount', 'commentCount', 'shareCount']);
       allow update: if signedIn()
                     && ((resource.data.authorId == request.auth.uid
                          && collabUntouched()
+                         && validPostContent(request.resource.data)
                          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(moderationKeys()))
                         || onlyKeys(['likeCount', 'commentCount'])
                         || collabAnswer()
@@ -188,8 +269,14 @@ service cloud.firestore {
       }
       match /comments/{commentId} {
         allow read: if signedIn();
-        allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
-        allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+        allow create: if signedIn() && request.resource.data.authorId == request.auth.uid
+                      && request.resource.data.keys().hasOnly(
+                           ['postId', 'authorId', 'author', 'text', 'likeCount', 'createdAt',
+                            'replyCount', 'parentId', 'isPinned'])
+                      && validCommentBody(request.resource.data);
+        allow update: if signedIn() && resource.data.authorId == request.auth.uid
+                      && validCommentBody(request.resource.data);
+        allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
       }
     }
 
@@ -288,14 +375,30 @@ service cloud.firestore {
       // which getOrCreateConversation needs before writing it.
       allow read: if signedIn()
         && (resource == null || request.auth.uid in resource.data.participantIds);
-      allow create: if signedIn() && request.auth.uid in request.resource.data.participantIds;
-      allow update: if signedIn() && request.auth.uid in resource.data.participantIds;
+      // 1:1 only; the id is the two sorted uids joined by '_' (see
+      // getOrCreateConversation), so a conversation can't be forged for others.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['participantIds', 'participants', 'unreadCounts', 'updatedAt'])
+        && request.resource.data.participantIds is list
+        && request.resource.data.participantIds.size() == 2
+        && request.auth.uid in request.resource.data.participantIds
+        && conversationId == request.resource.data.participantIds[0] + '_' + request.resource.data.participantIds[1]
+        && request.resource.data.participantIds[0] != request.resource.data.participantIds[1];
+      // Members may update the preview/unread counters only — never the member list.
+      allow update: if signedIn() && request.auth.uid in resource.data.participantIds
+        && request.resource.data.participantIds == resource.data.participantIds
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['lastMessage', 'updatedAt', 'unreadCounts']);
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow read, create: if signedIn()
+        allow read: if signedIn()
           && request.auth.uid in
              get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow create: if signedIn()
+          && request.auth.uid in
+             get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+          && validMessage(request.resource.data, conversationId);
         allow update, delete: if false;
       }
     }
